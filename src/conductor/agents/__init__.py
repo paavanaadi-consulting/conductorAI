@@ -1,0 +1,43 @@
+"""
+conductor.agents - Specialized AI Agent Layer
+===============================================
+
+This package contains the agent framework and all specialized agent
+implementations. The agent layer sits between the orchestration layer
+(which controls agents) and the integration layer (which agents use).
+
+Architecture:
+    ┌─────────────── ORCHESTRATION LAYER ─────────────────┐
+    │  Coordinator, WorkflowEngine, MessageBus             │
+    └─────────────────────┬───────────────────────────────┘
+                          │ dispatches tasks
+                          ▼
+    ┌─────────────── AGENT LAYER ─────────────────────────┐
+    │                                                      │
+    │  BaseAgent (abstract)                                │
+    │    ├── development/                                   │
+    │    │   ├── CodingAgent     (code generation)         │
+    │    │   ├── ReviewAgent     (code review)             │
+    │    │   ├── TestDataAgent   (test data generation)    │
+    │    │   └── TestAgent       (test execution)          │
+    │    ├── devops/                                        │
+    │    │   ├── DevOpsAgent     (CI/CD configuration)     │
+    │    │   └── DeployingAgent  (deployment)              │
+    │    └── monitoring/                                    │
+    │        └── MonitorAgent    (monitoring & feedback)    │
+    │                                                      │
+    └──────────────────────────────────────────────────────┘
+                          │ uses
+                          ▼
+    ┌─────────────── INTEGRATION LAYER ───────────────────┐
+    │  LLM Providers, Cloud, CI/CD, Notifications          │
+    └──────────────────────────────────────────────────────┘
+
+Usage:
+    from conductor.agents.base import BaseAgent
+    from conductor.agents.development.coding_agent import CodingAgent
+"""
+
+from conductor.agents.base import BaseAgent
+
+__all__ = ["BaseAgent"]

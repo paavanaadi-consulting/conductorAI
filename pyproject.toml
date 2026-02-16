@@ -1,0 +1,150 @@
+# =============================================================================
+# ConductorAI - Multi-Agent AI Framework
+# =============================================================================
+# This is the project configuration file for ConductorAI. It defines:
+#   - Package metadata (name, version, description, authors)
+#   - Runtime dependencies (what ConductorAI needs to run)
+#   - Development dependencies (what developers need for testing/linting)
+#   - Tool configurations (pytest, ruff, mypy settings)
+#
+# Build System: setuptools with pyproject.toml (PEP 621)
+# Python Requirement: 3.11+ (for modern typing features like str | None)
+# =============================================================================
+
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+# -----------------------------------------------------------------------------
+# Package Metadata
+# -----------------------------------------------------------------------------
+# This section follows PEP 621 for declaring project metadata.
+# The package is named "conductorai" on PyPI but imported as "conductor".
+# -----------------------------------------------------------------------------
+[project]
+name = "conductorai"
+version = "0.1.0"
+description = "A Multi-Agent AI Framework for orchestrating specialized AI agents through Development, DevOps, and Monitoring pipelines."
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.11"
+authors = [
+    {name = "ConductorAI Team"},
+]
+keywords = ["ai", "agents", "multi-agent", "orchestration", "devops", "llm"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Typing :: Typed",
+]
+
+# -----------------------------------------------------------------------------
+# Runtime Dependencies
+# -----------------------------------------------------------------------------
+# These are the packages ConductorAI needs to function:
+#   - pydantic:     Data validation, serialization, and settings management
+#   - pydantic-settings: Environment variable / .env file config loading
+#   - redis:        Message bus (pub/sub) and state persistence backend
+#   - pyyaml:       YAML configuration file parsing
+#   - structlog:    Structured, JSON-capable logging
+#   - httpx:        Async HTTP client for LLM API calls and webhooks
+# -----------------------------------------------------------------------------
+dependencies = [
+    "pydantic>=2.0,<3.0",
+    "pydantic-settings>=2.0,<3.0",
+    "redis>=5.0,<6.0",
+    "pyyaml>=6.0,<7.0",
+    "structlog>=23.0",
+    "httpx>=0.25,<1.0",
+]
+
+# -----------------------------------------------------------------------------
+# Development Dependencies
+# -----------------------------------------------------------------------------
+# Install with: pip install -e ".[dev]"
+#   - pytest:           Test runner
+#   - pytest-asyncio:   Async test support (our code is heavily async)
+#   - pytest-cov:       Test coverage reporting
+#   - ruff:             Fast Python linter + formatter (replaces flake8/black)
+#   - mypy:             Static type checking
+# -----------------------------------------------------------------------------
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0,<9.0",
+    "pytest-asyncio>=0.21,<1.0",
+    "pytest-cov>=4.0,<6.0",
+    "ruff>=0.1.0",
+    "mypy>=1.5",
+]
+
+# -----------------------------------------------------------------------------
+# Package Discovery
+# -----------------------------------------------------------------------------
+# Tell setuptools where to find our source code. The "src" layout is a best
+# practice that prevents accidental imports of the source during testing.
+# -----------------------------------------------------------------------------
+[tool.setuptools.packages.find]
+where = ["src"]
+
+# -----------------------------------------------------------------------------
+# Pytest Configuration
+# -----------------------------------------------------------------------------
+# - testpaths:      Where pytest looks for tests
+# - asyncio_mode:   "auto" means all async test functions are automatically
+#                   treated as async tests (no need for @pytest.mark.asyncio)
+# - markers:        Custom markers for selective test running
+# - addopts:        Default command-line options (verbose + short traceback)
+# -----------------------------------------------------------------------------
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+markers = [
+    "unit: Unit tests (fast, no external dependencies)",
+    "integration: Integration tests (may need Redis or other services)",
+    "e2e: End-to-end tests (full workflow execution)",
+]
+addopts = "-v --tb=short"
+
+# -----------------------------------------------------------------------------
+# Ruff Configuration (Linter + Formatter)
+# -----------------------------------------------------------------------------
+# Ruff is an extremely fast Python linter that replaces flake8, isort, and
+# others. We enable a curated set of rules for code quality.
+# -----------------------------------------------------------------------------
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes (unused imports, undefined names)
+    "I",      # isort (import sorting)
+    "N",      # pep8-naming conventions
+    "UP",     # pyupgrade (modern Python syntax)
+    "B",      # flake8-bugbear (common bugs)
+    "SIM",    # flake8-simplify (simplifiable code)
+]
+ignore = [
+    "E501",   # Line too long (we handle this with line-length above)
+]
+
+# -----------------------------------------------------------------------------
+# Mypy Configuration (Static Type Checker)
+# -----------------------------------------------------------------------------
+# Strict mode catches the most type errors. We enable it project-wide
+# and use Pydantic's mypy plugin for proper BaseModel type inference.
+# -----------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+check_untyped_defs = true
+plugins = ["pydantic.mypy"]

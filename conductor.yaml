@@ -1,0 +1,75 @@
+# =============================================================================
+# ConductorAI Configuration File
+# =============================================================================
+#
+# This YAML file configures the ConductorAI framework. All values below
+# show the DEFAULTS — you only need to specify values you want to change.
+#
+# Configuration Priority (highest wins):
+#   1. Environment variables (CONDUCTOR_ prefix)
+#   2. This YAML file
+#   3. Default values in code
+#
+# Environment Variable Examples:
+#   CONDUCTOR_ENVIRONMENT=prod
+#   CONDUCTOR_LOG_LEVEL=DEBUG
+#   CONDUCTOR_REDIS__URL=redis://prod-redis:6379/0
+#   CONDUCTOR_LLM__API_KEY=sk-your-key-here
+#
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# General Settings
+# -----------------------------------------------------------------------------
+# environment: "dev" | "staging" | "prod"
+#   - dev:     Verbose logging, mock providers, in-memory storage
+#   - staging: Reduced logging, real providers, persistent storage
+#   - prod:    Minimal logging, real providers, full monitoring
+# -----------------------------------------------------------------------------
+environment: "dev"
+
+# Logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+log_level: "INFO"
+
+# Maximum retry attempts when an agent task fails.
+# The ErrorHandler uses exponential backoff between retries.
+max_agent_retries: 3
+
+# Maximum time (seconds) a workflow can run before forced cancellation.
+# Prevents runaway workflows from consuming resources indefinitely.
+workflow_timeout_seconds: 300
+
+# Use Redis for state persistence? Set to true for staging/prod.
+# When false, uses in-memory storage (data lost on restart).
+enable_persistence: false
+
+# -----------------------------------------------------------------------------
+# Redis Configuration
+# -----------------------------------------------------------------------------
+# Redis serves as both the Message Bus (pub/sub) and State Store.
+# Only used when enable_persistence is true, or when you explicitly
+# choose Redis-backed implementations.
+# -----------------------------------------------------------------------------
+redis:
+  url: "redis://localhost:6379/0"
+  max_connections: 10
+  key_prefix: "conductor:"
+  socket_timeout: 5.0
+
+# -----------------------------------------------------------------------------
+# LLM (Large Language Model) Configuration
+# -----------------------------------------------------------------------------
+# Controls which AI model the agents use for code generation, review, etc.
+#
+# Supported providers:
+#   - "mock":      Returns configurable responses (for testing/development)
+#   - "openai":    OpenAI API (requires api_key)
+#   - "anthropic": Anthropic API (requires api_key)
+# -----------------------------------------------------------------------------
+llm:
+  provider: "mock"          # Start with mock for development
+  model: "gpt-4"            # Model name (ignored by mock provider)
+  # api_key: "sk-..."       # Uncomment and set for real providers
+  temperature: 0.7          # 0.0 = deterministic, 1.0 = creative
+  max_tokens: 4096          # Max tokens per LLM response
+  # api_base_url: null      # Custom endpoint (for proxies/self-hosted)

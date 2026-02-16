@@ -1,3 +1,33 @@
+Metadata-Version: 2.4
+Name: conductorai
+Version: 0.1.0
+Summary: A Multi-Agent AI Framework for orchestrating specialized AI agents through Development, DevOps, and Monitoring pipelines.
+Author: ConductorAI Team
+License: MIT
+Keywords: ai,agents,multi-agent,orchestration,devops,llm
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Software Development :: Libraries :: Application Frameworks
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Classifier: Typing :: Typed
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: pydantic<3.0,>=2.0
+Requires-Dist: pydantic-settings<3.0,>=2.0
+Requires-Dist: redis<6.0,>=5.0
+Requires-Dist: pyyaml<7.0,>=6.0
+Requires-Dist: structlog>=23.0
+Requires-Dist: httpx<1.0,>=0.25
+Provides-Extra: dev
+Requires-Dist: pytest<9.0,>=7.0; extra == "dev"
+Requires-Dist: pytest-asyncio<1.0,>=0.21; extra == "dev"
+Requires-Dist: pytest-cov<6.0,>=4.0; extra == "dev"
+Requires-Dist: ruff>=0.1.0; extra == "dev"
+Requires-Dist: mypy>=1.5; extra == "dev"
+
 # ConductorAI
 
 **A Multi-Agent AI Framework for Orchestrating Specialized AI Agents**
