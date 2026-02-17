@@ -594,9 +594,22 @@ class InMemoryMessageBus(MessageBus):
             # This is the key mechanism for the request-response pattern:
             # publish() acts as both the delivery mechanism AND the response
             # resolver.
+            #
+            # IMPORTANT: We must NOT resolve the Future when the message
+            # being published IS the original request itself. When request()
+            # calls publish(), the request message has correlation_id set to
+            # its own message_id. Without this guard, publish() would
+            # immediately resolve the Future with the REQUEST message instead
+            # of waiting for the actual RESPONSE from the subscriber.
+            #
+            # Detection: A request message has correlation_id == message_id
+            # (set in request() step 1). A response message has
+            # correlation_id != message_id (set by create_response()).
+            # So we skip resolution when correlation_id == message_id.
             if (
                 message.correlation_id
                 and message.correlation_id in self._pending_requests
+                and message.correlation_id != message.message_id
             ):
                 future = self._pending_requests.pop(message.correlation_id)
                 if not future.done():

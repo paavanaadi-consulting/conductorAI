@@ -82,7 +82,718 @@ agent_objectives:
       human_approval: false
 
 # -----------------------------------------------------------------------------
-# 3. AGENT SPECIFICATIONS
+# 3. MULTI-AGENT COMMUNICATION PROTOCOLS
+# -----------------------------------------------------------------------------
+# Define how agents communicate, coordinate, and collaborate in the system.
+# Supports: Agent-to-Agent (A2A), Message Bus, Hybrid architectures
+# -----------------------------------------------------------------------------
+communication_architecture:
+  # Overall architecture pattern
+  architecture_pattern: "hybrid"  # Options: "a2a" | "message_bus" | "hybrid" | "hierarchical"
+  
+  description: |
+    Hybrid architecture combining:
+    - A2A (gRPC) for latency-sensitive operations (monitoring → diagnostics)
+    - Message Bus (Kafka) for event distribution and async workflows
+    - Service mesh for traffic management and observability
+  
+  # ---------------------------------------------------------------------------
+  # Agent-to-Agent (A2A) Communication
+  # ---------------------------------------------------------------------------
+  a2a_protocol:
+    enabled: true
+    primary_transport: "grpc"  # Options: "grpc" | "http" | "websocket" | "rest"
+    
+    # gRPC Configuration
+    grpc_config:
+      host: "0.0.0.0"
+      port_range: "50051-50060"
+      max_message_size_mb: 100
+      keepalive_time_sec: 30
+      keepalive_timeout_sec: 10
+      keepalive_permit_without_calls: true
+      
+      compression: "gzip"  # Options: "gzip" | "deflate" | "snappy" | "none"
+      
+      retry_policy:
+        enabled: true
+        max_attempts: 3
+        initial_backoff_ms: 100
+        max_backoff_ms: 5000
+        backoff_multiplier: 2.0
+        retryable_status_codes: ["UNAVAILABLE", "DEADLINE_EXCEEDED"]
+      
+      timeout_policy:
+        default_timeout_ms: 5000
+        idle_timeout_ms: 300000  # 5 minutes
+        max_connection_age_ms: 1800000  # 30 minutes
+    
+    # HTTP/REST Configuration (fallback)
+    http_config:
+      enabled: false
+      port: 8080
+      protocol: "http2"  # Options: "http1.1" | "http2" | "http3"
+      tls_enabled: true
+      timeout_ms: 10000
+    
+    # Service Mesh Integration
+    service_mesh:
+      enabled: true
+      implementation: "istio"  # Options: "istio" | "linkerd" | "consul" | "none"
+      
+      features:
+        mutual_tls: true
+        automatic_retries: true
+        circuit_breaking: true
+        fault_injection: false  # Only for testing
+        
+      circuit_breaker:
+        max_connections: 1000
+        max_pending_requests: 1000
+        max_requests: 1000
+        max_retries: 3
+        consecutive_errors: 5
+        interval_sec: 30
+        base_ejection_time_sec: 30
+    
+    # Communication Patterns
+    patterns:
+      - pattern: "request_response"
+        description: "Synchronous request-reply"
+        use_cases:
+          - "MonitoringAgent → DiagnosticAgent (anomaly analysis)"
+          - "DiagnosticAgent → RemediationAgent (remediation request)"
+        timeout_ms: 5000
+        retry_enabled: true
+        
+      - pattern: "streaming"
+        description: "Unidirectional stream"
+        use_cases:
+          - "MonitoringAgent → DiagnosticAgent (real-time metrics stream)"
+        timeout_ms: 300000  # 5 minutes
+        buffer_size: 1000
+        
+      - pattern: "bidirectional_streaming"
+        description: "Two-way streaming communication"
+        use_cases:
+          - "DiagnosticAgent ↔ LearningAgent (interactive troubleshooting)"
+        timeout_ms: 600000  # 10 minutes
+        buffer_size: 500
+    
+    # Service Discovery
+    service_discovery:
+      mechanism: "kubernetes_dns"  # Options: "kubernetes_dns" | "consul" | "etcd" | "eureka"
+      namespace: "agentic-ops"
+      service_name_pattern: "{agent_id}-service.{namespace}.svc.cluster.local"
+      
+      health_checks:
+        enabled: true
+        protocol: "grpc_health_v1"  # gRPC health checking protocol
+        interval_sec: 30
+        timeout_sec: 5
+        unhealthy_threshold: 3
+        healthy_threshold: 2
+      
+      dns_config:
+        ndots: 5
+        timeout_sec: 2
+        attempts: 3
+
+  # ---------------------------------------------------------------------------
+  # Message Bus Communication
+  # ---------------------------------------------------------------------------
+  message_bus:
+    enabled: true
+    broker_type: "kafka"  # Options: "kafka" | "rabbitmq" | "redis_streams" | "pulsar" | "nats"
+    
+    # Kafka Configuration
+    kafka_config:
+      bootstrap_servers:
+        - "kafka-1.agentic-ops.svc.cluster.local:9092"
+        - "kafka-2.agentic-ops.svc.cluster.local:9092"
+        - "kafka-3.agentic-ops.svc.cluster.local:9092"
+      
+      cluster_settings:
+        replication_factor: 3
+        min_in_sync_replicas: 2
+        default_partitions: 16
+        retention_hours: 168  # 7 days
+        retention_bytes: 1073741824  # 1GB per partition
+        compression_type: "snappy"  # Options: "snappy" | "gzip" | "lz4" | "zstd"
+        
+      producer_config:
+        acks: "all"  # Wait for all replicas
+        max_in_flight_requests: 5
+        batch_size_bytes: 16384
+        linger_ms: 10
+        compression_type: "snappy"
+        enable_idempotence: true
+        max_request_size_bytes: 1048576  # 1MB
+        
+      consumer_config:
+        group_id_prefix: "agentic_ops"
+        auto_offset_reset: "latest"  # Options: "earliest" | "latest"
+        enable_auto_commit: false  # Manual commit for reliability
+        max_poll_records: 500
+        max_poll_interval_ms: 300000
+        session_timeout_ms: 30000
+        heartbeat_interval_ms: 3000
+        fetch_min_bytes: 1024
+        fetch_max_wait_ms: 500
+    
+    # RabbitMQ Configuration (alternative)
+    rabbitmq_config:
+      enabled: false
+      host: "rabbitmq.agentic-ops.svc.cluster.local"
+      port: 5672
+      vhost: "/"
+      username: "${RABBITMQ_USER}"
+      password: "${RABBITMQ_PASSWORD}"
+      
+      exchange_config:
+        type: "topic"  # Options: "direct" | "topic" | "fanout" | "headers"
+        durable: true
+        auto_delete: false
+      
+      queue_config:
+        durable: true
+        exclusive: false
+        auto_delete: false
+        max_length: 100000
+        message_ttl_ms: 604800000  # 7 days
+    
+    # Topic Taxonomy
+    topics:
+      # Event Topics (Pub/Sub)
+      events:
+        - name: "incidents.detected"
+          description: "Monitoring agent publishes detected incidents"
+          partitions: 16
+          replication_factor: 3
+          publishers: ["monitoring_agent"]
+          subscribers: ["diagnostic_agent", "notification_agent", "learning_agent"]
+          message_format: "avro"
+          schema_file: "schemas/incident_detected.avsc"
+          retention_hours: 168
+          
+        - name: "diagnostics.completed"
+          description: "Diagnostic agent publishes RCA results"
+          partitions: 8
+          publishers: ["diagnostic_agent"]
+          subscribers: ["remediation_agent", "learning_agent", "notification_agent"]
+          message_format: "avro"
+          schema_file: "schemas/diagnostic_completed.avsc"
+          
+        - name: "remediation.executed"
+          description: "Remediation actions taken"
+          partitions: 8
+          publishers: ["remediation_agent"]
+          subscribers: ["monitoring_agent", "learning_agent", "audit_agent"]
+          message_format: "protobuf"
+          schema_file: "schemas/remediation_executed.proto"
+          
+        - name: "remediation.failed"
+          description: "Remediation failures requiring escalation"
+          partitions: 4
+          publishers: ["remediation_agent"]
+          subscribers: ["notification_agent", "escalation_agent"]
+          message_format: "json"
+          
+        - name: "learning.insights"
+          description: "Learning agent publishes improved patterns"
+          partitions: 4
+          publishers: ["learning_agent"]
+          subscribers: ["diagnostic_agent", "remediation_agent"]
+          message_format: "avro"
+      
+      # Command Topics (Point-to-Point)
+      commands:
+        - name: "remediation.requests"
+          description: "Commands for remediation agent"
+          partitions: 8
+          consumer_group: "remediation_agent_group"
+          message_format: "avro"
+          schema_file: "schemas/remediation_request.avsc"
+          
+        - name: "escalation.requests"
+          description: "Human escalation requests"
+          partitions: 2
+          consumer_group: "escalation_agent_group"
+          message_format: "json"
+      
+      # Dead Letter Queues
+      dead_letter:
+        - name: "incidents.dlq"
+          description: "Failed incident processing"
+          partitions: 1
+          retention_hours: 720  # 30 days
+    
+    # Messaging Patterns
+    patterns:
+      - pattern: "publish_subscribe"
+        description: "Event broadcasting to multiple subscribers"
+        use_cases:
+          - "incidents.detected → all interested agents subscribe"
+          - "diagnostics.completed → remediation + learning agents"
+        delivery_guarantee: "at_least_once"
+        ordering_guarantee: "partition_level"
+        
+      - pattern: "request_reply_async"
+        description: "Async request-reply with correlation IDs"
+        use_cases:
+          - "Diagnostic agent requests historical data from learning agent"
+        delivery_guarantee: "exactly_once"
+        correlation_id_header: "correlation_id"
+        reply_to_header: "reply_topic"
+        timeout_ms: 60000
+        
+      - pattern: "event_sourcing"
+        description: "All state changes as immutable events"
+        use_cases:
+          - "Complete incident lifecycle tracking"
+          - "Audit trail for compliance"
+        delivery_guarantee: "exactly_once"
+        compaction_enabled: false
+        retention_policy: "infinite"
+        
+      - pattern: "saga_orchestration"
+        description: "Multi-step workflows with compensation"
+        use_cases:
+          - "Complex remediation requiring multiple agents"
+        coordinator: "orchestrator_agent"
+        compensation_enabled: true
+        
+  # ---------------------------------------------------------------------------
+  # Protocol Selection Rules
+  # ---------------------------------------------------------------------------
+  protocol_selection:
+    # When to use A2A (gRPC)
+    use_a2a_when:
+      conditions:
+        - "Latency requirement < 100ms"
+        - "Synchronous response required immediately"
+        - "Streaming data (metrics, logs) in real-time"
+        - "Bidirectional communication needed"
+        - "Message size < 1MB"
+      
+      examples:
+        - scenario: "Monitoring agent detects anomaly spike"
+          communication: "A2A gRPC streaming"
+          rationale: "Real-time metrics feed to diagnostic agent"
+          latency_target: "< 50ms"
+          
+        - scenario: "Diagnostic agent requests immediate remediation approval"
+          communication: "A2A gRPC request-response"
+          rationale: "Human-in-loop requires immediate callback"
+          latency_target: "< 100ms"
+    
+    # When to use Message Bus (Kafka)
+    use_message_bus_when:
+      conditions:
+        - "Fan-out to multiple subscribers required"
+        - "Asynchronous processing acceptable"
+        - "Ordered delivery within partition needed"
+        - "Guaranteed delivery (at-least-once or exactly-once)"
+        - "Event persistence for replay/audit"
+        - "Decoupling agents temporally"
+        - "Message size can be large (>1MB)"
+      
+      examples:
+        - scenario: "Monitoring agent detects incident"
+          communication: "Kafka pub/sub"
+          rationale: "Multiple agents need to know (diagnostic, notification, learning)"
+          delivery: "at-least-once"
+          
+        - scenario: "Diagnostic agent completes RCA"
+          communication: "Kafka event"
+          rationale: "Async workflows, audit trail, learning dataset"
+          delivery: "exactly-once"
+          
+        - scenario: "Learning agent updates incident patterns"
+          communication: "Kafka event"
+          rationale: "Other agents consume when ready, no blocking"
+          delivery: "at-least-once"
+  
+  # ---------------------------------------------------------------------------
+  # Agent Collaboration Workflows
+  # ---------------------------------------------------------------------------
+  workflows:
+    - workflow_id: "incident_detection_to_resolution"
+      description: "End-to-end incident handling workflow"
+      orchestration_type: "choreography"  # Decentralized, event-driven
+      
+      steps:
+        - step: 1
+          agent: "monitoring_agent"
+          action: "detect_anomaly"
+          trigger: "metrics_threshold_exceeded"
+          communication: "message_bus"
+          output_topic: "incidents.detected"
+          
+        - step: 2
+          agent: "diagnostic_agent"
+          action: "analyze_root_cause"
+          trigger: "incidents.detected"
+          communication: "a2a"  # Fast analysis with streaming metrics
+          input_protocol: "grpc_streaming"
+          output_topic: "diagnostics.completed"
+          sla_ms: 30000  # 30 seconds
+          
+        - step: 3
+          agents: ["remediation_agent", "learning_agent", "notification_agent"]
+          action: "parallel_processing"
+          trigger: "diagnostics.completed"
+          communication: "message_bus"
+          pattern: "fan_out"
+          
+        - step: 4
+          agent: "remediation_agent"
+          action: "execute_remediation"
+          trigger: "diagnostics.completed"
+          communication: "message_bus"
+          approval_required: true
+          approval_protocol: "a2a"  # Fast human approval via gRPC
+          output_topic: "remediation.executed"
+          
+        - step: 5
+          agent: "learning_agent"
+          action: "update_knowledge_base"
+          trigger: "remediation.executed"
+          communication: "message_bus"
+          async: true
+          output_topic: "learning.insights"
+    
+    - workflow_id: "proactive_optimization"
+      description: "Continuous learning and optimization workflow"
+      orchestration_type: "orchestration"  # Centralized coordinator
+      coordinator: "orchestrator_agent"
+      
+      steps:
+        - step: 1
+          agent: "learning_agent"
+          action: "analyze_historical_incidents"
+          communication: "message_bus"
+          schedule: "0 2 * * *"  # Daily at 2 AM
+          
+        - step: 2
+          agent: "learning_agent"
+          action: "generate_optimization_recommendations"
+          communication: "a2a"  # Sync request to orchestrator
+          output: "optimization_proposals"
+          
+        - step: 3
+          agent: "orchestrator_agent"
+          action: "validate_and_apply_optimizations"
+          communication: "message_bus"
+          approval_required: true
+
+  # ---------------------------------------------------------------------------
+  # Message Serialization & Schema Management
+  # ---------------------------------------------------------------------------
+  serialization:
+    default_format: "avro"  # Options: "avro" | "protobuf" | "json" | "msgpack"
+    
+    # Schema Registry (for Avro/Protobuf)
+    schema_registry:
+      enabled: true
+      implementation: "confluent_schema_registry"
+      url: "http://schema-registry.agentic-ops.svc.cluster.local:8081"
+      
+      compatibility_mode: "backward"  # Options: "backward" | "forward" | "full" | "none"
+      
+      auto_register_schemas: false  # Require explicit schema registration
+      
+      schema_validation:
+        enabled: true
+        fail_on_invalid_schema: true
+    
+    # Format-specific configuration
+    formats:
+      avro:
+        enabled: true
+        codec: "null"  # Options: "null" | "deflate" | "snappy"
+        schema_location: "schemas/avro/"
+        
+      protobuf:
+        enabled: true
+        schema_location: "schemas/proto/"
+        
+      json:
+        enabled: true
+        pretty_print: false
+        schema_validation: true  # JSON Schema validation
+        schema_location: "schemas/json/"
+    
+    # Schema Evolution Strategy
+    evolution:
+      strategy: "backward_compatible"
+      versioning: "semantic"
+      deprecation_policy: "6_months"
+      breaking_change_approval: "required"
+
+  # ---------------------------------------------------------------------------
+  # Coordination & Consensus
+  # ---------------------------------------------------------------------------
+  coordination:
+    # Distributed Consensus
+    consensus:
+      enabled: true
+      protocol: "raft"  # Options: "raft" | "paxos" | "viewstamped_replication"
+      backend: "etcd"
+      
+      etcd_config:
+        endpoints:
+          - "etcd-1.agentic-ops.svc.cluster.local:2379"
+          - "etcd-2.agentic-ops.svc.cluster.local:2379"
+          - "etcd-3.agentic-ops.svc.cluster.local:2379"
+        dial_timeout_sec: 5
+        request_timeout_sec: 10
+    
+    # Leader Election
+    leader_election:
+      enabled: true
+      mechanism: "kubernetes_lease"  # Options: "kubernetes_lease" | "etcd" | "redis"
+      
+      lease_config:
+        namespace: "agentic-ops"
+        lease_duration_sec: 15
+        renew_deadline_sec: 10
+        retry_period_sec: 2
+      
+      leader_responsibilities:
+        - "Workflow orchestration"
+        - "Global state management"
+        - "Conflict resolution"
+    
+    # Distributed Locking
+    distributed_locks:
+      enabled: true
+      backend: "redis"  # Options: "redis" | "etcd" | "zookeeper"
+      
+      redis_config:
+        host: "redis.agentic-ops.svc.cluster.local"
+        port: 6379
+        db: 0
+        
+      lock_config:
+        default_ttl_sec: 30
+        retry_delay_ms: 100
+        retry_count: 3
+      
+      use_cases:
+        - "Remediation action coordination (prevent duplicate fixes)"
+        - "Knowledge base updates (prevent conflicts)"
+        - "Resource allocation (prevent over-provisioning)"
+
+  # ---------------------------------------------------------------------------
+  # Security & Authentication
+  # ---------------------------------------------------------------------------
+  security:
+    # Encryption
+    encryption:
+      in_transit:
+        protocol: "tls_1_3"
+        cipher_suites:
+          - "TLS_AES_256_GCM_SHA384"
+          - "TLS_CHACHA20_POLY1305_SHA256"
+        
+      at_rest:
+        enabled: true
+        algorithm: "aes_256_gcm"
+        key_rotation_days: 90
+    
+    # Authentication
+    authentication:
+      mechanism: "mutual_tls"  # Options: "mutual_tls" | "jwt" | "oauth2" | "api_key"
+      
+      mtls_config:
+        ca_cert_path: "/etc/certs/ca.crt"
+        cert_path: "/etc/certs/agent.crt"
+        key_path: "/etc/certs/agent.key"
+        verify_client_cert: true
+        certificate_rotation_days: 90
+      
+      jwt_config:
+        enabled: false
+        issuer: "agentic-ops-auth"
+        algorithm: "RS256"
+        expiration_min: 60
+    
+    # Authorization
+    authorization:
+      mechanism: "rbac"  # Options: "rbac" | "abac" | "opa"
+      
+      rbac_config:
+        roles:
+          - role: "monitoring_agent"
+            permissions:
+              - "publish:incidents.detected"
+              - "subscribe:learning.insights"
+          
+          - role: "remediation_agent"
+            permissions:
+              - "publish:remediation.executed"
+              - "subscribe:diagnostics.completed"
+              - "execute:remediation_actions"
+      
+      opa_config:
+        enabled: false
+        policy_url: "http://opa.agentic-ops.svc.cluster.local:8181"
+    
+    # Message Signing
+    message_signing:
+      enabled: true
+      algorithm: "ed25519"
+      
+      signing_config:
+        sign_all_messages: false  # Only sign critical messages
+        sign_patterns:
+          - "remediation.*"
+          - "escalation.*"
+        
+        verification:
+          verify_signatures: true
+          reject_unsigned: false  # Warn but don't reject
+
+  # ---------------------------------------------------------------------------
+  # Observability & Monitoring
+  # ---------------------------------------------------------------------------
+  observability:
+    # Distributed Tracing
+    tracing:
+      enabled: true
+      implementation: "jaeger"  # Options: "jaeger" | "zipkin" | "tempo"
+      
+      jaeger_config:
+        agent_host: "jaeger-agent.observability.svc.cluster.local"
+        agent_port: 6831
+        sampler_type: "probabilistic"
+        sampler_param: 0.1  # 10% sampling
+        
+      trace_context:
+        propagation_format: "w3c_trace_context"  # W3C Trace Context standard
+        baggage_enabled: true
+      
+      instrumentation:
+        auto_instrument: true
+        custom_spans:
+          - "agent_decision_making"
+          - "llm_inference"
+          - "remediation_execution"
+    
+    # Metrics
+    metrics:
+      enabled: true
+      backend: "prometheus"
+      
+      protocol_metrics:
+        a2a:
+          - "grpc_request_duration_seconds"
+          - "grpc_request_total"
+          - "grpc_request_errors_total"
+          - "grpc_stream_messages_sent"
+          - "grpc_stream_messages_received"
+          
+        message_bus:
+          - "kafka_producer_record_send_total"
+          - "kafka_producer_record_error_total"
+          - "kafka_consumer_records_consumed_total"
+          - "kafka_consumer_lag"
+          - "kafka_consumer_commit_latency_avg"
+      
+      custom_metrics:
+        - "agent_decision_latency_seconds"
+        - "incident_detection_to_resolution_seconds"
+        - "remediation_success_rate"
+        - "agent_collaboration_count"
+      
+      export:
+        prometheus_port: 9090
+        scrape_interval_sec: 15
+    
+    # Logging
+    logging:
+      enabled: true
+      backend: "elasticsearch"
+      
+      log_config:
+        level: "info"  # Options: "debug" | "info" | "warn" | "error"
+        format: "json"
+        
+        include_fields:
+          - "timestamp"
+          - "agent_id"
+          - "workflow_id"
+          - "trace_id"
+          - "span_id"
+          - "communication_protocol"
+          - "message_id"
+          - "correlation_id"
+      
+      message_logging:
+        log_messages: true
+        log_payload: false  # Don't log full payload (security/performance)
+        sample_rate: 0.01  # Log 1% of messages
+      
+      retention:
+        days: 30
+        archive_after_days: 90
+
+  # ---------------------------------------------------------------------------
+  # Performance & Optimization
+  # ---------------------------------------------------------------------------
+  performance:
+    # Connection Pooling
+    connection_pooling:
+      a2a:
+        pool_size: 100
+        max_idle_connections: 50
+        connection_timeout_ms: 5000
+        
+      message_bus:
+        producer_pool_size: 10
+        consumer_pool_size: 5
+    
+    # Batching
+    batching:
+      enabled: true
+      
+      message_bus:
+        batch_size: 100
+        batch_timeout_ms: 100
+        compression_enabled: true
+    
+    # Caching
+    caching:
+      enabled: true
+      backend: "redis"
+      
+      cache_config:
+        ttl_sec: 300  # 5 minutes
+        max_size_mb: 1024  # 1GB
+        
+      cache_patterns:
+        - "Agent service discovery results"
+        - "Schema registry lookups"
+        - "Historical incident patterns"
+    
+    # Rate Limiting
+    rate_limiting:
+      enabled: true
+      
+      limits:
+        - agent: "monitoring_agent"
+          protocol: "message_bus"
+          limit: "1000 messages/second"
+          
+        - agent: "diagnostic_agent"
+          protocol: "a2a"
+          limit: "500 requests/second"
+      
+      strategy: "token_bucket"  # Options: "token_bucket" | "leaky_bucket" | "fixed_window"
+
+# -----------------------------------------------------------------------------
+# 4. AGENT SPECIFICATIONS
 # -----------------------------------------------------------------------------
 agents:
   # Monitoring Agent
@@ -387,7 +1098,7 @@ agents:
       reporting: "Weekly summary to team"
 
 # -----------------------------------------------------------------------------
-# 4. AGENT ORCHESTRATION
+# 5. AGENT ORCHESTRATION
 # -----------------------------------------------------------------------------
 orchestration:
   pattern: "conductor_based"  # Central coordinator orchestrates agents
@@ -466,7 +1177,7 @@ orchestration:
       - "Retry attempts"
 
 # -----------------------------------------------------------------------------
-# 5. LLM INTEGRATION
+# 6. LLM INTEGRATION
 # -----------------------------------------------------------------------------
 llm_configuration:
   primary_provider: "openai"
@@ -540,7 +1251,7 @@ llm_configuration:
       on_timeout: "Use cached response or escalate"
 
 # -----------------------------------------------------------------------------
-# 6. KNOWLEDGE BASE & MEMORY
+# 7. KNOWLEDGE BASE & MEMORY
 # -----------------------------------------------------------------------------
 knowledge_base:
   # Vector database for semantic search
@@ -597,7 +1308,7 @@ knowledge_base:
       stores: "All incident history, learned patterns"
 
 # -----------------------------------------------------------------------------
-# 7. SAFETY & GUARDRAILS
+# 8. SAFETY & GUARDRAILS
 # -----------------------------------------------------------------------------
 safety:
   # Circuit breakers for agents
@@ -648,7 +1359,7 @@ safety:
     verification: "Confirm metrics return to baseline"
 
 # -----------------------------------------------------------------------------
-# 8. MONITORING & OBSERVABILITY
+# 9. MONITORING & OBSERVABILITY
 # -----------------------------------------------------------------------------
 monitoring:
   # Agent performance metrics
@@ -699,7 +1410,7 @@ monitoring:
         - "Agent confidence over time"
 
 # -----------------------------------------------------------------------------
-# 9. TESTING & VALIDATION
+# 10. TESTING & VALIDATION
 # -----------------------------------------------------------------------------
 testing:
   # Agent unit tests
@@ -738,7 +1449,7 @@ testing:
       - "Remediation appropriateness"
 
 # -----------------------------------------------------------------------------
-# 10. SUCCESS CRITERIA
+# 11. SUCCESS CRITERIA
 # -----------------------------------------------------------------------------
 success_criteria:
   technical:
@@ -757,3 +1468,83 @@ success_criteria:
     - "Knowledge base populated with 100+ incidents"
     - "Human approval workflow functional"
     - "Safety guardrails tested and validated"
+
+# -----------------------------------------------------------------------------
+# NOTES & IMPLEMENTATION GUIDANCE
+# -----------------------------------------------------------------------------
+notes: |
+  This template defines a production-ready autonomous agentic operations system
+  with comprehensive multi-agent communication protocols.
+  
+  COMMUNICATION ARCHITECTURE:
+  1. Hybrid approach combining A2A (gRPC) and Message Bus (Kafka)
+  2. Use A2A for latency-sensitive operations (< 100ms requirement)
+  3. Use Message Bus for event broadcasting and async workflows
+  4. Service mesh (Istio) provides traffic management and observability
+  
+  PROTOCOL SELECTION GUIDE:
+  - A2A gRPC when:
+    * Real-time streaming (monitoring → diagnostics)
+    * Synchronous request-response needed
+    * Low latency critical (< 100ms)
+    * Bidirectional communication
+  
+  - Message Bus (Kafka) when:
+    * Multiple subscribers (pub/sub pattern)
+    * Event persistence needed for audit
+    * Guaranteed delivery required
+    * Temporal decoupling of agents
+    * Large message payloads
+  
+  INFRASTRUCTURE REQUIREMENTS:
+  - Kubernetes cluster with Istio service mesh
+  - Kafka cluster (3 brokers, replication factor 3)
+  - etcd cluster for distributed coordination
+  - Redis for distributed locking and caching
+  - Schema Registry for Avro/Protobuf schemas
+  - Jaeger for distributed tracing
+  - Prometheus for metrics collection
+  
+  SECURITY HIGHLIGHTS:
+  - Mutual TLS (mTLS) for all agent-to-agent communication
+  - Message signing for critical operations (remediation, escalation)
+  - RBAC for authorization
+  - TLS 1.3 encryption in transit
+  - AES-256-GCM encryption at rest
+  
+  OBSERVABILITY:
+  - Distributed tracing with W3C Trace Context propagation
+  - Protocol-specific metrics (gRPC latency, Kafka lag)
+  - Structured JSON logging with correlation IDs
+  - 10% trace sampling for performance
+  
+  IMPLEMENTATION TIMELINE:
+  - Week 1-2: Set up communication infrastructure (Kafka, etcd, Redis)
+  - Week 3-4: Implement agent base classes with protocol support
+  - Week 5-6: Deploy individual agents with communication wiring
+  - Week 7-8: Implement workflows and test end-to-end
+  - Week 9-10: Performance tuning and production hardening
+  
+  COST ESTIMATE:
+  - Kafka cluster (3 nodes): ~$500/month
+  - etcd cluster (3 nodes): ~$300/month
+  - Redis cluster: ~$200/month
+  - Service mesh overhead: ~20% additional compute
+  - Total infrastructure: ~$2-3K/month (excluding agent compute)
+
+# -----------------------------------------------------------------------------
+# TEMPLATE VERSION
+# -----------------------------------------------------------------------------
+template_version: "2.0.0"
+template_last_updated: "2026-02-16"
+
+# Changelog:
+# v2.0.0 (2026-02-16):
+#   - Added comprehensive multi-agent communication protocols section
+#   - Included A2A (gRPC) and Message Bus (Kafka) configurations
+#   - Added protocol selection rules and workflow examples
+#   - Included security, observability, and performance specifications
+#   - Added coordination mechanisms (consensus, leader election, distributed locks)
+#   - Defined serialization formats and schema management
+# v1.0.0 (2026-01-15):
+#   - Initial agentic operations pipeline template

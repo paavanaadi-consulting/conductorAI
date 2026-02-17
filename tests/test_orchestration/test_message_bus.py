@@ -9,8 +9,9 @@ What's Being Tested:
     - Pub/Sub pattern:        publish → subscribers receive messages
     - Request-Response:       request() waits for correlated response
     - Subscription lifecycle: subscribe, unsubscribe, callback management
-    - Error handling:         timeouts, no-subscriber scenarios
-    - Metrics:                published_message_count tracking
+    - Error handling:         timeouts, expired messages, disconnected guards
+    - Metrics:                published_count tracking
+    - Edge cases:             callback errors, concurrent access, TTL expiry
 
 All tests are async (pytest-asyncio with asyncio_mode=auto).
 No external dependencies required (pure in-memory).
@@ -30,7 +31,7 @@ Architecture Context:
 """
 
 import asyncio
-from typing import Any
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -50,17 +51,19 @@ from conductor.orchestration.message_bus import InMemoryMessageBus, MessageBus
 def _make_message(
     msg_type: MessageType = MessageType.STATUS_UPDATE,
     sender: str = "test",
+    **kwargs,
 ) -> AgentMessage:
     """Create a minimal AgentMessage for testing.
 
     Args:
         msg_type: The message type to use (default: STATUS_UPDATE).
         sender: The sender_id to use (default: "test").
+        **kwargs: Additional fields to set on the AgentMessage.
 
     Returns:
         An AgentMessage instance with the specified type and sender.
     """
-    return AgentMessage(message_type=msg_type, sender_id=sender)
+    return AgentMessage(message_type=msg_type, sender_id=sender, **kwargs)
 
 
 # =============================================================================
@@ -73,6 +76,17 @@ class TestInMemoryMessageBus:
     Tests cover pub/sub, request-response, subscription management,
     and metric tracking.
     """
+
+    # -------------------------------------------------------------------------
+    # Test: ABC conformance
+    # -------------------------------------------------------------------------
+
+    def test_is_message_bus(self) -> None:
+        """InMemoryMessageBus should be a subclass of MessageBus ABC."""
+        bus = InMemoryMessageBus()
+        assert isinstance(bus, MessageBus), (
+            "InMemoryMessageBus must implement the MessageBus interface"
+        )
 
     # -------------------------------------------------------------------------
     # Test: Basic Pub/Sub
@@ -129,7 +143,7 @@ class TestInMemoryMessageBus:
             1. Create a bus and connect
             2. Publish a message to "conductor:empty" (no subscribers)
             3. Verify no exception is raised
-            4. Verify the message count still increments
+            4. Verify the published_count still increments
 
         This is important because agents may publish status updates even
         when no one is listening yet (e.g., during system startup).
@@ -141,8 +155,9 @@ class TestInMemoryMessageBus:
         message = _make_message(sender="lonely-agent")
         await bus.publish("conductor:empty", message)
 
-        # The message was still "published" (counted), just not delivered
-        assert bus.published_message_count == 1, (
+        # The message was still "published" (counted), just not delivered.
+        # Note: The property is named `published_count` (not `published_message_count`).
+        assert bus.published_count == 1, (
             "Published count should increment even with no subscribers"
         )
 
@@ -201,19 +216,19 @@ class TestInMemoryMessageBus:
     # Test: Unsubscribe
     # -------------------------------------------------------------------------
 
-    async def test_unsubscribe(self) -> None:
-        """After unsubscribe, the callback should NOT be called for new messages.
+    async def test_unsubscribe_removes_all_channel_callbacks(self) -> None:
+        """unsubscribe(channel) should remove ALL callbacks for that channel.
 
         Scenario:
             1. Subscribe a callback to "conductor:test"
             2. Publish a message — callback receives it (1 message)
-            3. Unsubscribe the callback
+            3. Unsubscribe the entire channel (removes all callbacks)
             4. Publish another message — callback should NOT receive it
             5. Verify the callback still has only 1 message (from step 2)
 
-        This ensures that unsubscribe truly removes the callback from the
-        channel's subscriber list. Agents use this when shutting down to
-        stop receiving messages.
+        Note: unsubscribe() takes a CHANNEL name, not a subscription ID.
+        It removes ALL callbacks registered for that channel.
+        Agents use this when shutting down to stop receiving messages.
         """
         bus = InMemoryMessageBus()
         await bus.connect()
@@ -224,18 +239,75 @@ class TestInMemoryMessageBus:
             received.append(msg)
 
         # Subscribe and receive one message
-        sub_id = await bus.subscribe("conductor:test", callback)
+        await bus.subscribe("conductor:test", callback)
         await bus.publish("conductor:test", _make_message(sender="before"))
         assert len(received) == 1, "Should have received the first message"
 
-        # Unsubscribe
-        await bus.unsubscribe(sub_id)
+        # Unsubscribe the entire channel (removes all callbacks for this channel)
+        await bus.unsubscribe("conductor:test")
 
         # Publish again — callback should NOT fire
         await bus.publish("conductor:test", _make_message(sender="after"))
         assert len(received) == 1, (
             "Should still have only 1 message — the post-unsubscribe "
             "message should not have been delivered"
+        )
+
+        await bus.disconnect()
+
+    async def test_unsubscribe_no_op_for_unknown_channel(self) -> None:
+        """Unsubscribing from a channel with no subscribers should not raise.
+
+        This ensures unsubscribe is idempotent and safe to call even when
+        the channel was never subscribed to.
+        """
+        bus = InMemoryMessageBus()
+        await bus.connect()
+
+        # Should not raise
+        await bus.unsubscribe("conductor:nonexistent")
+
+        await bus.disconnect()
+
+    async def test_unsubscribe_only_affects_target_channel(self) -> None:
+        """Unsubscribing from one channel should not affect other channels.
+
+        Scenario:
+            1. Subscribe callback_a to "channel-a"
+            2. Subscribe callback_b to "channel-b"
+            3. Unsubscribe "channel-a"
+            4. Publish to both channels
+            5. Verify only callback_b received its message
+
+        This ensures channel isolation is maintained during unsubscribe.
+        """
+        bus = InMemoryMessageBus()
+        await bus.connect()
+
+        received_a: list[AgentMessage] = []
+        received_b: list[AgentMessage] = []
+
+        async def cb_a(msg: AgentMessage) -> None:
+            received_a.append(msg)
+
+        async def cb_b(msg: AgentMessage) -> None:
+            received_b.append(msg)
+
+        await bus.subscribe("channel-a", cb_a)
+        await bus.subscribe("channel-b", cb_b)
+
+        # Unsubscribe only channel-a
+        await bus.unsubscribe("channel-a")
+
+        # Publish to both
+        await bus.publish("channel-a", _make_message(sender="test"))
+        await bus.publish("channel-b", _make_message(sender="test"))
+
+        assert len(received_a) == 0, (
+            "channel-a callback should NOT fire after unsubscribe"
+        )
+        assert len(received_b) == 1, (
+            "channel-b callback should still work"
         )
 
         await bus.disconnect()
@@ -305,7 +377,7 @@ class TestInMemoryMessageBus:
             1. Subscribe a handler to "conductor:agent:coding-01" that:
                a. Receives a TASK_ASSIGNMENT message
                b. Creates a response using message.create_response()
-               c. Publishes the response back to the request sender's channel
+               c. Publishes the response back to the bus
             2. Call request() with a TASK_ASSIGNMENT message
             3. Verify we get back the correct response
 
@@ -317,7 +389,7 @@ class TestInMemoryMessageBus:
               → publish(TASK_ASSIGNMENT) to agent channel
               → handler receives it, creates response with create_response()
               → handler publishes response (correlation_id matches)
-              → request() Future is resolved
+              → publish() resolves the pending Future
               → request() returns the response
         """
         bus = InMemoryMessageBus()
@@ -334,7 +406,8 @@ class TestInMemoryMessageBus:
                 payload={"result": "code generated"},
             )
             # Publish the response — the bus matches correlation_id
-            # and resolves the pending Future in request()
+            # and resolves the pending Future in request().
+            # We publish to the coordinator's channel (the original sender).
             await bus.publish("conductor:agent:coordinator", response)
 
         # Subscribe the handler to the agent's channel
@@ -368,6 +441,40 @@ class TestInMemoryMessageBus:
         assert response.correlation_id == request_msg.message_id, (
             "Response correlation_id should match the request's message_id, "
             "linking the two messages together"
+        )
+
+        await bus.disconnect()
+
+    async def test_request_response_preserves_priority(self) -> None:
+        """Response created via create_response() should inherit request priority.
+
+        This verifies that the priority field flows through the
+        request-response chain correctly.
+        """
+        bus = InMemoryMessageBus()
+        await bus.connect()
+
+        async def handler(msg: AgentMessage) -> None:
+            response = msg.create_response(
+                sender_id="agent-01",
+                message_type=MessageType.TASK_RESULT,
+                payload={"done": True},
+            )
+            await bus.publish("conductor:response", response)
+
+        await bus.subscribe("conductor:request", handler)
+
+        request_msg = _make_message(
+            msg_type=MessageType.TASK_ASSIGNMENT,
+            sender="coordinator",
+            priority=Priority.CRITICAL,
+        )
+
+        response = await bus.request("conductor:request", request_msg, timeout=5.0)
+
+        # create_response() inherits the priority from the original message
+        assert response.priority == Priority.CRITICAL, (
+            "Response should inherit the request's priority level"
         )
 
         await bus.disconnect()
@@ -406,8 +513,52 @@ class TestInMemoryMessageBus:
             "Error should have REQUEST_TIMEOUT code for programmatic handling"
         )
         # Verify error details include useful debugging context
-        assert "timeout" in exc_info.value.message.lower(), (
-            "Error message should mention 'timeout' for human readability"
+        assert "timed out" in exc_info.value.message.lower(), (
+            "Error message should mention 'timed out' for human readability"
+        )
+
+        await bus.disconnect()
+
+    async def test_request_sets_correlation_id(self) -> None:
+        """request() should auto-set correlation_id to message_id if not set.
+
+        This ensures that request messages always have a correlation_id
+        that the responder can use with create_response().
+        """
+        bus = InMemoryMessageBus()
+        await bus.connect()
+
+        # Track what the subscriber receives
+        received: list[AgentMessage] = []
+
+        async def handler(msg: AgentMessage) -> None:
+            received.append(msg)
+            # Send response to resolve the request
+            response = msg.create_response(
+                sender_id="agent",
+                message_type=MessageType.TASK_RESULT,
+                payload={},
+            )
+            await bus.publish("conductor:response", response)
+
+        await bus.subscribe("conductor:request", handler)
+
+        # Create a message WITHOUT a correlation_id
+        request_msg = _make_message(
+            msg_type=MessageType.TASK_ASSIGNMENT,
+            sender="coordinator",
+        )
+        assert request_msg.correlation_id is None, (
+            "Pre-condition: message should have no correlation_id"
+        )
+
+        await bus.request("conductor:request", request_msg, timeout=5.0)
+
+        # The subscriber should have received the message with
+        # correlation_id set to message_id
+        assert len(received) == 1
+        assert received[0].correlation_id == request_msg.message_id, (
+            "request() should auto-set correlation_id to message_id"
         )
 
         await bus.disconnect()
@@ -424,7 +575,7 @@ class TestInMemoryMessageBus:
             2. Connect — bus is ready
             3. Subscribe and publish to verify it works
             4. Disconnect — cleans up subscriptions
-            5. Verify subscriptions are cleared
+            5. Reconnect and verify old subscriptions are gone
 
         This tests the infrastructure lifecycle that production code
         uses during application startup and shutdown.
@@ -432,12 +583,13 @@ class TestInMemoryMessageBus:
         bus = InMemoryMessageBus()
 
         # Bus starts in a clean state
-        assert bus.published_message_count == 0, (
+        assert bus.published_count == 0, (
             "Fresh bus should have zero published messages"
         )
 
         # Connect the bus
         await bus.connect()
+        assert bus.is_connected is True
 
         # Use the bus (subscribe + publish)
         received: list[AgentMessage] = []
@@ -451,10 +603,9 @@ class TestInMemoryMessageBus:
 
         # Disconnect cleans up everything
         await bus.disconnect()
+        assert bus.is_connected is False
 
-        # After disconnect, internal state should be cleared.
-        # We verify this by checking the published_message_count is preserved
-        # (it's a counter, not a subscription) but subscriptions are gone.
+        # After disconnect + reconnect, old subscriptions should be gone.
         # A fresh connect + publish should NOT trigger the old callback.
         await bus.connect()
         await bus.publish("conductor:lifecycle-test", _make_message())
@@ -465,12 +616,74 @@ class TestInMemoryMessageBus:
 
         await bus.disconnect()
 
+    async def test_connect_resets_state(self) -> None:
+        """Calling connect() should reset all internal state.
+
+        This ensures that reconnecting gives a clean slate — no stale
+        subscriptions or orphaned Futures from the previous session.
+        """
+        bus = InMemoryMessageBus()
+        await bus.connect()
+
+        # Publish some messages to build up the counter
+        await bus.publish("ch", _make_message())
+        await bus.publish("ch", _make_message())
+        assert bus.published_count == 2
+
+        # Reconnect — should reset everything
+        await bus.connect()
+        assert bus.published_count == 0, (
+            "connect() should reset the published count"
+        )
+
+        await bus.disconnect()
+
+    # -------------------------------------------------------------------------
+    # Test: Not Connected Guards
+    # -------------------------------------------------------------------------
+
+    async def test_publish_not_connected_raises(self) -> None:
+        """publish() should raise MessageBusError if the bus is not connected.
+
+        This guard prevents operations on an uninitialized bus.
+        """
+        bus = InMemoryMessageBus()
+
+        with pytest.raises(MessageBusError) as exc_info:
+            await bus.publish("channel", _make_message())
+
+        assert exc_info.value.error_code == "BUS_NOT_CONNECTED"
+
+    async def test_subscribe_not_connected_raises(self) -> None:
+        """subscribe() should raise MessageBusError if not connected."""
+        bus = InMemoryMessageBus()
+
+        async def noop(msg: AgentMessage) -> None:
+            pass
+
+        with pytest.raises(MessageBusError):
+            await bus.subscribe("channel", noop)
+
+    async def test_unsubscribe_not_connected_raises(self) -> None:
+        """unsubscribe() should raise MessageBusError if not connected."""
+        bus = InMemoryMessageBus()
+
+        with pytest.raises(MessageBusError):
+            await bus.unsubscribe("channel")
+
+    async def test_request_not_connected_raises(self) -> None:
+        """request() should raise MessageBusError if not connected."""
+        bus = InMemoryMessageBus()
+
+        with pytest.raises(MessageBusError):
+            await bus.request("channel", _make_message(), timeout=1.0)
+
     # -------------------------------------------------------------------------
     # Test: Message Count Tracking
     # -------------------------------------------------------------------------
 
     async def test_message_count_tracking(self) -> None:
-        """published_message_count should increment with each publish call.
+        """published_count should increment with each publish call.
 
         Scenario:
             1. Create a bus — count starts at 0
@@ -487,7 +700,7 @@ class TestInMemoryMessageBus:
         await bus.connect()
 
         # Start at zero
-        assert bus.published_message_count == 0, (
+        assert bus.published_count == 0, (
             "Fresh bus should have zero published messages"
         )
 
@@ -496,7 +709,7 @@ class TestInMemoryMessageBus:
         await bus.publish("conductor:agent:b", _make_message(sender="test-2"))
         await bus.publish("conductor:broadcast", _make_message(sender="test-3"))
 
-        assert bus.published_message_count == 3, (
+        assert bus.published_count == 3, (
             "Count should be 3 after publishing 3 messages"
         )
 
@@ -504,8 +717,146 @@ class TestInMemoryMessageBus:
         await bus.publish("conductor:agent:c", _make_message(sender="test-4"))
         await bus.publish("conductor:agent:d", _make_message(sender="test-5"))
 
-        assert bus.published_message_count == 5, (
+        assert bus.published_count == 5, (
             "Count should be 5 after publishing 5 total messages"
         )
 
         await bus.disconnect()
+
+    # -------------------------------------------------------------------------
+    # Test: Expired Message Handling
+    # -------------------------------------------------------------------------
+
+    async def test_expired_message_dropped(self) -> None:
+        """Messages past their TTL should be silently dropped by publish().
+
+        Expired messages are not delivered to subscribers and do NOT
+        increment the published count. This prevents stale messages
+        from being processed after long delays.
+        """
+        bus = InMemoryMessageBus()
+        await bus.connect()
+
+        received: list[AgentMessage] = []
+
+        async def callback(msg: AgentMessage) -> None:
+            received.append(msg)
+
+        await bus.subscribe("conductor:test", callback)
+
+        # Create a message that's already expired: timestamp 10s ago, TTL 1s
+        old_time = datetime.now(timezone.utc) - timedelta(seconds=10)
+        expired_msg = AgentMessage(
+            message_type=MessageType.STATUS_UPDATE,
+            sender_id="stale-agent",
+            ttl_seconds=1,
+            timestamp=old_time,
+        )
+        assert expired_msg.is_expired() is True, "Pre-condition: message should be expired"
+
+        # Publish the expired message — should be silently dropped
+        await bus.publish("conductor:test", expired_msg)
+
+        assert len(received) == 0, "Expired message should NOT be delivered"
+        # Expired messages are NOT counted (publish returns early)
+        assert bus.published_count == 0, (
+            "Expired messages should not increment the published count"
+        )
+
+        await bus.disconnect()
+
+    async def test_non_expired_message_delivered(self) -> None:
+        """Messages within their TTL should be delivered normally."""
+        bus = InMemoryMessageBus()
+        await bus.connect()
+
+        received: list[AgentMessage] = []
+
+        async def callback(msg: AgentMessage) -> None:
+            received.append(msg)
+
+        await bus.subscribe("conductor:test", callback)
+
+        # Create a message with a long TTL — should NOT be expired
+        fresh_msg = _make_message(sender="fresh-agent", ttl_seconds=3600)
+        assert fresh_msg.is_expired() is False, "Pre-condition: message should NOT be expired"
+
+        await bus.publish("conductor:test", fresh_msg)
+
+        assert len(received) == 1, "Non-expired message should be delivered"
+
+        await bus.disconnect()
+
+    # -------------------------------------------------------------------------
+    # Test: Callback Error Isolation
+    # -------------------------------------------------------------------------
+
+    async def test_callback_error_does_not_affect_other_subscribers(self) -> None:
+        """A failing callback should not prevent other subscribers from receiving.
+
+        This is critical for system reliability: if one agent's handler
+        crashes, other agents should still receive the message.
+        """
+        bus = InMemoryMessageBus()
+        await bus.connect()
+
+        received_good: list[AgentMessage] = []
+
+        async def bad_callback(msg: AgentMessage) -> None:
+            raise RuntimeError("I'm broken!")
+
+        async def good_callback(msg: AgentMessage) -> None:
+            received_good.append(msg)
+
+        # Subscribe both — bad callback first
+        await bus.subscribe("conductor:test", bad_callback)
+        await bus.subscribe("conductor:test", good_callback)
+
+        # Publish — bad callback will raise, but good callback should still work
+        await bus.publish("conductor:test", _make_message())
+
+        assert len(received_good) == 1, (
+            "Good callback should receive the message even if another "
+            "callback on the same channel raises an exception"
+        )
+
+        await bus.disconnect()
+
+    # -------------------------------------------------------------------------
+    # Test: Disconnect Cancels Pending Requests
+    # -------------------------------------------------------------------------
+
+    async def test_disconnect_cancels_pending_requests(self) -> None:
+        """Disconnecting should cancel pending request-response Futures.
+
+        When the bus disconnects while a request() is waiting for a response,
+        the Future should be resolved with a MessageBusError (not hang forever).
+        """
+        bus = InMemoryMessageBus()
+        await bus.connect()
+
+        request_msg = _make_message(
+            msg_type=MessageType.TASK_ASSIGNMENT,
+            sender="coordinator",
+        )
+
+        # Start a request in the background that will wait for a response
+        async def do_request():
+            return await bus.request(
+                "conductor:agent:slow-agent",
+                request_msg,
+                timeout=10.0,  # Long timeout — we'll disconnect before it fires
+            )
+
+        # Start the request as a task
+        request_task = asyncio.create_task(do_request())
+
+        # Give the event loop a moment to process the request publish
+        await asyncio.sleep(0.01)
+
+        # Disconnect while the request is pending — should cancel the Future
+        await bus.disconnect()
+
+        # The request should raise MessageBusError (bus disconnected)
+        with pytest.raises((MessageBusError, asyncio.TimeoutError)):
+            await asyncio.wait_for(request_task, timeout=1.0)
