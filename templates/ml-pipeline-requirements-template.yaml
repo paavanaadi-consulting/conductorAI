@@ -1,0 +1,21 @@
+# =============================================================================
+# ML Pipeline Requirements Template
+# =============================================================================
+# Specialized template for end-to-end ML pipelines including training,
+# deployment, monitoring, and retraining automation (MLOps).
+# This is the comprehensive ai-ml-requirements-template.yaml renamed for clarity.
+# For full ML pipeline requirements, use ai-ml-requirements-template.yaml
+# =============================================================================
+
+# Note: This template points to the comprehensive AI/ML template.
+# Use ai-ml-requirements-template.yaml for complete ML pipeline specifications.
+
+# Quick Reference for ML Pipeline Components:
+# 1. Data Requirements - Training data, features, labels
+# 2. Model Requirements - Algorithms, hyperparameters, performance targets
+# 3. Training Pipeline - Orchestration, stages, compute resources
+# 4. Deployment Pipeline - Inference endpoints, batch processing
+# 5. Monitoring Pipeline - Performance tracking, drift detection
+# 6. Retraining Pipeline - Triggers, automation, CI/CD for ML
+
+# Refer to: ai-ml-requirements-template.yaml for the complete specification

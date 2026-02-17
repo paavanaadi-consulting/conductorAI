@@ -1,0 +1,759 @@
+# =============================================================================
+# Agentic Operations Pipeline Requirements Template
+# =============================================================================
+# Specialized template for autonomous agent-based operations including
+# multi-agent orchestration, agent collaboration, and self-healing systems.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 1. PROJECT METADATA
+# -----------------------------------------------------------------------------
+project:
+  name: "autonomous-devops-agents"
+  version: "1.0.0"
+  description: |
+    Multi-agent system for autonomous DevOps operations including
+    incident detection, root cause analysis, automated remediation,
+    and continuous optimization. Agents collaborate to maintain
+    system health with minimal human intervention.
+  
+  agent_architecture: "multi_agent_collaborative"  # single_agent | multi_agent_collaborative |
+                                                   # hierarchical | swarm | hybrid
+  
+  orchestration_pattern: "conductor"  # conductor | choreography | event_driven | hybrid
+  
+  domain: "devops_automation"
+  priority: "high"
+  deadline: "2026-08-31"
+  
+  stakeholders:
+    product_owner: "platform-eng@company.com"
+    agent_architect: "ai-eng@company.com"
+    devops_lead: "devops@company.com"
+    team: "platform-engineering"
+
+# -----------------------------------------------------------------------------
+# 2. AGENT SYSTEM OBJECTIVES
+# -----------------------------------------------------------------------------
+agent_objectives:
+  mission: |
+    Build autonomous agent system that monitors infrastructure,
+    detects anomalies, diagnoses issues, executes remediations,
+    and learns from outcomes to continuously improve reliability.
+  
+  success_metrics:
+    - metric: "mttr_reduction"
+      target: "Reduce Mean Time To Recovery by 70%"
+      baseline: "45 minutes (manual)"
+      target_value: "< 15 minutes (automated)"
+    
+    - metric: "incident_auto_resolution_rate"
+      target: ">= 60% of incidents resolved without human intervention"
+      measurement: "auto_resolved / total_incidents"
+    
+    - metric: "false_positive_rate"
+      target: "< 5% false alerts requiring rollback"
+      measurement: "rollbacks / total_actions"
+    
+    - metric: "system_uptime"
+      target: "Improve from 99.5% to 99.95%"
+      measurement: "uptime_percentage"
+  
+  autonomous_capabilities:
+    - capability: "Anomaly Detection"
+      description: "Detect infrastructure and application anomalies"
+      autonomy_level: "fully_autonomous"
+      human_approval: false
+    
+    - capability: "Root Cause Analysis"
+      description: "Analyze logs, metrics, traces to identify root cause"
+      autonomy_level: "autonomous_with_confidence_threshold"
+      human_approval: "required_if_confidence < 0.8"
+    
+    - capability: "Automated Remediation"
+      description: "Execute fixes (restart services, scale resources, etc.)"
+      autonomy_level: "semi_autonomous"
+      human_approval: "required_for_production"
+      approval_timeout: "5 minutes"
+    
+    - capability: "Continuous Learning"
+      description: "Learn from past incidents to improve future responses"
+      autonomy_level: "fully_autonomous"
+      human_approval: false
+
+# -----------------------------------------------------------------------------
+# 3. AGENT SPECIFICATIONS
+# -----------------------------------------------------------------------------
+agents:
+  # Monitoring Agent
+  - agent_id: "monitoring_agent"
+    name: "Vigilance"
+    role: "System Monitoring & Anomaly Detection"
+    
+    responsibilities:
+      - "Monitor infrastructure metrics (CPU, memory, disk, network)"
+      - "Monitor application metrics (latency, error rate, throughput)"
+      - "Detect anomalies using ML models"
+      - "Trigger alerts when anomalies exceed thresholds"
+    
+    inputs:
+      - source: "prometheus"
+        type: "metrics"
+        metrics: ["cpu_usage", "memory_usage", "error_rate", "latency"]
+        scrape_interval: "15s"
+      
+      - source: "cloudwatch"
+        type: "metrics"
+        metrics: ["ec2_metrics", "rds_metrics", "alb_metrics"]
+        poll_interval: "1m"
+    
+    outputs:
+      - type: "incident_alert"
+        destination: "message_bus"
+        topic: "incidents.detected"
+        schema:
+          incident_id: "string"
+          severity: "critical|high|medium|low"
+          affected_services: "array"
+          metrics: "object"
+          timestamp: "datetime"
+    
+    llm_integration:
+      provider: "openai"
+      model: "gpt-4"
+      use_cases:
+        - "Analyze metric patterns to determine severity"
+        - "Generate human-readable incident descriptions"
+        - "Suggest potential related services"
+      
+    decision_logic:
+      anomaly_detection:
+        algorithm: "isolation_forest"
+        confidence_threshold: 0.85
+        window_size: "15 minutes"
+      
+      severity_classification:
+        critical: "error_rate > 5% OR latency_p99 > 5s OR service_down"
+        high: "error_rate > 2% OR latency_p99 > 2s"
+        medium: "error_rate > 1% OR latency_p95 > 1s"
+        low: "minor_degradation"
+    
+    autonomy:
+      level: "fully_autonomous"
+      human_in_loop: false
+      escalation: "Only for critical incidents"
+  
+  # Diagnostic Agent
+  - agent_id: "diagnostic_agent"
+    name: "Sherlock"
+    role: "Root Cause Analysis & Diagnostics"
+    
+    responsibilities:
+      - "Receive incident alerts from monitoring agent"
+      - "Collect relevant logs, traces, and metrics"
+      - "Perform root cause analysis using correlation and LLM"
+      - "Generate diagnostic report with confidence score"
+    
+    inputs:
+      - source: "message_bus"
+        topic: "incidents.detected"
+        type: "incident_alert"
+      
+      - source: "elasticsearch"
+        type: "logs"
+        query_window: "last_30_minutes"
+      
+      - source: "jaeger"
+        type: "distributed_traces"
+        query_window: "last_30_minutes"
+    
+    outputs:
+      - type: "diagnostic_report"
+        destination: "message_bus"
+        topic: "diagnostics.completed"
+        schema:
+          incident_id: "string"
+          root_cause: "string"
+          confidence: "float (0-1)"
+          evidence: "array of objects"
+          suggested_remediation: "array"
+    
+    llm_integration:
+      provider: "openai"
+      model: "gpt-4"
+      use_cases:
+        - "Analyze log patterns to identify errors"
+        - "Correlate multiple data sources (logs, metrics, traces)"
+        - "Generate root cause hypothesis"
+        - "Explain causality in natural language"
+      
+      context_window: 128000
+      system_prompt: |
+        You are an expert DevOps engineer performing root cause analysis.
+        Analyze logs, metrics, and traces to identify the root cause of incidents.
+        Provide confidence scores and supporting evidence.
+        Suggest specific remediation actions.
+    
+    tools:
+      - tool: "log_analyzer"
+        description: "Parse and analyze log patterns"
+        implementation: "custom_python + regex"
+      
+      - tool: "trace_analyzer"
+        description: "Analyze distributed traces for bottlenecks"
+        implementation: "jaeger_api"
+      
+      - tool: "knowledge_base_search"
+        description: "Search past incident database"
+        implementation: "vector_db_similarity_search"
+    
+    decision_logic:
+      confidence_calculation:
+        - "evidence_count * 0.3"
+        - "+ log_pattern_match_score * 0.3"
+        - "+ similar_past_incident_score * 0.2"
+        - "+ llm_confidence * 0.2"
+      
+      escalation_threshold: 0.7  # If confidence < 0.7, escalate to human
+    
+    autonomy:
+      level: "autonomous_with_confidence_threshold"
+      human_in_loop: "if confidence < 0.8"
+      escalation: "Escalate low-confidence diagnoses"
+  
+  # Remediation Agent
+  - agent_id: "remediation_agent"
+    name: "Healer"
+    role: "Automated Remediation & Recovery"
+    
+    responsibilities:
+      - "Receive diagnostic reports from diagnostic agent"
+      - "Select appropriate remediation action"
+      - "Execute remediation with safety checks"
+      - "Verify remediation success"
+      - "Rollback if remediation fails"
+    
+    inputs:
+      - source: "message_bus"
+        topic: "diagnostics.completed"
+        type: "diagnostic_report"
+    
+    outputs:
+      - type: "remediation_result"
+        destination: "message_bus"
+        topic: "remediation.completed"
+        schema:
+          incident_id: "string"
+          action_taken: "string"
+          success: "boolean"
+          metrics_after: "object"
+          rollback_performed: "boolean"
+    
+    remediation_actions:
+      - action: "restart_service"
+        triggers: ["service_crash", "memory_leak", "deadlock"]
+        commands:
+          - "kubectl rollout restart deployment/{service_name}"
+        safety_checks:
+          - "Verify service has replicas > 1"
+          - "Check no recent restarts in last 10 minutes"
+        rollback: "automatic if service doesn't recover in 2 minutes"
+      
+      - action: "scale_up"
+        triggers: ["high_cpu", "high_memory", "high_latency"]
+        commands:
+          - "kubectl scale deployment/{service_name} --replicas={current + 2}"
+        safety_checks:
+          - "Max replicas not exceeded"
+          - "Check cost budget not exceeded"
+        rollback: "Scale down if metrics don't improve in 5 minutes"
+      
+      - action: "circuit_breaker_reset"
+        triggers: ["circuit_breaker_open", "external_service_recovered"]
+        commands:
+          - "curl -X POST http://{service}/admin/circuit-breaker/reset"
+        safety_checks:
+          - "Verify upstream service is healthy"
+          - "Check error rate is back to normal"
+      
+      - action: "clear_cache"
+        triggers: ["cache_corruption", "stale_data"]
+        commands:
+          - "redis-cli FLUSHDB"
+        safety_checks:
+          - "Verify cache is non-critical"
+          - "Check cache size is abnormal"
+      
+      - action: "increase_rate_limit"
+        triggers: ["rate_limit_exceeded", "traffic_spike"]
+        commands:
+          - "Update Kong rate limit via API"
+        safety_checks:
+          - "Verify not under DDoS attack"
+          - "Check upstream can handle increased load"
+    
+    llm_integration:
+      provider: "openai"
+      model: "gpt-4"
+      use_cases:
+        - "Map root cause to remediation action"
+        - "Generate custom remediation scripts"
+        - "Explain remediation plan before execution"
+    
+    decision_logic:
+      action_selection:
+        strategy: "rule_based_with_llm_fallback"
+        confidence_threshold: 0.9
+        max_attempts: 3
+      
+      safety_verification:
+        - "Check blast radius (affect < 10% of users)"
+        - "Verify recent change history (no deploys in last 15 min)"
+        - "Confirm remediation has succeeded before (success_rate > 80%)"
+    
+    autonomy:
+      level: "semi_autonomous"
+      human_in_loop: true
+      approval_required:
+        - environment: "production"
+          timeout: "5 minutes"
+        - environment: "staging"
+          timeout: "1 minute"
+      auto_approve_conditions:
+        - "Non-production environment"
+        - "Action has 100% historical success rate"
+        - "Blast radius < 1%"
+  
+  # Learning Agent
+  - agent_id: "learning_agent"
+    name: "Sage"
+    role: "Continuous Learning & Optimization"
+    
+    responsibilities:
+      - "Collect data from all agent interactions"
+      - "Analyze incident patterns and outcomes"
+      - "Update remediation strategies based on success/failure"
+      - "Generate improvement recommendations"
+    
+    inputs:
+      - source: "message_bus"
+        topics: ["incidents.*", "diagnostics.*", "remediation.*"]
+      
+      - source: "incident_database"
+        type: "historical_incidents"
+        time_range: "last_6_months"
+    
+    outputs:
+      - type: "learning_report"
+        destination: "knowledge_base"
+        frequency: "weekly"
+        schema:
+          insights: "array"
+          pattern_changes: "array"
+          strategy_updates: "array"
+      
+      - type: "agent_config_update"
+        destination: "agent_configs"
+        trigger: "significant_pattern_change"
+    
+    llm_integration:
+      provider: "openai"
+      model: "gpt-4"
+      use_cases:
+        - "Identify recurring incident patterns"
+        - "Suggest new remediation strategies"
+        - "Generate post-mortem insights"
+        - "Optimize agent decision thresholds"
+    
+    learning_mechanisms:
+      - mechanism: "Success Rate Tracking"
+        description: "Track success rate of each remediation action"
+        update_frequency: "daily"
+        action: "Demote actions with success_rate < 70%"
+      
+      - mechanism: "Pattern Recognition"
+        description: "Identify new incident patterns using clustering"
+        algorithm: "DBSCAN on incident features"
+        update_frequency: "weekly"
+      
+      - mechanism: "Threshold Optimization"
+        description: "Optimize anomaly detection thresholds"
+        algorithm: "Bayesian optimization"
+        objective: "Minimize false positives while maintaining recall > 95%"
+    
+    autonomy:
+      level: "fully_autonomous"
+      human_in_loop: false
+      reporting: "Weekly summary to team"
+
+# -----------------------------------------------------------------------------
+# 4. AGENT ORCHESTRATION
+# -----------------------------------------------------------------------------
+orchestration:
+  pattern: "conductor_based"  # Central coordinator orchestrates agents
+  
+  message_bus:
+    technology: "apache_kafka"
+    topics:
+      - "incidents.detected"
+      - "diagnostics.completed"
+      - "remediation.completed"
+      - "learning.insights"
+    
+    message_schema:
+      format: "json"
+      versioning: true
+      validation: "json_schema"
+  
+  workflow:
+    incident_handling:
+      trigger: "Anomaly detected by monitoring agent"
+      steps:
+        - step: 1
+          agent: "monitoring_agent"
+          action: "Detect anomaly and create incident"
+          output: "Incident alert to message bus"
+          timeout: "1 minute"
+        
+        - step: 2
+          agent: "diagnostic_agent"
+          action: "Analyze incident and determine root cause"
+          input: "Incident alert from step 1"
+          output: "Diagnostic report"
+          timeout: "5 minutes"
+        
+        - step: 3
+          decision: "If confidence >= 0.8, proceed to remediation"
+          else: "Escalate to human"
+        
+        - step: 4
+          agent: "remediation_agent"
+          action: "Execute remediation"
+          input: "Diagnostic report from step 2"
+          approval_required: "production only"
+          output: "Remediation result"
+          timeout: "10 minutes"
+        
+        - step: 5
+          agent: "monitoring_agent"
+          action: "Verify incident resolved"
+          validation: "Check metrics returned to normal"
+        
+        - step: 6
+          agent: "learning_agent"
+          action: "Record incident for learning"
+          async: true
+  
+  coordination:
+    coordinator: "workflow_engine"
+    technology: "temporal"  # or "airflow", "prefect"
+    
+    retry_policy:
+      max_retries: 3
+      backoff: "exponential"
+      initial_delay: "30s"
+    
+    timeout_handling:
+      on_timeout: "escalate_to_human"
+      notification: "slack + pagerduty"
+  
+  state_management:
+    storage: "postgresql"
+    state_tracking:
+      - "Current step in workflow"
+      - "Agent decisions and outputs"
+      - "Human approvals"
+      - "Retry attempts"
+
+# -----------------------------------------------------------------------------
+# 5. LLM INTEGRATION
+# -----------------------------------------------------------------------------
+llm_configuration:
+  primary_provider: "openai"
+  
+  models:
+    - name: "gpt-4"
+      use_case: "Complex reasoning, root cause analysis"
+      cost_per_1k_tokens: 0.03
+      max_tokens: 8192
+    
+    - name: "gpt-3.5-turbo"
+      use_case: "Simple classifications, summaries"
+      cost_per_1k_tokens: 0.002
+      max_tokens: 4096
+  
+  prompt_engineering:
+    templates:
+      root_cause_analysis: |
+        You are an expert DevOps engineer analyzing an incident.
+        
+        Incident Details:
+        - Service: {service_name}
+        - Metric: {metric_name}
+        - Current Value: {current_value}
+        - Normal Range: {normal_range}
+        
+        Recent Logs:
+        {logs}
+        
+        Recent Metrics:
+        {metrics}
+        
+        Analyze the data and provide:
+        1. Most likely root cause
+        2. Confidence score (0-1)
+        3. Supporting evidence
+        4. Recommended remediation action
+      
+      remediation_plan: |
+        Generate a remediation plan for the following incident:
+        
+        Root Cause: {root_cause}
+        Affected Service: {service}
+        
+        Available Actions: {actions}
+        
+        Provide:
+        1. Recommended action
+        2. Step-by-step execution plan
+        3. Safety checks to perform
+        4. Rollback plan if action fails
+    
+    few_shot_examples:
+      - example: "High memory usage pattern"
+        solution: "Restart service to clear memory leak"
+      - example: "Database connection pool exhausted"
+        solution: "Scale up application replicas"
+  
+  cost_optimization:
+    caching:
+      enabled: true
+      strategy: "Cache similar queries for 1 hour"
+      cache_backend: "redis"
+    
+    token_limits:
+      max_input_tokens: 16000
+      max_output_tokens: 2000
+    
+    fallback:
+      on_rate_limit: "Use rule-based system"
+      on_timeout: "Use cached response or escalate"
+
+# -----------------------------------------------------------------------------
+# 6. KNOWLEDGE BASE & MEMORY
+# -----------------------------------------------------------------------------
+knowledge_base:
+  # Vector database for semantic search
+  vector_db:
+    technology: "pinecone"  # or "weaviate", "qdrant"
+    index: "incident_knowledge"
+    embedding_model: "text-embedding-ada-002"
+    dimension: 1536
+    
+    stored_data:
+      - type: "past_incidents"
+        fields: ["description", "root_cause", "resolution", "outcome"]
+        retention: "2 years"
+      
+      - type: "runbooks"
+        fields: ["service", "issue_type", "steps", "success_rate"]
+      
+      - type: "system_documentation"
+        fields: ["service", "architecture", "dependencies"]
+  
+  # Relational database for structured data
+  relational_db:
+    technology: "postgresql"
+    tables:
+      - table: "incidents"
+        schema:
+          incident_id: "UUID PRIMARY KEY"
+          service: "VARCHAR"
+          severity: "ENUM"
+          root_cause: "TEXT"
+          remediation_action: "TEXT"
+          resolution_time_minutes: "INTEGER"
+          auto_resolved: "BOOLEAN"
+          created_at: "TIMESTAMP"
+      
+      - table: "remediation_actions"
+        schema:
+          action_id: "UUID PRIMARY KEY"
+          action_type: "VARCHAR"
+          success_count: "INTEGER"
+          failure_count: "INTEGER"
+          avg_execution_time_seconds: "FLOAT"
+          last_updated: "TIMESTAMP"
+  
+  # Agent memory
+  agent_memory:
+    short_term:
+      type: "redis"
+      ttl: "1 hour"
+      stores: "Current workflow state, recent decisions"
+    
+    long_term:
+      type: "postgresql"
+      stores: "All incident history, learned patterns"
+
+# -----------------------------------------------------------------------------
+# 7. SAFETY & GUARDRAILS
+# -----------------------------------------------------------------------------
+safety:
+  # Circuit breakers for agents
+  circuit_breakers:
+    - agent: "remediation_agent"
+      failure_threshold: 3
+      timeout: "30 minutes"
+      half_open_after: "15 minutes"
+      action_on_open: "Escalate all remediations to human"
+  
+  # Rate limiting
+  rate_limits:
+    - agent: "remediation_agent"
+      limit: "5 actions per 10 minutes"
+      scope: "per_service"
+      action_on_exceed: "Queue and require approval"
+  
+  # Blast radius limits
+  blast_radius:
+    - action: "restart_service"
+      max_affected_users: "10%"
+      verification: "Check traffic distribution"
+    
+    - action: "scale_down"
+      min_replicas: 2
+      verification: "Ensure high availability maintained"
+  
+  # Human oversight
+  human_oversight:
+    always_require_approval:
+      - "Production database changes"
+      - "Actions affecting > 25% of users"
+      - "New remediation actions never seen before"
+    
+    approval_timeout: "5 minutes"
+    on_timeout: "Escalate to on-call engineer"
+    
+    override_capability: "Human can override agent decision"
+  
+  # Rollback mechanisms
+  rollback:
+    automatic_triggers:
+      - "Metrics worsen after remediation"
+      - "Error rate increases by 50%"
+      - "Service becomes unhealthy"
+    
+    rollback_time: "< 1 minute"
+    verification: "Confirm metrics return to baseline"
+
+# -----------------------------------------------------------------------------
+# 8. MONITORING & OBSERVABILITY
+# -----------------------------------------------------------------------------
+monitoring:
+  # Agent performance metrics
+  agent_metrics:
+    - metric: "agent_response_time"
+      measurement: "Time from trigger to output"
+      threshold:
+        monitoring_agent: "< 1 minute"
+        diagnostic_agent: "< 5 minutes"
+        remediation_agent: "< 10 minutes"
+    
+    - metric: "agent_accuracy"
+      measurement: "Correct decisions / total decisions"
+      threshold: ">= 90%"
+      evaluation: "Human review of sample decisions"
+    
+    - metric: "llm_cost"
+      measurement: "Total spend on LLM API calls"
+      budget: "$500/month"
+      alert_threshold: "80% of budget"
+  
+  # System health metrics
+  system_metrics:
+    - metric: "auto_resolution_rate"
+      target: ">= 60%"
+    
+    - metric: "false_positive_rate"
+      target: "< 5%"
+    
+    - metric: "mttr"
+      target: "< 15 minutes"
+  
+  # Dashboards
+  dashboards:
+    - name: "Agent Operations"
+      tool: "grafana"
+      panels:
+        - "Incidents detected per hour"
+        - "Auto-resolution rate"
+        - "Agent response times"
+        - "Remediation success rate"
+        - "LLM token usage and cost"
+    
+    - name: "Learning Progress"
+      panels:
+        - "New patterns discovered"
+        - "Remediation strategy evolution"
+        - "Agent confidence over time"
+
+# -----------------------------------------------------------------------------
+# 9. TESTING & VALIDATION
+# -----------------------------------------------------------------------------
+testing:
+  # Agent unit tests
+  unit_tests:
+    framework: "pytest"
+    coverage: "85%"
+    test_cases:
+      - "Anomaly detection logic"
+      - "Root cause analysis accuracy"
+      - "Remediation action selection"
+      - "Safety checks"
+  
+  # Simulation testing
+  simulation:
+    tool: "chaos_engineering"
+    scenarios:
+      - scenario: "High CPU spike"
+        expected_agent_response: "Scale up deployment"
+        validation: "Verify scaling occurs within 5 minutes"
+      
+      - scenario: "Service crash"
+        expected_agent_response: "Restart service"
+        validation: "Service recovers within 2 minutes"
+      
+      - scenario: "Database connection pool exhausted"
+        expected_agent_response: "Increase pool size or scale app"
+        validation: "Connection errors stop"
+  
+  # Human evaluation
+  human_eval:
+    frequency: "weekly"
+    sample_size: "10% of agent decisions"
+    metrics:
+      - "Decision correctness"
+      - "Root cause accuracy"
+      - "Remediation appropriateness"
+
+# -----------------------------------------------------------------------------
+# 10. SUCCESS CRITERIA
+# -----------------------------------------------------------------------------
+success_criteria:
+  technical:
+    - "MTTR reduced from 45 min to < 15 min"
+    - "Auto-resolution rate >= 60%"
+    - "False positive rate < 5%"
+    - "Agent response times within SLA"
+  
+  business:
+    - "System uptime improved to 99.95%"
+    - "On-call engineer workload reduced by 50%"
+    - "Incident cost reduced by 60%"
+  
+  operational:
+    - "All agents deployed and monitored"
+    - "Knowledge base populated with 100+ incidents"
+    - "Human approval workflow functional"
+    - "Safety guardrails tested and validated"

@@ -1,0 +1,1057 @@
+# =============================================================================
+# ConductorAI Project Requirements Template
+# =============================================================================
+# This template provides a structured format for defining comprehensive project
+# requirements to be processed by the ConductorAI multi-agent framework.
+#
+# Complete all sections to enable the system to generate, test, deploy, and
+# monitor your application with minimal ambiguity.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 1. PROJECT METADATA
+# -----------------------------------------------------------------------------
+project:
+  name: "my-application"                    # Project identifier (alphanumeric, hyphens)
+  version: "1.0.0"                          # Semantic versioning
+  description: |                            # Detailed project description
+    A comprehensive description of what this project does, its purpose,
+    and its primary objectives. Be specific about the problem it solves.
+  
+  domain: "fintech"                         # e.g., fintech, healthcare, e-commerce, ml-ops
+  priority: "high"                          # low | medium | high | critical
+  deadline: "2026-06-30"                    # ISO 8601 date format
+  
+  stakeholders:
+    product_owner: "john.doe@company.com"
+    tech_lead: "jane.smith@company.com"
+    team: "platform-engineering"
+
+# -----------------------------------------------------------------------------
+# 2. FUNCTIONAL REQUIREMENTS
+# -----------------------------------------------------------------------------
+functional_requirements:
+  # Core features and capabilities
+  features:
+    - id: "FEAT-001"
+      name: "User Authentication"
+      description: |
+        Implement OAuth2-based authentication with JWT tokens.
+        Support Google, GitHub, and email/password login.
+      priority: "critical"
+      acceptance_criteria:
+        - "Users can register with email/password"
+        - "Users can login via Google OAuth2"
+        - "JWT tokens expire after 24 hours"
+        - "Refresh tokens are rotated on use"
+      
+    - id: "FEAT-002"
+      name: "Data Processing Pipeline"
+      description: |
+        Process incoming data streams with validation, transformation,
+        and enrichment before storage.
+      priority: "high"
+      acceptance_criteria:
+        - "Validate incoming data against JSON schema"
+        - "Transform data to canonical format"
+        - "Enrich with external API data within 200ms"
+        - "Handle 10,000 records/minute throughput"
+
+  # API Endpoints (if applicable)
+  api_endpoints:
+    - path: "/api/v1/users"
+      method: "POST"
+      description: "Create new user account"
+      request_body:
+        type: "object"
+        schema_ref: "#/schemas/CreateUserRequest"
+      response:
+        success_code: 201
+        schema_ref: "#/schemas/UserResponse"
+      
+    - path: "/api/v1/data/process"
+      method: "POST"
+      description: "Submit data for processing"
+      request_body:
+        type: "object"
+        schema_ref: "#/schemas/DataProcessRequest"
+      response:
+        success_code: 202
+        schema_ref: "#/schemas/ProcessingJobResponse"
+
+  # Business Rules
+  business_rules:
+    - rule: "Users under 18 cannot create accounts"
+      enforcement: "validation"
+    - rule: "Maximum 3 failed login attempts before 15-minute lockout"
+      enforcement: "rate_limiting"
+    - rule: "Data retention period is 7 years for compliance"
+      enforcement: "automated_archival"
+
+# -----------------------------------------------------------------------------
+# 3. NON-FUNCTIONAL REQUIREMENTS
+# -----------------------------------------------------------------------------
+non_functional_requirements:
+  performance:
+    response_time:
+      p50: "100ms"                          # Median response time
+      p95: "300ms"                          # 95th percentile
+      p99: "500ms"                          # 99th percentile
+    throughput: "10000 req/min"             # Requests per minute
+    concurrent_users: 5000                  # Peak concurrent users
+  
+  scalability:
+    horizontal_scaling: true                # Auto-scale based on load
+    min_instances: 2                        # Minimum running instances
+    max_instances: 20                       # Maximum instances
+    scale_up_threshold: "cpu > 70%"         # Scale up trigger
+    scale_down_threshold: "cpu < 30%"       # Scale down trigger
+  
+  availability:
+    uptime_sla: "99.95%"                    # Uptime service level agreement
+    rpo: "1 hour"                           # Recovery Point Objective
+    rto: "30 minutes"                       # Recovery Time Objective
+    multi_region: true                      # Deploy across regions
+  
+  security:
+    authentication: "oauth2_jwt"            # Auth mechanism
+    authorization: "rbac"                   # Role-Based Access Control
+    encryption_at_rest: true                # Encrypt stored data
+    encryption_in_transit: true             # TLS/SSL required
+    security_scanning: true                 # Automated vulnerability scanning
+    compliance_standards:
+      - "SOC2"
+      - "GDPR"
+      - "HIPAA"
+  
+  reliability:
+    error_rate_threshold: "0.1%"            # Maximum error rate
+    circuit_breaker: true                   # Enable circuit breaker pattern
+    retry_policy:
+      max_attempts: 3
+      backoff_strategy: "exponential"
+      initial_delay: "100ms"
+    health_checks:
+      liveness_probe: "/health/live"
+      readiness_probe: "/health/ready"
+      interval: "30s"
+
+# -----------------------------------------------------------------------------
+# 4. DATA MODELS & SCHEMAS
+# -----------------------------------------------------------------------------
+data_models:
+  schemas:
+    CreateUserRequest:
+      type: "object"
+      properties:
+        email:
+          type: "string"
+          format: "email"
+          required: true
+        password:
+          type: "string"
+          minLength: 12
+          required: true
+        full_name:
+          type: "string"
+          required: true
+        age:
+          type: "integer"
+          minimum: 18
+      
+    UserResponse:
+      type: "object"
+      properties:
+        id:
+          type: "string"
+          format: "uuid"
+        email:
+          type: "string"
+        full_name:
+          type: "string"
+        created_at:
+          type: "string"
+          format: "date-time"
+        status:
+          type: "string"
+          enum: ["active", "suspended", "deleted"]
+    
+    DataProcessRequest:
+      type: "object"
+      properties:
+        data_type:
+          type: "string"
+          enum: ["transaction", "event", "metric"]
+        payload:
+          type: "object"
+          additionalProperties: true
+        priority:
+          type: "string"
+          enum: ["low", "medium", "high"]
+          default: "medium"
+
+  # Database schemas
+  database_tables:
+    - name: "users"
+      type: "relational"
+      columns:
+        - name: "id"
+          type: "UUID"
+          primary_key: true
+        - name: "email"
+          type: "VARCHAR(255)"
+          unique: true
+          indexed: true
+        - name: "password_hash"
+          type: "VARCHAR(255)"
+        - name: "full_name"
+          type: "VARCHAR(255)"
+        - name: "created_at"
+          type: "TIMESTAMP"
+        - name: "updated_at"
+          type: "TIMESTAMP"
+      
+    - name: "processing_jobs"
+      type: "document"                      # NoSQL/document store
+      schema:
+        job_id: "string"
+        status: "string"                    # pending, processing, completed, failed
+        input_data: "object"
+        result: "object"
+        created_at: "timestamp"
+        completed_at: "timestamp"
+
+# -----------------------------------------------------------------------------
+# 5. SAMPLE DATA
+# -----------------------------------------------------------------------------
+sample_data:
+  # Test data for development and testing
+  test_users:
+    - email: "test.user1@example.com"
+      password: "SecurePass123!"
+      full_name: "Test User One"
+      age: 25
+    - email: "test.user2@example.com"
+      password: "SecurePass456!"
+      full_name: "Test User Two"
+      age: 35
+  
+  test_data_payloads:
+    - data_type: "transaction"
+      payload:
+        transaction_id: "txn_001"
+        amount: 99.99
+        currency: "USD"
+        timestamp: "2026-02-16T10:00:00Z"
+      priority: "high"
+    
+    - data_type: "event"
+      payload:
+        event_type: "user_signup"
+        user_id: "usr_123"
+        properties:
+          source: "web"
+          campaign: "spring_2026"
+      priority: "medium"
+  
+  # Seed data for production initialization
+  seed_data:
+    admin_user:
+      email: "admin@company.com"
+      full_name: "System Administrator"
+      role: "admin"
+    
+    default_configuration:
+      settings:
+        max_file_upload_size: "10MB"
+        session_timeout: "30m"
+        rate_limit: "100/minute"
+
+# -----------------------------------------------------------------------------
+# 6. OUTPUT STRUCTURES
+# -----------------------------------------------------------------------------
+output_structures:
+  # Define expected outputs from the system
+  artifacts:
+    - name: "source_code"
+      type: "directory"
+      structure:
+        - "src/"
+        - "tests/"
+        - "docs/"
+        - "scripts/"
+      description: "Complete application source code with tests"
+    
+    - name: "docker_images"
+      type: "container_registry"
+      images:
+        - "company/app:latest"
+        - "company/app:1.0.0"
+      registry: "docker.io"
+    
+    - name: "deployment_manifests"
+      type: "kubernetes_yaml"
+      files:
+        - "k8s/deployment.yaml"
+        - "k8s/service.yaml"
+        - "k8s/ingress.yaml"
+        - "k8s/configmap.yaml"
+      description: "Kubernetes manifests for deployment"
+    
+    - name: "api_documentation"
+      type: "openapi_spec"
+      format: "openapi_3.0"
+      output_path: "docs/api/openapi.yaml"
+    
+    - name: "test_reports"
+      type: "coverage_report"
+      formats:
+        - "html"
+        - "lcov"
+        - "json"
+      minimum_coverage: "80%"
+  
+  # Deliverables structure
+  deliverables:
+    - type: "runnable_application"
+      format: "docker_compose"
+      location: "docker-compose.yml"
+    - type: "deployment_pipeline"
+      format: "github_actions"
+      location: ".github/workflows/deploy.yml"
+    - type: "monitoring_dashboard"
+      format: "grafana_json"
+      location: "monitoring/dashboards/"
+
+# -----------------------------------------------------------------------------
+# 7. TECHNOLOGY STACK
+# -----------------------------------------------------------------------------
+technology_stack:
+  # Programming languages
+  languages:
+    primary: "python"                       # Main language
+    version: "3.11"                         # Specific version
+    secondary:
+      - language: "typescript"              # For frontend if needed
+        version: "5.0"
+      - language: "sql"                     # For database queries
+        dialect: "postgresql"
+  
+  # Frameworks and libraries
+  frameworks:
+    backend:
+      - name: "fastapi"                     # Web framework
+        version: ">=0.110.0"
+        purpose: "REST API server"
+      - name: "sqlalchemy"                  # ORM
+        version: ">=2.0.0"
+        purpose: "Database interaction"
+      - name: "celery"                      # Task queue
+        version: ">=5.3.0"
+        purpose: "Async job processing"
+    
+    testing:
+      - name: "pytest"
+        version: ">=8.0.0"
+      - name: "pytest-cov"
+        version: ">=4.1.0"
+      - name: "pytest-asyncio"
+        version: ">=0.23.0"
+  
+  # Databases
+  databases:
+    primary:
+      type: "postgresql"
+      version: "15"
+      purpose: "Relational data storage"
+      connection_pool_size: 20
+    
+    cache:
+      type: "redis"
+      version: "7"
+      purpose: "Caching and session storage"
+      max_memory: "2GB"
+    
+    document_store:
+      type: "mongodb"
+      version: "7.0"
+      purpose: "Unstructured data storage"
+      collections:
+        - "processing_jobs"
+        - "audit_logs"
+  
+  # Message queues and streaming
+  message_broker:
+    type: "rabbitmq"
+    version: "3.12"
+    purpose: "Message queue for Celery"
+    queues:
+      - name: "high_priority"
+        durable: true
+      - name: "default"
+        durable: true
+      - name: "low_priority"
+        durable: false
+  
+  # Infrastructure components
+  infrastructure:
+    container_orchestration:
+      type: "kubernetes"
+      version: "1.28"
+      distribution: "eks"                   # EKS, GKE, AKS, or vanilla
+    
+    service_mesh:
+      type: "istio"
+      version: "1.20"
+      features:
+        - "traffic_management"
+        - "observability"
+        - "security"
+    
+    api_gateway:
+      type: "kong"
+      version: "3.5"
+      plugins:
+        - "rate-limiting"
+        - "jwt-auth"
+        - "cors"
+    
+    load_balancer:
+      type: "nginx"
+      version: "1.25"
+      ssl_termination: true
+
+# -----------------------------------------------------------------------------
+# 8. ARCHITECTURE & DESIGN PATTERNS
+# -----------------------------------------------------------------------------
+architecture:
+  # Architectural style
+  style: "microservices"                    # monolith | microservices | serverless
+  
+  # Design patterns to implement
+  design_patterns:
+    - pattern: "facade"
+      location: "src/api/facades/"
+      description: |
+        Provide simplified interfaces to complex subsystems.
+        Use for external API integrations and internal service orchestration.
+      example: "PaymentFacade to abstract Stripe/PayPal differences"
+    
+    - pattern: "repository"
+      location: "src/repositories/"
+      description: |
+        Abstract data access layer to decouple business logic from persistence.
+      example: "UserRepository, TransactionRepository"
+    
+    - pattern: "factory"
+      location: "src/factories/"
+      description: |
+        Create objects without specifying exact classes.
+      example: "DatabaseConnectionFactory for multi-tenant databases"
+    
+    - pattern: "observer"
+      location: "src/events/"
+      description: |
+        Implement event-driven architecture for decoupled communication.
+      example: "User signup triggers welcome email, analytics, and onboarding"
+    
+    - pattern: "circuit_breaker"
+      location: "src/resilience/"
+      description: |
+        Prevent cascading failures in distributed systems.
+      example: "Protect external API calls with circuit breakers"
+    
+    - pattern: "saga"
+      location: "src/workflows/"
+      description: |
+        Manage distributed transactions across microservices.
+      example: "Order placement saga (inventory, payment, shipping)"
+  
+  # Service boundaries (for microservices)
+  services:
+    - name: "auth-service"
+      responsibility: "Authentication and authorization"
+      database: "auth_db"
+      endpoints:
+        - "/api/v1/auth/login"
+        - "/api/v1/auth/register"
+        - "/api/v1/auth/verify"
+    
+    - name: "data-processing-service"
+      responsibility: "Data validation, transformation, enrichment"
+      database: "processing_db"
+      endpoints:
+        - "/api/v1/data/process"
+        - "/api/v1/jobs/{job_id}"
+    
+    - name: "notification-service"
+      responsibility: "Send emails, SMS, push notifications"
+      database: "notification_db"
+      endpoints:
+        - "/api/v1/notifications/send"
+  
+  # Communication patterns
+  communication:
+    synchronous:
+      protocol: "REST"
+      format: "JSON"
+      timeout: "30s"
+    
+    asynchronous:
+      protocol: "AMQP"
+      broker: "rabbitmq"
+      message_format: "JSON"
+      delivery_guarantee: "at_least_once"
+
+# -----------------------------------------------------------------------------
+# 9. MONITORING, LOGGING & OBSERVABILITY
+# -----------------------------------------------------------------------------
+monitoring:
+  # Metrics collection
+  metrics:
+    provider: "prometheus"
+    port: 9090
+    scrape_interval: "15s"
+    retention: "15d"
+    
+    custom_metrics:
+      - name: "api_request_duration_seconds"
+        type: "histogram"
+        labels: ["method", "endpoint", "status"]
+      - name: "processing_jobs_total"
+        type: "counter"
+        labels: ["status", "priority"]
+      - name: "active_users_gauge"
+        type: "gauge"
+        labels: ["region"]
+    
+    alerts:
+      - name: "HighErrorRate"
+        condition: "error_rate > 1%"
+        duration: "5m"
+        severity: "critical"
+        notification: "pagerduty"
+      
+      - name: "HighLatency"
+        condition: "p95_latency > 500ms"
+        duration: "10m"
+        severity: "warning"
+        notification: "slack"
+  
+  # Logging
+  logging:
+    provider: "elasticsearch"                # ELK stack
+    log_level: "INFO"                        # DEBUG, INFO, WARNING, ERROR
+    structured_logging: true                 # Use JSON format
+    log_retention: "30d"
+    
+    log_fields:
+      required:
+        - "timestamp"
+        - "level"
+        - "service"
+        - "trace_id"
+        - "message"
+      optional:
+        - "user_id"
+        - "request_id"
+        - "duration_ms"
+    
+    aggregation:
+      tool: "logstash"
+      filters:
+        - "grok"
+        - "json"
+        - "geoip"
+    
+    visualization:
+      tool: "kibana"
+      dashboards:
+        - "application_logs"
+        - "error_tracking"
+        - "audit_trail"
+  
+  # Distributed tracing
+  tracing:
+    provider: "jaeger"
+    sampling_rate: 0.1                      # Sample 10% of traces
+    max_traces_per_second: 100
+    
+    instrumentation:
+      - "HTTP requests"
+      - "Database queries"
+      - "Message queue operations"
+      - "External API calls"
+  
+  # Application Performance Monitoring
+  apm:
+    provider: "datadog"                      # or "newrelic", "elastic_apm"
+    features:
+      - "real_user_monitoring"
+      - "error_tracking"
+      - "profiling"
+      - "synthetic_monitoring"
+  
+  # Dashboards
+  dashboards:
+    - name: "System Health"
+      tool: "grafana"
+      panels:
+        - "CPU usage by service"
+        - "Memory usage trends"
+        - "Request rate (RPS)"
+        - "Error rate percentage"
+        - "P50/P95/P99 latency"
+    
+    - name: "Business Metrics"
+      tool: "grafana"
+      panels:
+        - "New user signups"
+        - "Active users (DAU/MAU)"
+        - "Processing jobs completed"
+        - "Revenue (if applicable)"
+  
+  # Health checks
+  health_checks:
+    endpoints:
+      - path: "/health/live"
+        type: "liveness"
+        checks:
+          - "application_running"
+      
+      - path: "/health/ready"
+        type: "readiness"
+        checks:
+          - "database_connection"
+          - "redis_connection"
+          - "external_api_reachable"
+
+# -----------------------------------------------------------------------------
+# 10. CLOUD INFRASTRUCTURE
+# -----------------------------------------------------------------------------
+cloud_infrastructure:
+  # Cloud provider
+  provider: "aws"                            # aws | gcp | azure
+  region: "us-east-1"
+  multi_region:
+    enabled: true
+    regions:
+      - "us-east-1"
+      - "us-west-2"
+      - "eu-west-1"
+  
+  # Compute resources
+  compute:
+    kubernetes:
+      cluster_name: "production-cluster"
+      node_groups:
+        - name: "general-purpose"
+          instance_type: "t3.large"
+          min_size: 3
+          max_size: 10
+          disk_size: "50GB"
+        
+        - name: "compute-optimized"
+          instance_type: "c6i.xlarge"
+          min_size: 2
+          max_size: 20
+          disk_size: "100GB"
+          labels:
+            workload: "processing"
+      
+      autoscaling:
+        enabled: true
+        metrics:
+          - type: "cpu"
+            target_utilization: 70
+          - type: "memory"
+            target_utilization: 80
+  
+  # Storage
+  storage:
+    block_storage:
+      type: "ebs"                            # AWS EBS
+      volume_type: "gp3"
+      iops: 3000
+      throughput: "125MB/s"
+    
+    object_storage:
+      type: "s3"
+      buckets:
+        - name: "app-data-prod"
+          versioning: true
+          encryption: "AES256"
+          lifecycle_rules:
+            - name: "archive_old_data"
+              transition_to: "glacier"
+              after_days: 90
+        
+        - name: "app-backups-prod"
+          versioning: true
+          replication:
+            enabled: true
+            destination_region: "us-west-2"
+    
+    file_storage:
+      type: "efs"                            # Shared file system
+      performance_mode: "generalPurpose"
+      throughput_mode: "bursting"
+  
+  # Networking
+  networking:
+    vpc:
+      cidr: "10.0.0.0/16"
+      subnets:
+        public:
+          - cidr: "10.0.1.0/24"
+            availability_zone: "us-east-1a"
+          - cidr: "10.0.2.0/24"
+            availability_zone: "us-east-1b"
+        private:
+          - cidr: "10.0.10.0/24"
+            availability_zone: "us-east-1a"
+          - cidr: "10.0.11.0/24"
+            availability_zone: "us-east-1b"
+    
+    load_balancing:
+      type: "application_load_balancer"      # ALB
+      scheme: "internet-facing"
+      ssl_policy: "ELBSecurityPolicy-TLS-1-2-2017-01"
+      certificates:
+        - domain: "api.company.com"
+          provider: "acm"
+    
+    dns:
+      provider: "route53"
+      domains:
+        - "api.company.com"
+        - "app.company.com"
+      routing_policy: "latency"              # Route to nearest region
+    
+    cdn:
+      provider: "cloudfront"
+      cache_behavior:
+        min_ttl: 0
+        default_ttl: 86400                   # 24 hours
+        max_ttl: 31536000                    # 1 year
+      geo_restriction:
+        enabled: false
+  
+  # Security
+  security:
+    iam:
+      roles:
+        - name: "app-service-role"
+          policies:
+            - "s3-read-write"
+            - "secrets-manager-read"
+            - "cloudwatch-write"
+      
+      service_accounts:                      # Kubernetes service accounts
+        - name: "processing-service"
+          namespace: "production"
+          annotations:
+            aws_role_arn: "arn:aws:iam::123456789:role/processing"
+    
+    secrets_management:
+      provider: "aws_secrets_manager"        # or "vault", "gcp_secret_manager"
+      secrets:
+        - name: "database-credentials"
+          rotation: "30d"
+        - name: "api-keys"
+          rotation: "90d"
+    
+    network_security:
+      security_groups:
+        - name: "app-sg"
+          rules:
+            - port: 443
+              protocol: "tcp"
+              source: "0.0.0.0/0"
+            - port: 80
+              protocol: "tcp"
+              source: "0.0.0.0/0"
+      
+      network_policies:                      # Kubernetes network policies
+        - name: "deny-all-default"
+          policy_type: "Ingress"
+          action: "deny"
+        - name: "allow-frontend-to-backend"
+          from: "frontend-namespace"
+          to: "backend-namespace"
+          ports: [8080]
+  
+  # Backup and disaster recovery
+  backup:
+    database_backups:
+      frequency: "daily"
+      retention: "30d"
+      automated_snapshots: true
+      cross_region_backup: true
+    
+    application_backups:
+      frequency: "weekly"
+      retention: "90d"
+      backup_bucket: "app-backups-prod"
+  
+  # Cost optimization
+  cost_optimization:
+    reserved_instances:
+      enabled: true
+      percentage: 60                         # 60% reserved, 40% on-demand
+    
+    spot_instances:
+      enabled: true
+      workloads:
+        - "batch-processing"
+        - "dev-environments"
+    
+    autoscaling_schedule:
+      - name: "business-hours-scale-up"
+        schedule: "0 8 * * MON-FRI"          # 8 AM Mon-Fri
+        desired_capacity: 10
+      - name: "off-hours-scale-down"
+        schedule: "0 20 * * *"               # 8 PM daily
+        desired_capacity: 3
+
+# -----------------------------------------------------------------------------
+# 11. DEPLOYMENT & CI/CD
+# -----------------------------------------------------------------------------
+deployment:
+  # CI/CD pipeline
+  cicd_platform: "github_actions"            # or "gitlab_ci", "jenkins"
+  
+  pipeline_stages:
+    - stage: "build"
+      steps:
+        - "checkout_code"
+        - "install_dependencies"
+        - "run_linters"
+        - "run_type_checks"
+        - "build_artifacts"
+    
+    - stage: "test"
+      steps:
+        - "unit_tests"
+        - "integration_tests"
+        - "security_scan"
+        - "generate_coverage_report"
+      coverage_threshold: "80%"
+    
+    - stage: "containerize"
+      steps:
+        - "build_docker_image"
+        - "scan_image_vulnerabilities"
+        - "push_to_registry"
+    
+    - stage: "deploy_staging"
+      environment: "staging"
+      steps:
+        - "deploy_to_kubernetes"
+        - "run_smoke_tests"
+        - "run_e2e_tests"
+    
+    - stage: "deploy_production"
+      environment: "production"
+      requires_approval: true
+      strategy: "blue_green"                 # or "canary", "rolling"
+      steps:
+        - "deploy_to_kubernetes"
+        - "run_smoke_tests"
+        - "monitor_metrics"
+  
+  # Deployment strategy
+  strategy:
+    type: "blue_green"
+    rollback_on_failure: true
+    health_check_grace_period: "60s"
+    
+  # Environments
+  environments:
+    - name: "development"
+      url: "https://dev.company.com"
+      auto_deploy: true
+      branch: "develop"
+    
+    - name: "staging"
+      url: "https://staging.company.com"
+      auto_deploy: true
+      branch: "main"
+    
+    - name: "production"
+      url: "https://api.company.com"
+      auto_deploy: false
+      requires_approval: true
+      approvers:
+        - "tech-lead"
+        - "platform-engineering"
+
+# -----------------------------------------------------------------------------
+# 12. KEY CONSIDERATIONS & CONSTRAINTS
+# -----------------------------------------------------------------------------
+key_considerations:
+  # Technical constraints
+  technical_constraints:
+    - "Must support offline mode for mobile clients"
+    - "API responses must be cacheable for 5 minutes"
+    - "Database migrations must be backward compatible"
+    - "Maximum Docker image size: 500MB"
+  
+  # Performance requirements
+  performance_targets:
+    - "Cold start time < 3 seconds"
+    - "Database query time < 50ms (p95)"
+    - "Background job processing < 10 seconds"
+  
+  # Compliance and legal
+  compliance:
+    - standard: "GDPR"
+      requirements:
+        - "User data deletion within 30 days of request"
+        - "Data export in machine-readable format"
+        - "Consent management for data processing"
+    
+    - standard: "SOC2"
+      requirements:
+        - "Audit logs for all data access"
+        - "Encryption at rest and in transit"
+        - "Access control reviews quarterly"
+  
+  # Operational requirements
+  operations:
+    - "Zero-downtime deployments required"
+    - "Database migrations must run in < 5 minutes"
+    - "Rollback capability within 2 minutes"
+    - "Automated health checks every 30 seconds"
+  
+  # Dependencies and integrations
+  external_dependencies:
+    - service: "Stripe"
+      purpose: "Payment processing"
+      fallback: "PayPal"
+      timeout: "10s"
+    
+    - service: "SendGrid"
+      purpose: "Email delivery"
+      fallback: "AWS SES"
+      timeout: "5s"
+    
+    - service: "Google Maps API"
+      purpose: "Geolocation"
+      fallback: "OpenStreetMap"
+      timeout: "3s"
+  
+  # Edge cases and error scenarios
+  edge_cases:
+    - scenario: "Database connection pool exhausted"
+      handling: "Queue requests, return 503 with retry-after header"
+    
+    - scenario: "External API rate limit exceeded"
+      handling: "Exponential backoff, use cached data if available"
+    
+    - scenario: "Invalid input data"
+      handling: "Return 422 with detailed validation errors"
+
+# -----------------------------------------------------------------------------
+# 13. TESTING STRATEGY
+# -----------------------------------------------------------------------------
+testing:
+  # Test coverage requirements
+  coverage:
+    unit_tests: "85%"
+    integration_tests: "70%"
+    e2e_tests: "critical_paths_only"
+  
+  # Test types
+  test_types:
+    unit:
+      framework: "pytest"
+      mocking: "pytest-mock"
+      fixtures: true
+    
+    integration:
+      framework: "pytest"
+      database: "testcontainers"             # Spin up real DB for tests
+      external_services: "mocked"
+    
+    e2e:
+      framework: "playwright"                # For web UI testing
+      browser: "chromium"
+      headless: true
+    
+    performance:
+      tool: "locust"
+      scenarios:
+        - name: "peak_load"
+          users: 1000
+          spawn_rate: 100
+          duration: "10m"
+    
+    security:
+      tools:
+        - "bandit"                           # Python security linter
+        - "safety"                           # Dependency vulnerability check
+        - "trivy"                            # Container scanning
+  
+  # Test data management
+  test_data:
+    strategy: "factories"                    # Use factories for test data
+    library: "factory_boy"
+    anonymization: true                      # Anonymize production data if used
+
+# -----------------------------------------------------------------------------
+# 14. DOCUMENTATION REQUIREMENTS
+# -----------------------------------------------------------------------------
+documentation:
+  required_documents:
+    - type: "api_documentation"
+      format: "openapi_3.0"
+      auto_generated: true
+      hosted_at: "https://api.company.com/docs"
+    
+    - type: "architecture_diagrams"
+      format: "mermaid"
+      includes:
+        - "system_architecture"
+        - "data_flow"
+        - "deployment_diagram"
+    
+    - type: "runbook"
+      format: "markdown"
+      sections:
+        - "deployment_procedures"
+        - "incident_response"
+        - "rollback_procedures"
+        - "common_troubleshooting"
+    
+    - type: "developer_guide"
+      format: "markdown"
+      sections:
+        - "local_setup"
+        - "code_standards"
+        - "testing_guide"
+        - "contribution_guidelines"
+
+# -----------------------------------------------------------------------------
+# 15. SUCCESS CRITERIA
+# -----------------------------------------------------------------------------
+success_criteria:
+  # Technical acceptance
+  technical:
+    - "All tests pass with >80% coverage"
+    - "Zero critical security vulnerabilities"
+    - "API response time <300ms (p95)"
+    - "System uptime >99.9% over 30 days"
+  
+  # Business acceptance
+  business:
+    - "Successfully processes 10,000 requests/minute"
+    - "Handles peak load without degradation"
+    - "Deployment completes in <10 minutes"
+  
+  # Operational readiness
+  operational:
+    - "Monitoring dashboards configured"
+    - "Alerts configured for critical metrics"
+    - "Runbooks complete and tested"
+    - "Backup and restore procedures validated"

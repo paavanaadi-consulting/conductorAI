@@ -1,0 +1,573 @@
+# =============================================================================
+# EXAMPLE: Simple REST API for Payment Webhooks
+# =============================================================================
+# This is a simplified example showing how to fill out the requirements
+# template for a real project. Use this as a reference.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 1. PROJECT METADATA
+# -----------------------------------------------------------------------------
+project:
+  name: "payment-webhook-api"
+  version: "1.0.0"
+  description: |
+    A REST API service that receives webhook notifications from Stripe,
+    validates signatures, stores payment events in PostgreSQL, and sends
+    confirmation emails to customers. Handles up to 1000 webhooks per minute.
+  
+  domain: "fintech"
+  priority: "high"
+  deadline: "2026-04-30"
+  
+  stakeholders:
+    product_owner: "sarah.chen@company.com"
+    tech_lead: "mike.johnson@company.com"
+    team: "payments-engineering"
+
+# -----------------------------------------------------------------------------
+# 2. FUNCTIONAL REQUIREMENTS
+# -----------------------------------------------------------------------------
+functional_requirements:
+  features:
+    - id: "FEAT-001"
+      name: "Receive Stripe Webhooks"
+      description: |
+        Accept webhook POST requests from Stripe, validate signatures using
+        webhook secret, and acknowledge receipt with 200 OK within 5 seconds.
+      priority: "critical"
+      acceptance_criteria:
+        - "Accept POST at /api/webhooks/stripe"
+        - "Validate Stripe-Signature header using webhook secret"
+        - "Return 200 OK within 5 seconds"
+        - "Return 401 if signature invalid"
+        - "Handle idempotency using stripe event_id"
+      
+    - id: "FEAT-002"
+      name: "Store Payment Events"
+      description: |
+        Store validated webhook events in PostgreSQL with all relevant
+        payment information for audit and reconciliation purposes.
+      priority: "critical"
+      acceptance_criteria:
+        - "Store event_id, type, amount, customer_id, created timestamp"
+        - "Prevent duplicate events using unique constraint on event_id"
+        - "Store raw webhook JSON for debugging"
+        - "Index by customer_id and created timestamp"
+    
+    - id: "FEAT-003"
+      name: "Send Confirmation Emails"
+      description: |
+        For successful payment events (payment.succeeded), send confirmation
+        email to customer using SendGrid within 30 seconds.
+      priority: "high"
+      acceptance_criteria:
+        - "Send email only for payment.succeeded events"
+        - "Include amount, date, transaction ID in email"
+        - "Use SendGrid API with 10s timeout"
+        - "Retry 3 times with exponential backoff if fails"
+        - "Log email delivery status"
+
+  api_endpoints:
+    - path: "/api/webhooks/stripe"
+      method: "POST"
+      description: "Receive Stripe webhook events"
+      request_body:
+        type: "object"
+        schema_ref: "Stripe Event Object"
+      response:
+        success_code: 200
+        schema_ref: '{"received": true}'
+      
+    - path: "/health"
+      method: "GET"
+      description: "Health check endpoint"
+      response:
+        success_code: 200
+        schema_ref: '{"status": "healthy"}'
+
+  business_rules:
+    - rule: "Reject webhooks older than 5 minutes (replay attack prevention)"
+      enforcement: "timestamp_validation"
+    - rule: "Duplicate events (same event_id) should be acknowledged but not reprocessed"
+      enforcement: "database_unique_constraint"
+
+# -----------------------------------------------------------------------------
+# 3. NON-FUNCTIONAL REQUIREMENTS
+# -----------------------------------------------------------------------------
+non_functional_requirements:
+  performance:
+    response_time:
+      p50: "100ms"
+      p95: "300ms"
+      p99: "500ms"
+    throughput: "1000 req/min"
+    concurrent_users: 50
+  
+  scalability:
+    horizontal_scaling: true
+    min_instances: 2
+    max_instances: 10
+    scale_up_threshold: "cpu > 70%"
+    scale_down_threshold: "cpu < 30%"
+  
+  availability:
+    uptime_sla: "99.9%"
+    rpo: "1 hour"
+    rto: "30 minutes"
+    multi_region: false
+  
+  security:
+    authentication: "webhook_signature_validation"
+    authorization: "none"
+    encryption_at_rest: true
+    encryption_in_transit: true
+    security_scanning: true
+    compliance_standards:
+      - "PCI-DSS"
+  
+  reliability:
+    error_rate_threshold: "0.5%"
+    circuit_breaker: false
+    retry_policy:
+      max_attempts: 3
+      backoff_strategy: "exponential"
+      initial_delay: "100ms"
+    health_checks:
+      liveness_probe: "/health"
+      readiness_probe: "/health"
+      interval: "30s"
+
+# -----------------------------------------------------------------------------
+# 4. DATA MODELS & SCHEMAS
+# -----------------------------------------------------------------------------
+data_models:
+  schemas:
+    StripeWebhookEvent:
+      type: "object"
+      properties:
+        id:
+          type: "string"
+          description: "Stripe event ID"
+          example: "evt_1234567890"
+        type:
+          type: "string"
+          description: "Event type"
+          example: "payment_intent.succeeded"
+        data:
+          type: "object"
+          properties:
+            object:
+              type: "object"
+              description: "Payment intent or other resource"
+        created:
+          type: "integer"
+          description: "Unix timestamp"
+          example: 1708095600
+
+  database_tables:
+    - name: "webhook_events"
+      type: "relational"
+      columns:
+        - name: "id"
+          type: "SERIAL"
+          primary_key: true
+        - name: "event_id"
+          type: "VARCHAR(255)"
+          unique: true
+          indexed: true
+        - name: "event_type"
+          type: "VARCHAR(100)"
+          indexed: true
+        - name: "customer_id"
+          type: "VARCHAR(255)"
+          indexed: true
+        - name: "amount"
+          type: "INTEGER"
+          description: "Amount in cents"
+        - name: "currency"
+          type: "VARCHAR(3)"
+          default: "'USD'"
+        - name: "raw_data"
+          type: "JSONB"
+          description: "Full webhook payload"
+        - name: "created_at"
+          type: "TIMESTAMP"
+          default: "NOW()"
+        - name: "processed_at"
+          type: "TIMESTAMP"
+          nullable: true
+
+# -----------------------------------------------------------------------------
+# 5. SAMPLE DATA
+# -----------------------------------------------------------------------------
+sample_data:
+  test_webhook_payloads:
+    - event_id: "evt_test_001"
+      type: "payment_intent.succeeded"
+      data:
+        object:
+          id: "pi_123456"
+          amount: 2999
+          currency: "usd"
+          customer: "cus_ABC123"
+      created: 1708095600
+    
+    - event_id: "evt_test_002"
+      type: "payment_intent.payment_failed"
+      data:
+        object:
+          id: "pi_789012"
+          amount: 1499
+          currency: "usd"
+          customer: "cus_XYZ789"
+      created: 1708095700
+
+# -----------------------------------------------------------------------------
+# 6. OUTPUT STRUCTURES
+# -----------------------------------------------------------------------------
+output_structures:
+  artifacts:
+    - name: "source_code"
+      type: "directory"
+      structure:
+        - "src/app.py"
+        - "src/webhook_handler.py"
+        - "src/models.py"
+        - "tests/"
+        - "requirements.txt"
+        - "Dockerfile"
+      
+    - name: "docker_image"
+      type: "container_registry"
+      images:
+        - "company/payment-webhook-api:1.0.0"
+      
+    - name: "kubernetes_manifests"
+      type: "kubernetes_yaml"
+      files:
+        - "k8s/deployment.yaml"
+        - "k8s/service.yaml"
+        - "k8s/configmap.yaml"
+        - "k8s/secret.yaml"
+    
+    - name: "api_documentation"
+      type: "openapi_spec"
+      format: "openapi_3.0"
+      output_path: "docs/api/openapi.yaml"
+
+# -----------------------------------------------------------------------------
+# 7. TECHNOLOGY STACK
+# -----------------------------------------------------------------------------
+technology_stack:
+  languages:
+    primary: "python"
+    version: "3.11"
+  
+  frameworks:
+    backend:
+      - name: "fastapi"
+        version: ">=0.110.0"
+        purpose: "REST API server"
+      - name: "sqlalchemy"
+        version: ">=2.0.0"
+        purpose: "Database ORM"
+      - name: "pydantic"
+        version: ">=2.0.0"
+        purpose: "Data validation"
+    
+    testing:
+      - name: "pytest"
+        version: ">=8.0.0"
+      - name: "pytest-cov"
+        version: ">=4.1.0"
+      - name: "httpx"
+        version: ">=0.27.0"
+        purpose: "Test client for FastAPI"
+  
+  databases:
+    primary:
+      type: "postgresql"
+      version: "15"
+      purpose: "Store webhook events"
+      connection_pool_size: 10
+  
+  infrastructure:
+    container_orchestration:
+      type: "kubernetes"
+      version: "1.28"
+      distribution: "eks"
+
+# -----------------------------------------------------------------------------
+# 8. ARCHITECTURE & DESIGN PATTERNS
+# -----------------------------------------------------------------------------
+architecture:
+  style: "monolith"
+  
+  design_patterns:
+    - pattern: "repository"
+      location: "src/repositories/"
+      description: |
+        Abstract database operations for webhook events.
+      example: "WebhookEventRepository.save(event)"
+    
+    - pattern: "strategy"
+      location: "src/handlers/"
+      description: |
+        Different handler strategies for different webhook event types.
+      example: "PaymentSucceededHandler, PaymentFailedHandler"
+  
+  communication:
+    synchronous:
+      protocol: "REST"
+      format: "JSON"
+      timeout: "30s"
+
+# -----------------------------------------------------------------------------
+# 9. MONITORING, LOGGING & OBSERVABILITY
+# -----------------------------------------------------------------------------
+monitoring:
+  metrics:
+    provider: "prometheus"
+    port: 9090
+    scrape_interval: "15s"
+    
+    custom_metrics:
+      - name: "webhook_requests_total"
+        type: "counter"
+        labels: ["event_type", "status"]
+      - name: "webhook_processing_duration_seconds"
+        type: "histogram"
+        labels: ["event_type"]
+      - name: "email_delivery_total"
+        type: "counter"
+        labels: ["status"]
+    
+    alerts:
+      - name: "HighWebhookErrorRate"
+        condition: "error_rate > 5%"
+        duration: "5m"
+        severity: "critical"
+        notification: "slack"
+      
+      - name: "SlowWebhookProcessing"
+        condition: "p95_duration > 1s"
+        duration: "10m"
+        severity: "warning"
+        notification: "slack"
+  
+  logging:
+    provider: "stdout"
+    log_level: "INFO"
+    structured_logging: true
+    
+    log_fields:
+      required:
+        - "timestamp"
+        - "level"
+        - "message"
+        - "event_id"
+        - "event_type"
+  
+  health_checks:
+    endpoints:
+      - path: "/health"
+        type: "liveness"
+        checks:
+          - "application_running"
+      
+      - path: "/health"
+        type: "readiness"
+        checks:
+          - "database_connection"
+
+# -----------------------------------------------------------------------------
+# 10. CLOUD INFRASTRUCTURE
+# -----------------------------------------------------------------------------
+cloud_infrastructure:
+  provider: "aws"
+  region: "us-east-1"
+  multi_region:
+    enabled: false
+  
+  compute:
+    kubernetes:
+      cluster_name: "production-cluster"
+      node_groups:
+        - name: "general-purpose"
+          instance_type: "t3.medium"
+          min_size: 2
+          max_size: 10
+          disk_size: "30GB"
+  
+  storage:
+    object_storage:
+      type: "s3"
+      buckets:
+        - name: "payment-webhook-logs"
+          versioning: true
+          encryption: "AES256"
+  
+  networking:
+    vpc:
+      cidr: "10.0.0.0/16"
+      subnets:
+        public:
+          - cidr: "10.0.1.0/24"
+            availability_zone: "us-east-1a"
+          - cidr: "10.0.2.0/24"
+            availability_zone: "us-east-1b"
+    
+    load_balancing:
+      type: "application_load_balancer"
+      scheme: "internet-facing"
+      ssl_policy: "ELBSecurityPolicy-TLS-1-2-2017-01"
+  
+  security:
+    secrets_management:
+      provider: "aws_secrets_manager"
+      secrets:
+        - name: "stripe-webhook-secret"
+          rotation: "90d"
+        - name: "sendgrid-api-key"
+          rotation: "90d"
+        - name: "database-password"
+          rotation: "30d"
+
+# -----------------------------------------------------------------------------
+# 11. DEPLOYMENT & CI/CD
+# -----------------------------------------------------------------------------
+deployment:
+  cicd_platform: "github_actions"
+  
+  pipeline_stages:
+    - stage: "build"
+      steps:
+        - "checkout_code"
+        - "install_dependencies"
+        - "run_ruff_linting"
+        - "run_mypy_type_check"
+        - "build_docker_image"
+    
+    - stage: "test"
+      steps:
+        - "unit_tests"
+        - "integration_tests"
+        - "generate_coverage_report"
+      coverage_threshold: "80%"
+    
+    - stage: "deploy_production"
+      environment: "production"
+      requires_approval: true
+      strategy: "rolling"
+      steps:
+        - "deploy_to_kubernetes"
+        - "run_smoke_tests"
+  
+  strategy:
+    type: "rolling"
+    rollback_on_failure: true
+    health_check_grace_period: "30s"
+  
+  environments:
+    - name: "production"
+      url: "https://webhooks.company.com"
+      auto_deploy: false
+      requires_approval: true
+
+# -----------------------------------------------------------------------------
+# 12. KEY CONSIDERATIONS & CONSTRAINTS
+# -----------------------------------------------------------------------------
+key_considerations:
+  technical_constraints:
+    - "Must respond to Stripe within 5 seconds or webhook will retry"
+    - "Must handle duplicate webhooks gracefully (idempotency)"
+    - "Webhook signature validation is critical for security"
+  
+  performance_targets:
+    - "Process webhook in <500ms (p95)"
+    - "Database insert <50ms"
+  
+  compliance:
+    - standard: "PCI-DSS"
+      requirements:
+        - "Encrypt all payment data at rest"
+        - "Use TLS 1.2+ for all connections"
+        - "Log all payment events for audit"
+  
+  external_dependencies:
+    - service: "Stripe"
+      purpose: "Webhook source"
+      timeout: "N/A"
+      fallback: "none"
+    
+    - service: "SendGrid"
+      purpose: "Email delivery"
+      timeout: "10s"
+      fallback: "log_failure_retry_later"
+  
+  edge_cases:
+    - scenario: "Duplicate webhook (same event_id)"
+      handling: "Return 200 OK, do not reprocess, log duplicate"
+    
+    - scenario: "Invalid signature"
+      handling: "Return 401 Unauthorized, log security event"
+    
+    - scenario: "Database connection lost"
+      handling: "Return 503 Service Unavailable, Stripe will retry"
+    
+    - scenario: "SendGrid API down"
+      handling: "Log failure, retry 3 times, then mark for manual review"
+
+# -----------------------------------------------------------------------------
+# 13. TESTING STRATEGY
+# -----------------------------------------------------------------------------
+testing:
+  coverage:
+    unit_tests: "85%"
+    integration_tests: "70%"
+  
+  test_types:
+    unit:
+      framework: "pytest"
+      mocking: "pytest-mock"
+    
+    integration:
+      framework: "pytest"
+      database: "testcontainers"
+      external_services: "mocked"
+  
+  test_data:
+    strategy: "fixtures"
+    library: "pytest fixtures"
+
+# -----------------------------------------------------------------------------
+# 14. DOCUMENTATION REQUIREMENTS
+# -----------------------------------------------------------------------------
+documentation:
+  required_documents:
+    - type: "api_documentation"
+      format: "openapi_3.0"
+      auto_generated: true
+    
+    - type: "runbook"
+      format: "markdown"
+      sections:
+        - "deployment_procedures"
+        - "incident_response"
+        - "common_troubleshooting"
+
+# -----------------------------------------------------------------------------
+# 15. SUCCESS CRITERIA
+# -----------------------------------------------------------------------------
+success_criteria:
+  technical:
+    - "All tests pass with >80% coverage"
+    - "Zero critical security vulnerabilities"
+    - "Webhook response time <500ms (p95)"
+    - "Successfully handles 1000 webhooks/minute"
+  
+  operational:
+    - "Monitoring configured with alerts"
+    - "Runbook complete"
+    - "Successfully processes Stripe test webhooks"

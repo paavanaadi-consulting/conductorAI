@@ -1,0 +1,801 @@
+# =============================================================================
+# RAG & LLM Pipeline Requirements Template
+# =============================================================================
+# Specialized template for Retrieval-Augmented Generation (RAG) systems,
+# LLM applications, embeddings pipelines, and vector search infrastructure.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 1. PROJECT METADATA
+# -----------------------------------------------------------------------------
+project:
+  name: "enterprise-knowledge-assistant"
+  version: "1.0.0"
+  description: |
+    RAG-powered enterprise knowledge assistant that answers employee
+    questions using company documentation, wikis, tickets, and codebases.
+    Provides accurate, contextual answers with source citations.
+  
+  project_type: "rag_application"  # rag_application | llm_fine_tuning | 
+                                   # prompt_engineering | agent_system
+  
+  llm_use_case: "question_answering"  # qa | summarization | generation |
+                                      # classification | extraction | chat
+  
+  domain: "enterprise_knowledge_management"
+  priority: "high"
+  deadline: "2026-07-31"
+  
+  stakeholders:
+    product_owner: "ai-products@company.com"
+    ai_engineer: "ai-eng@company.com"
+    knowledge_manager: "knowledge@company.com"
+    team: "ai-platform"
+
+# -----------------------------------------------------------------------------
+# 2. RAG SYSTEM OBJECTIVES
+# -----------------------------------------------------------------------------
+rag_objectives:
+  business_problem: |
+    Employees spend 2+ hours daily searching for information across
+    30+ knowledge sources (Confluence, Notion, GitHub, Jira, Slack).
+    Average time to find answer: 15 minutes per query.
+    Goal: Reduce to < 30 seconds with AI-powered search and answers.
+  
+  success_metrics:
+    - metric: "answer_accuracy"
+      target: ">= 85% factually correct answers"
+      measurement: "Human evaluation on test set + user feedback"
+    
+    - metric: "response_time"
+      target: "< 5 seconds (p95)"
+      measurement: "End-to-end latency from query to answer"
+    
+    - metric: "source_attribution"
+      target: "100% of answers cite sources"
+      measurement: "Automated validation"
+    
+    - metric: "user_satisfaction"
+      target: ">= 4.0/5.0 rating"
+      measurement: "Post-answer user ratings"
+    
+    - metric: "hallucination_rate"
+      target: "< 5%"
+      measurement: "Answers that cite non-existent information"
+  
+  baseline:
+    current_method: "Manual search across tools"
+    current_performance:
+      avg_time_to_answer: "15 minutes"
+      success_rate: "65%"
+
+# -----------------------------------------------------------------------------
+# 3. KNOWLEDGE SOURCE CONFIGURATION
+# -----------------------------------------------------------------------------
+knowledge_sources:
+  # Documentation sources
+  sources:
+    - name: "confluence_wiki"
+      type: "documentation"
+      connector: "confluence_api"
+      authentication: "api_token"
+      
+      content_types:
+        - "pages"
+        - "blog_posts"
+        - "attachments"
+      
+      extraction:
+        method: "api_crawl"
+        update_frequency: "hourly"
+        incremental: true
+        last_modified_field: "version.when"
+      
+      processing:
+        - "Extract text from HTML"
+        - "Parse markdown formatting"
+        - "Extract metadata (author, created_date, labels)"
+        - "Chunk into 512-token segments with 50-token overlap"
+      
+      estimated_volume:
+        pages: 10000
+        total_tokens: "50M tokens"
+      
+      metadata_schema:
+        space: "string"
+        title: "string"
+        author: "string"
+        created_date: "timestamp"
+        labels: "array"
+        url: "string"
+    
+    - name: "github_repositories"
+      type: "code"
+      connector: "github_api"
+      authentication: "github_app"
+      
+      repositories:
+        - "company/backend-services"
+        - "company/frontend-app"
+        - "company/infrastructure"
+      
+      file_types:
+        - ".py"
+        - ".js"
+        - ".md"
+        - ".yaml"
+      
+      exclusions:
+        - "node_modules/"
+        - "*.min.js"
+        - "dist/"
+      
+      processing:
+        - "Extract code with syntax highlighting context"
+        - "Parse docstrings and comments"
+        - "Extract README files"
+        - "Chunk by function/class for code"
+      
+      metadata_schema:
+        repo: "string"
+        file_path: "string"
+        language: "string"
+        last_commit_date: "timestamp"
+        url: "string"
+    
+    - name: "jira_tickets"
+      type: "structured"
+      connector: "jira_api"
+      authentication: "oauth2"
+      
+      query: "project in (ENG, PROD, DATA) AND created >= -180d"
+      
+      fields:
+        - "summary"
+        - "description"
+        - "comments"
+        - "resolution"
+      
+      processing:
+        - "Concatenate ticket fields"
+        - "Extract code blocks from comments"
+        - "Link related tickets"
+      
+      metadata_schema:
+        ticket_key: "string"
+        project: "string"
+        issue_type: "string"
+        status: "string"
+        created_date: "timestamp"
+        url: "string"
+    
+    - name: "slack_channels"
+      type: "conversational"
+      connector: "slack_api"
+      authentication: "bot_token"
+      
+      channels:
+        - "#engineering"
+        - "#product"
+        - "#data-science"
+      
+      time_range: "last_90_days"
+      
+      processing:
+        - "Thread messages together"
+        - "Extract Q&A pairs (question + accepted answer)"
+        - "Filter out casual conversation"
+      
+      metadata_schema:
+        channel: "string"
+        thread_ts: "string"
+        author: "string"
+        timestamp: "timestamp"
+        url: "string"
+  
+  # Access control
+  access_control:
+    enforcement: "query_time"  # filter results based on user permissions
+    
+    permission_sources:
+      - "Active Directory groups"
+      - "Confluence space permissions"
+      - "GitHub repository access"
+      - "Jira project roles"
+    
+    requirements:
+      - "Users only see documents they have access to"
+      - "Embed user_id in vector DB metadata"
+      - "Filter by user permissions before retrieval"
+
+# -----------------------------------------------------------------------------
+# 4. EMBEDDING & VECTOR STORAGE
+# -----------------------------------------------------------------------------
+embeddings:
+  # Embedding model
+  model:
+    provider: "openai"
+    model_name: "text-embedding-3-large"
+    dimensions: 3072
+    cost_per_1k_tokens: 0.00013
+    max_tokens: 8191
+    
+    alternatives:
+      - provider: "cohere"
+        model: "embed-english-v3.0"
+      - provider: "sentence_transformers"
+        model: "all-mpnet-base-v2"
+  
+  # Chunking strategy
+  chunking:
+    primary_strategy: "recursive_character_splitter"
+    chunk_size: 512  # tokens
+    chunk_overlap: 50  # tokens
+    
+    strategies_by_type:
+      documentation:
+        method: "markdown_splitter"
+        respect_headers: true
+        chunk_size: 512
+      
+      code:
+        method: "ast_based_splitter"
+        split_by: "function"
+        include_docstring: true
+      
+      conversational:
+        method: "thread_based"
+        keep_thread_intact: true
+  
+  # Vector database
+  vector_db:
+    technology: "pinecone"  # or "weaviate", "qdrant", "milvus"
+    
+    index_configuration:
+      name: "enterprise-knowledge"
+      metric: "cosine"
+      dimension: 3072
+      pod_type: "p2.x1"
+      replicas: 2
+      
+      namespaces:
+        - "confluence"
+        - "github"
+        - "jira"
+        - "slack"
+    
+    metadata_fields:
+      - "source"
+      - "document_id"
+      - "chunk_id"
+      - "title"
+      - "url"
+      - "created_date"
+      - "author"
+      - "access_groups"  # For permission filtering
+    
+    indexing_pipeline:
+      batch_size: 100
+      parallel_workers: 10
+      rate_limit: "10000 upserts/minute"
+      
+      workflow:
+        - "Extract text from source"
+        - "Chunk text using strategy"
+        - "Generate embeddings (batch)"
+        - "Upsert to vector DB with metadata"
+        - "Update index state tracker"
+      
+      error_handling:
+        on_embedding_failure: "Log and skip chunk"
+        on_upsert_failure: "Retry 3 times with exponential backoff"
+
+# -----------------------------------------------------------------------------
+# 5. RETRIEVAL CONFIGURATION
+# -----------------------------------------------------------------------------
+retrieval:
+  # Search strategy
+  search_strategy: "hybrid"  # vector_only | keyword_only | hybrid | reranking
+  
+  vector_search:
+    top_k: 20
+    similarity_threshold: 0.7
+    namespace_filter: "Based on query classification"
+    
+    query_expansion:
+      enabled: true
+      method: "llm_generated_variants"
+      max_variants: 3
+  
+  keyword_search:
+    engine: "elasticsearch"
+    index: "enterprise-content"
+    fields:
+      - "title^3"  # Boost title matches
+      - "content"
+      - "tags^2"
+    top_k: 10
+  
+  hybrid_fusion:
+    method: "reciprocal_rank_fusion"
+    weights:
+      vector: 0.7
+      keyword: 0.3
+    final_top_k: 10
+  
+  # Reranking
+  reranking:
+    enabled: true
+    model: "cohere_rerank"
+    model_name: "rerank-english-v3.0"
+    top_k_after_rerank: 5
+    
+    rerank_criteria:
+      - "Semantic relevance to query"
+      - "Recency (boost recent documents)"
+      - "Authority (boost high-quality sources)"
+  
+  # Context window management
+  context_selection:
+    max_tokens: 8000  # Leave room for system prompt + query + answer
+    
+    strategy: "relevance_priority"
+    prioritization:
+      - "Highest relevance scores first"
+      - "Diversity across sources (avoid redundancy)"
+      - "Recent over old (if tie in relevance)"
+    
+    context_formatting: |
+      Source {idx}: {title} ({source})
+      URL: {url}
+      Content: {text}
+      ---
+
+# -----------------------------------------------------------------------------
+# 6. LLM CONFIGURATION
+# -----------------------------------------------------------------------------
+llm_config:
+  # Primary model
+  primary_model:
+    provider: "openai"
+    model: "gpt-4-turbo-preview"
+    max_tokens: 128000
+    output_max_tokens: 4096
+    temperature: 0.2  # Low for factual consistency
+    top_p: 0.9
+    
+  # Fallback model (cheaper/faster)
+  fallback_model:
+    provider: "openai"
+    model: "gpt-3.5-turbo-16k"
+    max_tokens: 16384
+    use_when: "Simple queries or primary model unavailable"
+  
+  # System prompt
+  system_prompt: |
+    You are an enterprise knowledge assistant for {company_name}.
+    Your role is to answer employee questions using the provided context.
+    
+    Guidelines:
+    - Answer ONLY using information from the provided sources
+    - If the answer is not in the sources, say "I don't have enough information"
+    - Always cite sources using [Source X] notation
+    - Be concise but comprehensive
+    - If multiple sources conflict, mention the discrepancy
+    - Format code snippets with proper syntax highlighting
+    - Provide step-by-step instructions where applicable
+    
+    DO NOT:
+    - Make up information not in the sources
+    - Provide outdated information if recent source available
+    - Include personal opinions
+  
+  # Prompt template
+  prompt_template: |
+    Context from company knowledge base:
+    {context}
+    
+    Employee Question: {query}
+    
+    Provide a comprehensive answer using only the context above.
+    Cite sources using [Source X] format.
+  
+  # Response formatting
+  response_format:
+    structure:
+      answer: "Main answer text with [Source X] citations"
+      sources: "Array of source objects with title, url, excerpt"
+      confidence: "Float 0-1 based on source relevance"
+      follow_up_questions: "Array of suggested related questions"
+    
+    example: |
+      {
+        "answer": "To deploy to production, follow these steps...[Source 1]",
+        "sources": [
+          {
+            "source_id": 1,
+            "title": "Deployment Guide",
+            "url": "https://wiki.company.com/deployment",
+            "excerpt": "...relevant excerpt..."
+          }
+        ],
+        "confidence": 0.92,
+        "follow_up_questions": [
+          "How do I rollback a deployment?",
+          "What are the deployment prerequisites?"
+        ]
+      }
+  
+  # Safety and moderation
+  safety:
+    content_filtering: true
+    pii_detection: true
+    pii_redaction: "Automatically redact SSN, credit cards, passwords"
+    
+    prompt_injection_defense:
+      - "Validate input for malicious instructions"
+      - "Sanitize user queries"
+      - "Reject queries attempting to override system prompt"
+
+# -----------------------------------------------------------------------------
+# 7. RAG PIPELINE ORCHESTRATION
+# -----------------------------------------------------------------------------
+pipeline:
+  # Indexing pipeline (batch)
+  indexing:
+    orchestration_tool: "airflow"
+    
+    dag:
+      name: "knowledge_base_indexing"
+      schedule: "0 */6 * * *"  # Every 6 hours
+      
+      tasks:
+        - task: "extract_confluence"
+          type: "python_operator"
+          timeout: "30 minutes"
+        
+        - task: "extract_github"
+          type: "python_operator"
+          timeout: "1 hour"
+        
+        - task: "process_documents"
+          type: "spark_operator"
+          dependencies: ["extract_confluence", "extract_github"]
+        
+        - task: "generate_embeddings"
+          type: "python_operator"
+          batch_size: 100
+          parallelism: 10
+          dependencies: ["process_documents"]
+        
+        - task: "upsert_to_vector_db"
+          type: "python_operator"
+          dependencies: ["generate_embeddings"]
+        
+        - task: "validate_index"
+          type: "great_expectations_operator"
+          dependencies: ["upsert_to_vector_db"]
+  
+  # Query pipeline (real-time)
+  query_pipeline:
+    endpoint: "/api/v1/ask"
+    method: "POST"
+    
+    flow:
+      - step: "Input Validation"
+        validations:
+          - "Non-empty query"
+          - "Query length < 500 characters"
+          - "No malicious content"
+        timeout: "100ms"
+      
+      - step: "Query Classification"
+        description: "Classify query type and determine search strategy"
+        llm_call: true
+        timeout: "500ms"
+      
+      - step: "Query Expansion"
+        description: "Generate query variants for better recall"
+        optional: true
+        skip_if: "Simple factual query"
+        timeout: "300ms"
+      
+      - step: "Hybrid Search"
+        description: "Vector + keyword search with fusion"
+        parallel:
+          - "Vector search in Pinecone"
+          - "Keyword search in Elasticsearch"
+        timeout: "2 seconds"
+      
+      - step: "Reranking"
+        description: "Rerank results by relevance"
+        top_k: 5
+        timeout: "500ms"
+      
+      - step: "Context Preparation"
+        description: "Format retrieved chunks for LLM"
+        timeout: "100ms"
+      
+      - step: "LLM Generation"
+        description: "Generate answer with citations"
+        model: "gpt-4-turbo"
+        timeout: "3 seconds"
+      
+      - step: "Post-processing"
+        description: "Format response, validate citations"
+        timeout: "200ms"
+      
+      - step: "Logging & Feedback"
+        description: "Log query-answer pair for monitoring"
+        async: true
+    
+    total_sla: "5 seconds (p95)"
+    
+    caching:
+      enabled: true
+      backend: "redis"
+      ttl: "1 hour"
+      cache_key: "hash(query + user_permissions)"
+
+# -----------------------------------------------------------------------------
+# 8. EVALUATION & QUALITY ASSURANCE
+# -----------------------------------------------------------------------------
+evaluation:
+  # Offline evaluation
+  offline_eval:
+    test_set:
+      size: 500
+      creation: "Human-curated question-answer pairs"
+      coverage:
+        - "Common employee questions"
+        - "Edge cases (no answer in docs)"
+        - "Multi-hop reasoning questions"
+        - "Code-related questions"
+    
+    metrics:
+      - metric: "answer_accuracy"
+        evaluation: "Human judgment (3 annotators)"
+        scale: "Correct | Partially Correct | Incorrect"
+      
+      - metric: "citation_accuracy"
+        evaluation: "Automated check if cited sources support answer"
+        threshold: ">= 95%"
+      
+      - metric: "hallucination_rate"
+        evaluation: "Human review for fabricated information"
+        threshold: "< 5%"
+      
+      - metric: "retrieval_recall"
+        evaluation: "Relevant docs in top-k retrieved"
+        threshold: ">= 90%"
+      
+      - metric: "answer_completeness"
+        evaluation: "Human judgment on thoroughness"
+        threshold: ">= 80% rated complete"
+    
+    frequency: "Weekly on updated test set"
+  
+  # Online evaluation
+  online_eval:
+    user_feedback:
+      thumbs_up_down: true
+      star_rating: "1-5 scale"
+      text_feedback: "Optional comment"
+      
+      feedback_triggers:
+        - "After every answer"
+        - "Low confidence answers (< 0.7)"
+      
+      feedback_collection_rate: "Target 30% response rate"
+    
+    implicit_signals:
+      - signal: "User clicks on cited source"
+        interpretation: "Source was relevant"
+      
+      - signal: "User reformulates query immediately"
+        interpretation: "Answer was unsatisfactory"
+      
+      - signal: "User copies answer"
+        interpretation: "Answer was useful"
+    
+    a_b_testing:
+      platform: "optimizely"
+      experiments:
+        - experiment: "Reranking effectiveness"
+          variants: ["with_rerank", "without_rerank"]
+          metric: "user_satisfaction"
+        
+        - experiment: "Temperature tuning"
+          variants: ["temp_0.1", "temp_0.3", "temp_0.5"]
+          metric: "answer_quality"
+
+# -----------------------------------------------------------------------------
+# 9. MONITORING & OBSERVABILITY
+# -----------------------------------------------------------------------------
+monitoring:
+  # System metrics
+  system_metrics:
+    - metric: "query_latency"
+      measurement: "p50, p95, p99"
+      threshold: "p95 < 5 seconds"
+      alert: "Slack if p95 > 7 seconds"
+    
+    - metric: "embedding_generation_time"
+      measurement: "time per 100 chunks"
+      threshold: "< 10 seconds"
+    
+    - metric: "vector_search_latency"
+      measurement: "Pinecone query time"
+      threshold: "< 500ms"
+    
+    - metric: "llm_api_latency"
+      measurement: "OpenAI API response time"
+      threshold: "< 3 seconds"
+  
+  # Quality metrics
+  quality_metrics:
+    - metric: "user_satisfaction_score"
+      calculation: "avg(star_ratings)"
+      threshold: ">= 4.0/5.0"
+      measurement_window: "rolling 7 days"
+    
+    - metric: "thumbs_up_rate"
+      calculation: "thumbs_up / (thumbs_up + thumbs_down)"
+      threshold: ">= 75%"
+    
+    - metric: "citation_coverage"
+      calculation: "answers_with_citations / total_answers"
+      threshold: "100%"
+    
+    - metric: "no_answer_rate"
+      calculation: "I don't know responses / total responses"
+      threshold: "< 15%"
+      interpretation: "Coverage of knowledge base"
+  
+  # Cost monitoring
+  cost_metrics:
+    - metric: "llm_api_cost"
+      budget: "$5000/month"
+      breakdown:
+        embeddings: "$1000"
+        query_llm: "$3000"
+        reranking: "$500"
+        other: "$500"
+      alert: "80% of budget"
+    
+    - metric: "vector_db_cost"
+      budget: "$1000/month"
+    
+    cost_optimization:
+      - "Cache frequent queries"
+      - "Use cheaper model for simple queries"
+      - "Batch embedding generation"
+  
+  # Dashboards
+  dashboards:
+    - name: "RAG System Health"
+      tool: "grafana"
+      panels:
+        - "Queries per minute"
+        - "p95 latency"
+        - "User satisfaction trend"
+        - "LLM token usage"
+        - "Cost per query"
+    
+    - name: "Knowledge Base Coverage"
+      panels:
+        - "Documents indexed by source"
+        - "Indexing lag by source"
+        - "Failed indexing jobs"
+        - "Embedding generation rate"
+
+# -----------------------------------------------------------------------------
+# 10. CONTINUOUS IMPROVEMENT
+# -----------------------------------------------------------------------------
+continuous_improvement:
+  # Feedback loop
+  feedback_integration:
+    - source: "Low-rated answers"
+      action: "Review for missing knowledge or hallucinations"
+      frequency: "Daily review of < 3 star ratings"
+    
+    - source: "No answer queries"
+      action: "Identify knowledge gaps and prioritize content creation"
+      frequency: "Weekly analysis"
+    
+    - source: "User reformulations"
+      action: "Improve query understanding and synonym handling"
+      frequency: "Weekly pattern analysis"
+  
+  # Knowledge base updates
+  knowledge_maintenance:
+    - task: "Detect stale documents"
+      criteria: "Not updated in > 180 days AND low access"
+      action: "Flag for review by content owners"
+    
+    - task: "Identify popular topics"
+      criteria: "High query volume but low citation rate"
+      action: "Create or improve documentation"
+    
+    - task: "Remove deprecated content"
+      criteria: "Marked as deprecated in source system"
+      action: "Remove from vector DB"
+  
+  # Model improvements
+  model_tuning:
+    - experiment: "Prompt engineering"
+      frequency: "Monthly A/B tests"
+      success_metric: "User satisfaction"
+    
+    - experiment: "Chunk size optimization"
+      frequency: "Quarterly evaluation"
+      success_metric: "Retrieval recall"
+    
+    - experiment: "Embedding model upgrade"
+      frequency: "When new models released"
+      success_metric: "Retrieval accuracy + cost"
+
+# -----------------------------------------------------------------------------
+# 11. DEPLOYMENT & INFRASTRUCTURE
+# -----------------------------------------------------------------------------
+deployment:
+  # Application architecture
+  architecture:
+    components:
+      - component: "API Gateway"
+        technology: "FastAPI"
+        instances: 3
+        resources:
+          cpu: "2 cores"
+          memory: "4GB"
+      
+      - component: "Embedding Service"
+        technology: "Python + OpenAI SDK"
+        instances: 5
+        resources:
+          cpu: "4 cores"
+          memory: "8GB"
+      
+      - component: "Vector DB"
+        technology: "Pinecone"
+        managed: true
+      
+      - component: "Cache"
+        technology: "Redis"
+        instances: 2
+        resources:
+          memory: "8GB"
+  
+  # Scaling
+  scaling:
+    auto_scaling:
+      metric: "cpu_utilization"
+      target: "70%"
+      min_replicas: 3
+      max_replicas: 20
+    
+    rate_limiting:
+      per_user: "100 queries/hour"
+      global: "10,000 queries/minute"
+
+# -----------------------------------------------------------------------------
+# 12. SUCCESS CRITERIA
+# -----------------------------------------------------------------------------
+success_criteria:
+  technical:
+    - "Answer accuracy >= 85%"
+    - "Response time p95 < 5 seconds"
+    - "100% citation coverage"
+    - "Hallucination rate < 5%"
+  
+  business:
+    - "User satisfaction >= 4.0/5.0"
+    - "Reduce time-to-answer from 15 min to < 30 seconds"
+    - "Handle 10,000 queries/day"
+    - "Cost per query < $0.10"
+  
+  operational:
+    - "Knowledge base covers 95% of common queries"
+    - "Uptime >= 99.9%"
+    - "Indexing lag < 6 hours"
+    - "Monitoring and alerting fully configured"

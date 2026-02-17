@@ -1,0 +1,834 @@
+# =============================================================================
+# Pipeline Integration Requirements Template
+# =============================================================================
+# Specialized template for integrating existing ML/AI/Data pipelines,
+# connecting disparate systems, and building unified data/ML platforms.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 1. PROJECT METADATA
+# -----------------------------------------------------------------------------
+project:
+  name: "unified-ml-data-platform-integration"
+  version: "1.0.0"
+  description: |
+    Integration project to connect existing data pipelines, ML models,
+    and AI systems into a unified platform with centralized orchestration,
+    monitoring, and governance. Connect legacy systems with modern MLOps.
+  
+  integration_type: "multi_pipeline_integration"  # single_pipeline_migration |
+                                                  # multi_pipeline_integration |
+                                                  # legacy_modernization |
+                                                  # platform_consolidation
+  
+  integration_scope: "end_to_end"  # data_only | ml_only | ai_only | end_to_end
+  
+  domain: "platform_engineering"
+  priority: "critical"
+  deadline: "2026-10-31"
+  
+  stakeholders:
+    product_owner: "platform@company.com"
+    integration_lead: "integration-eng@company.com"
+    data_eng_lead: "data-eng@company.com"
+    ml_eng_lead: "ml-eng@company.com"
+    team: "platform-engineering"
+
+# -----------------------------------------------------------------------------
+# 2. CURRENT STATE ASSESSMENT
+# -----------------------------------------------------------------------------
+current_state:
+  # Existing data pipelines
+  existing_data_pipelines:
+    - pipeline_id: "customer_etl_legacy"
+      technology: "Jenkins + Python scripts"
+      source_systems: ["MySQL", "MongoDB", "S3"]
+      destination: "Redshift"
+      schedule: "Daily at 2 AM"
+      data_volume: "500GB/day"
+      
+      issues:
+        - "No data quality validation"
+        - "Manual failure recovery"
+        - "No lineage tracking"
+        - "Outdated Python 2.7"
+      
+      migration_priority: "high"
+      keep_or_migrate: "migrate"
+    
+    - pipeline_id: "product_analytics_stream"
+      technology: "Kafka + Spark Streaming"
+      source: "Application events"
+      destination: "S3 + Elasticsearch"
+      throughput: "10K events/second"
+      
+      issues:
+        - "No monitoring dashboard"
+        - "Inconsistent error handling"
+      
+      migration_priority: "medium"
+      keep_or_migrate: "enhance_in_place"
+  
+  # Existing ML pipelines
+  existing_ml_pipelines:
+    - model_id: "churn_prediction_v1"
+      technology: "SageMaker training + Lambda inference"
+      framework: "XGBoost"
+      deployment: "SageMaker endpoint"
+      training_frequency: "monthly"
+      inference_type: "batch"
+      
+      issues:
+        - "No automated retraining"
+        - "No drift monitoring"
+        - "Manual model registry"
+        - "No A/B testing capability"
+      
+      migration_priority: "critical"
+      keep_or_migrate: "migrate_to_mlflow"
+    
+    - model_id: "recommendation_engine"
+      technology: "Custom Python service"
+      framework: "TensorFlow 1.x"
+      deployment: "EC2 instances"
+      inference_type: "real-time"
+      
+      issues:
+        - "TensorFlow 1.x EOL"
+        - "No auto-scaling"
+        - "High operational overhead"
+      
+      migration_priority: "high"
+      keep_or_migrate: "rewrite_and_migrate"
+  
+  # Existing AI systems
+  existing_ai_systems:
+    - system_id: "customer_support_bot"
+      technology: "Dialogflow + custom NLU"
+      deployment: "GCP"
+      integration: "REST API"
+      
+      issues:
+        - "Siloed from other AI systems"
+        - "No shared knowledge base"
+        - "Inconsistent user experience"
+  
+  # Integration challenges
+  integration_challenges:
+    technical:
+      - "Incompatible data formats across systems"
+      - "Different authentication mechanisms"
+      - "Version conflicts (Python 2.7 vs 3.11)"
+      - "Network isolation between legacy and modern systems"
+    
+    organizational:
+      - "Different teams own different pipelines"
+      - "Lack of standardized practices"
+      - "Resistance to change from legacy system owners"
+    
+    operational:
+      - "Zero-downtime migration required"
+      - "Cannot lose historical data"
+      - "Compliance validation for new systems"
+
+# -----------------------------------------------------------------------------
+# 3. TARGET STATE ARCHITECTURE
+# -----------------------------------------------------------------------------
+target_architecture:
+  vision: |
+    Unified data and ML platform with:
+    - Centralized orchestration (Airflow)
+    - Unified data catalog (DataHub)
+    - MLOps platform (MLflow + Kubernetes)
+    - Observability stack (Prometheus + Grafana)
+    - Governance framework (Great Expectations + custom policies)
+  
+  # Architectural layers
+  layers:
+    data_layer:
+      bronze:
+        description: "Raw data from all sources"
+        storage: "S3 data lake"
+        format: "Parquet"
+        retention: "90 days"
+      
+      silver:
+        description: "Cleaned and conformed"
+        storage: "S3 data lake"
+        format: "Parquet"
+        retention: "2 years"
+      
+      gold:
+        description: "Business aggregates"
+        storage: "Snowflake"
+        format: "Tables"
+        retention: "5 years"
+    
+    ml_layer:
+      feature_store:
+        technology: "Feast"
+        online_store: "Redis"
+        offline_store: "S3"
+      
+      model_registry:
+        technology: "MLflow"
+        storage: "S3"
+        metadata_db: "PostgreSQL"
+      
+      serving:
+        technology: "Kubernetes + Seldon"
+        auto_scaling: true
+    
+    orchestration_layer:
+      tool: "Apache Airflow"
+      deployment: "Kubernetes"
+      
+      managed_pipelines:
+        - "Data ingestion DAGs"
+        - "ML training DAGs"
+        - "Batch inference DAGs"
+        - "Model deployment DAGs"
+    
+    governance_layer:
+      data_catalog:
+        tool: "DataHub"
+        features: ["lineage", "discovery", "governance"]
+      
+      data_quality:
+        tool: "Great Expectations"
+        validation_frequency: "Every pipeline run"
+      
+      access_control:
+        authentication: "Okta SSO"
+        authorization: "RBAC + attribute-based"
+
+# -----------------------------------------------------------------------------
+# 4. INTEGRATION STRATEGY
+# -----------------------------------------------------------------------------
+integration_strategy:
+  approach: "phased_migration"  # big_bang | phased_migration | strangler_fig
+  
+  # Migration phases
+  phases:
+    - phase: 1
+      name: "Foundation Setup"
+      duration: "4 weeks"
+      
+      deliverables:
+        - "Deploy unified orchestration (Airflow)"
+        - "Setup data catalog (DataHub)"
+        - "Deploy monitoring stack (Prometheus + Grafana)"
+        - "Establish CI/CD pipelines"
+      
+      success_criteria:
+        - "Airflow deployed and accessible"
+        - "DataHub cataloging test datasets"
+        - "Monitoring collecting metrics from test services"
+    
+    - phase: 2
+      name: "Data Pipeline Integration"
+      duration: "8 weeks"
+      
+      approach: "Strangler fig pattern"
+      
+      steps:
+        - step: "Create adapters for legacy data sources"
+          description: |
+            Build connectors to extract data from legacy systems
+            without modifying them. Route to new unified data lake.
+        
+        - step: "Parallel run legacy and new pipelines"
+          description: "Run both pipelines side-by-side, validate outputs match"
+          duration: "2 weeks"
+          validation: "Compare row counts, checksums, sample data"
+        
+        - step: "Gradual traffic shift"
+          description: "Shift downstream consumers to new pipeline"
+          traffic_shift: "10% -> 25% -> 50% -> 100% over 4 weeks"
+        
+        - step: "Decommission legacy pipeline"
+          description: "Shut down old Jenkins jobs after 100% cutover"
+      
+      success_criteria:
+        - "All legacy data pipelines migrated"
+        - "Zero data loss verified"
+        - "Downstream systems functioning correctly"
+    
+    - phase: 3
+      name: "ML Pipeline Integration"
+      duration: "12 weeks"
+      
+      steps:
+        - step: "Setup MLflow model registry"
+          description: "Deploy MLflow with S3 backend"
+        
+        - step: "Migrate existing models to MLflow"
+          description: |
+            Register existing models in MLflow registry
+            without changing inference endpoints yet
+        
+        - step: "Deploy unified inference platform"
+          description: "Kubernetes + Seldon for model serving"
+        
+        - step: "Migrate inference traffic"
+          description: "Blue-green deployment of new endpoints"
+          validation: "Shadow mode then gradual shift"
+        
+        - step: "Enable automated retraining"
+          description: "Airflow DAGs for model training pipelines"
+      
+      success_criteria:
+        - "All models in MLflow registry"
+        - "Automated retraining functioning"
+        - "Inference latency within SLA"
+        - "Drift monitoring enabled"
+    
+    - phase: 4
+      name: "AI System Integration"
+      duration: "6 weeks"
+      
+      steps:
+        - step: "Build unified knowledge base"
+          description: "Consolidate knowledge sources for all AI systems"
+        
+        - step: "Migrate to shared LLM infrastructure"
+          description: "Central LLM gateway for cost control and monitoring"
+        
+        - step: "Integrate with MLOps platform"
+          description: "Track AI system performance in unified monitoring"
+      
+      success_criteria:
+        - "AI systems using shared knowledge base"
+        - "Consistent user experience across AI systems"
+        - "Centralized cost and usage tracking"
+    
+    - phase: 5
+      name: "Optimization & Hardening"
+      duration: "4 weeks"
+      
+      deliverables:
+        - "Performance optimization"
+        - "Cost optimization"
+        - "Disaster recovery testing"
+        - "Documentation and training"
+  
+  # Risk mitigation
+  risk_mitigation:
+    - risk: "Data loss during migration"
+      mitigation:
+        - "Maintain legacy systems as backup during parallel run"
+        - "Daily data validation comparing old vs new"
+        - "Rollback plan within 1 hour"
+      
+      rollback: "Switch DNS/routing back to legacy systems"
+    
+    - risk: "Performance degradation"
+      mitigation:
+        - "Load testing before cutover"
+        - "Gradual traffic shift with monitoring"
+        - "Auto-rollback if latency exceeds SLA"
+      
+      monitoring: "Alert if p95 latency > 1.5x baseline"
+    
+    - risk: "Incompatible data formats"
+      mitigation:
+        - "Schema mapping and validation layer"
+        - "Data transformation adapters"
+        - "Extensive integration testing"
+    
+    - risk: "Team knowledge gaps"
+      mitigation:
+        - "Training sessions for new tools"
+        - "Pair programming during migration"
+        - "Detailed runbooks and documentation"
+
+# -----------------------------------------------------------------------------
+# 5. INTEGRATION PATTERNS & ADAPTERS
+# -----------------------------------------------------------------------------
+integration_patterns:
+  # Data integration patterns
+  data_patterns:
+    - pattern: "Legacy Database Connector"
+      use_case: "Extract from MySQL/MongoDB legacy systems"
+      
+      implementation:
+        technology: "Airbyte"
+        connectors:
+          - source: "MySQL"
+            destination: "S3 (bronze layer)"
+            sync_mode: "incremental"
+            cursor_field: "updated_at"
+          
+          - source: "MongoDB"
+            destination: "S3 (bronze layer)"
+            sync_mode: "full_refresh"
+            schedule: "daily"
+      
+      transformation:
+        tool: "dbt"
+        models:
+          - "bronze_to_silver_transformation"
+          - "silver_to_gold_aggregation"
+    
+    - pattern: "API Gateway Integration"
+      use_case: "Connect legacy REST APIs to unified platform"
+      
+      implementation:
+        gateway: "Kong"
+        
+        routes:
+          - legacy_endpoint: "/old-api/v1/customers"
+            new_endpoint: "/api/v2/customers"
+            transformation: "request_body_mapping"
+            caching: "15 minutes"
+          
+        authentication:
+          legacy: "Basic Auth"
+          new: "OAuth2 + JWT"
+          adapter: "Kong auth plugin"
+    
+    - pattern: "Event Bridge"
+      use_case: "Connect Kafka streams with batch systems"
+      
+      implementation:
+        kafka_connector:
+          topics: ["product_events", "user_events"]
+          sink: "S3"
+          format: "Parquet"
+          partition_by: "date"
+        
+        batch_trigger:
+          tool: "Airflow sensor"
+          check: "New files in S3"
+          trigger_dag: "process_events"
+  
+  # ML integration patterns
+  ml_patterns:
+    - pattern: "Model Adapter"
+      use_case: "Wrap legacy models for MLflow compatibility"
+      
+      implementation:
+        wrapper_class: "MLflowModelWrapper"
+        
+        code_template: |
+          class LegacyModelWrapper(mlflow.pyfunc.PythonModel):
+              def load_context(self, context):
+                  # Load legacy model artifacts
+                  self.model = load_legacy_model(context.artifacts["model"])
+              
+              def predict(self, context, model_input):
+                  # Transform input to legacy format
+                  legacy_input = transform_to_legacy(model_input)
+                  # Get predictions
+                  predictions = self.model.predict(legacy_input)
+                  # Transform output to standard format
+                  return transform_from_legacy(predictions)
+        
+        benefits:
+          - "No retraining required"
+          - "Immediate MLflow integration"
+          - "Unified inference API"
+    
+    - pattern: "Feature Store Migration"
+      use_case: "Migrate feature computation from notebooks to Feast"
+      
+      steps:
+        - "Identify feature calculations in notebooks"
+        - "Define feature views in Feast"
+        - "Backfill historical features"
+        - "Update training pipelines to use Feast"
+        - "Update inference to use online store"
+      
+      implementation:
+        feast_feature_view: |
+          @feature_view(
+              entities=["customer_id"],
+              ttl=timedelta(days=30),
+              online=True,
+              batch_source=customer_events,
+              tags={"migrated_from": "churn_notebook"}
+          )
+          def customer_activity_features(df: DataFrame):
+              return df.select(
+                  col("customer_id"),
+                  count("*").alias("logins_last_30d"),
+                  max("login_date").alias("last_login_date")
+              ).groupby("customer_id")
+    
+    - pattern: "Inference Endpoint Proxy"
+      use_case: "Gradually migrate traffic from legacy to new endpoints"
+      
+      implementation:
+        technology: "NGINX + Lua"
+        
+        traffic_routing:
+          initial: "100% legacy, 0% new (shadow mode)"
+          week_1: "90% legacy, 10% new"
+          week_2: "75% legacy, 25% new"
+          week_3: "50% legacy, 50% new"
+          week_4: "25% legacy, 75% new"
+          final: "0% legacy, 100% new"
+        
+        health_checks:
+          - "Compare predictions (should match)"
+          - "Monitor latency (new <= legacy * 1.2)"
+          - "Track error rates"
+        
+        rollback_trigger: "Error rate > 1% OR latency > SLA"
+  
+  # AI integration patterns
+  ai_patterns:
+    - pattern: "Unified LLM Gateway"
+      use_case: "Route all AI systems through central LLM proxy"
+      
+      implementation:
+        technology: "LiteLLM proxy"
+        
+        features:
+          - "Cost tracking per team/project"
+          - "Rate limiting"
+          - "Fallback to different models"
+          - "Caching common queries"
+          - "Load balancing across providers"
+        
+        configuration: |
+          model_list:
+            - model_name: gpt-4
+              litellm_params:
+                model: openai/gpt-4
+                api_key: os.environ/OPENAI_API_KEY
+                rpm: 10000
+            
+            - model_name: claude-3
+              litellm_params:
+                model: anthropic/claude-3-opus
+                api_key: os.environ/ANTHROPIC_API_KEY
+    
+    - pattern: "Knowledge Base Federation"
+      use_case: "Unify separate knowledge bases for RAG systems"
+      
+      implementation:
+        approach: "Federated search with unified vector DB"
+        
+        steps:
+          - "Migrate embeddings from disparate vector DBs to Pinecone"
+          - "Standardize metadata schemas"
+          - "Create namespace per legacy system for gradual migration"
+          - "Build unified retrieval API"
+          - "Update AI systems to use unified API"
+        
+        metadata_mapping:
+          legacy_field: "doc_id"
+          unified_field: "document_id"
+          transformation: "Prefix with source system ID"
+
+# -----------------------------------------------------------------------------
+# 6. DATA GOVERNANCE & COMPLIANCE
+# -----------------------------------------------------------------------------
+governance:
+  # Data lineage during migration
+  lineage_tracking:
+    tool: "OpenLineage + DataHub"
+    
+    capture:
+      - "Legacy system outputs -> Adapter -> New system inputs"
+      - "Transformation logic in adapters"
+      - "Data quality checks at boundaries"
+    
+    validation:
+      - "Verify end-to-end lineage visible in DataHub"
+      - "Track data flow from source to consumption"
+      - "Audit trail for compliance"
+  
+  # Schema evolution
+  schema_management:
+    strategy: "Schema Registry with backward compatibility"
+    
+    tool: "Confluent Schema Registry"
+    
+    compatibility_mode: "BACKWARD"  # New schemas can read old data
+    
+    migration_process:
+      - "Register legacy schemas"
+      - "Define target schemas"
+      - "Build transformation mappings"
+      - "Validate compatibility"
+      - "Automated schema evolution"
+  
+  # Access control migration
+  access_control_migration:
+    - legacy_system: "Database-level permissions"
+      new_system: "RBAC with fine-grained controls"
+      
+      mapping_strategy:
+        - "Map database users to SSO identities"
+        - "Convert table-level permissions to data catalog policies"
+        - "Implement row-level security where needed"
+      
+      validation:
+        - "Audit access patterns before/after"
+        - "Ensure no privilege escalation"
+        - "Test with each user role"
+
+# -----------------------------------------------------------------------------
+# 7. TESTING STRATEGY
+# -----------------------------------------------------------------------------
+testing:
+  # Integration testing
+  integration_tests:
+    - test_type: "Data Validation"
+      description: "Verify data correctness during migration"
+      
+      tests:
+        - "Row count comparison (legacy vs new)"
+        - "Schema compatibility checks"
+        - "Sample data comparison (checksums)"
+        - "Aggregate metrics comparison"
+      
+      tools:
+        - "Great Expectations"
+        - "custom Python scripts"
+      
+      frequency: "After every sync"
+    
+    - test_type: "ML Model Validation"
+      description: "Ensure migrated models perform identically"
+      
+      tests:
+        - "Prediction comparison on test set"
+        - "Performance metrics (accuracy, latency)"
+        - "Feature importance consistency"
+      
+      acceptance_criteria:
+        - "99.9% prediction agreement"
+        - "Performance within 5% of baseline"
+        - "Latency < legacy system * 1.2"
+    
+    - test_type: "API Compatibility"
+      description: "Verify new APIs are backward compatible"
+      
+      tests:
+        - "Contract testing with Pact"
+        - "Load testing with legacy traffic patterns"
+        - "Error handling validation"
+      
+      tools:
+        - "Pact for contract testing"
+        - "Locust for load testing"
+  
+  # Chaos engineering
+  chaos_testing:
+    tool: "Chaos Mesh"
+    
+    scenarios:
+      - scenario: "Legacy system failure during parallel run"
+        simulation: "Kill legacy database"
+        expected: "New system continues without disruption"
+      
+      - scenario: "Network partition between old and new"
+        simulation: "Introduce latency and packet loss"
+        expected: "Graceful degradation, no data loss"
+      
+      - scenario: "Rollback under load"
+        simulation: "Switch back to legacy during peak traffic"
+        expected: "Rollback completes in < 5 minutes"
+  
+  # User acceptance testing
+  uat:
+    participants:
+      - "Data analysts (data pipeline validation)"
+      - "Data scientists (ML pipeline validation)"
+      - "End users (AI system validation)"
+    
+    test_scenarios:
+      - "Execute typical daily workflows"
+      - "Verify report outputs match legacy"
+      - "Validate model predictions align"
+    
+    acceptance_criteria:
+      - "100% of critical workflows functional"
+      - "User satisfaction >= 4/5"
+      - "No blocking issues reported"
+
+# -----------------------------------------------------------------------------
+# 8. MONITORING & OBSERVABILITY
+# -----------------------------------------------------------------------------
+monitoring:
+  # Migration progress tracking
+  migration_metrics:
+    - metric: "pipelines_migrated"
+      calculation: "migrated / total_pipelines"
+      target: "100%"
+      dashboard: "Migration Progress"
+    
+    - metric: "data_drift_during_migration"
+      calculation: "Compare legacy vs new outputs"
+      threshold: "< 0.1% difference"
+      alert: "Slack if threshold exceeded"
+    
+    - metric: "rollback_count"
+      tracking: "Number of rollbacks triggered"
+      target: "< 3 per phase"
+  
+  # Performance comparison
+  performance_metrics:
+    - metric: "latency_comparison"
+      measurement: "p95 latency (new vs legacy)"
+      target: "new <= legacy * 1.2"
+    
+    - metric: "cost_comparison"
+      measurement: "Infrastructure cost (new vs legacy)"
+      target: "new <= legacy * 1.5 (short term)"
+      long_term_target: "new <= legacy * 0.7"
+    
+    - metric: "resource_utilization"
+      tracking: "CPU, memory, network for new systems"
+      optimization: "Continuous tuning during migration"
+  
+  # Dashboards
+  dashboards:
+    - name: "Migration Health"
+      tool: "Grafana"
+      panels:
+        - "Migration progress by phase"
+        - "Data validation pass rate"
+        - "Parallel run comparison (legacy vs new)"
+        - "Traffic shift percentage"
+        - "Rollback events"
+    
+    - name: "Integration Performance"
+      panels:
+        - "End-to-end latency (legacy vs new)"
+        - "Error rates by system"
+        - "Cost breakdown (legacy vs new)"
+        - "Resource utilization"
+
+# -----------------------------------------------------------------------------
+# 9. ROLLBACK & DISASTER RECOVERY
+# -----------------------------------------------------------------------------
+rollback:
+  # Rollback triggers
+  triggers:
+    automatic:
+      - "Data validation failure rate > 1%"
+      - "Error rate > 5% for 5 minutes"
+      - "Latency p95 > 2x baseline"
+    
+    manual:
+      - "Critical bug discovered"
+      - "Compliance violation detected"
+      - "Stakeholder request"
+  
+  # Rollback procedures
+  procedures:
+    - phase: "Data Pipeline Rollback"
+      steps:
+        - "Switch Airflow DAGs back to legacy pipelines"
+        - "Redirect downstream consumers to legacy endpoints"
+        - "Verify data flow restored"
+        - "Incident post-mortem"
+      
+      sla: "< 15 minutes"
+      validation: "Data flow resumed, no data loss"
+    
+    - phase: "ML Pipeline Rollback"
+      steps:
+        - "Route inference traffic back to legacy endpoints (DNS switch)"
+        - "Pause new model training"
+        - "Verify prediction quality"
+        - "Root cause analysis"
+      
+      sla: "< 5 minutes"
+      validation: "Inference functioning, latency within SLA"
+  
+  # Disaster recovery
+  disaster_recovery:
+    backup_strategy:
+      - "Daily snapshots of all pipeline configurations"
+      - "Version control for all code and DAGs"
+      - "Cross-region replication of critical data"
+    
+    recovery_procedures:
+      rto: "4 hours"
+      rpo: "1 hour"
+      
+      steps:
+        - "Restore from latest backup"
+        - "Replay failed pipeline runs"
+        - "Validate data integrity"
+        - "Resume normal operations"
+
+# -----------------------------------------------------------------------------
+# 10. POST-INTEGRATION OPTIMIZATION
+# -----------------------------------------------------------------------------
+post_integration:
+  # Decommissioning legacy systems
+  decommissioning:
+    timeline:
+      - milestone: "All pipelines migrated and stable"
+        action: "Archive legacy system data"
+      
+      - milestone: "+ 30 days of stable operation"
+        action: "Shut down legacy compute resources"
+      
+      - milestone: "+ 90 days"
+        action: "Delete legacy system data (after backup)"
+    
+    validation:
+      - "Verify no dependencies on legacy systems"
+      - "Confirm backup and archival complete"
+      - "Get stakeholder sign-off"
+  
+  # Cost optimization
+  cost_optimization:
+    immediate:
+      - "Right-size compute resources based on actual usage"
+      - "Enable auto-scaling to reduce idle costs"
+      - "Use spot instances for non-critical workloads"
+    
+    ongoing:
+      - "Optimize data storage lifecycle policies"
+      - "Cache frequent queries to reduce compute"
+      - "Batch similar operations to reduce overhead"
+    
+    target: "30% cost reduction within 6 months"
+  
+  # Performance tuning
+  performance_tuning:
+    - "Profile bottlenecks in unified pipelines"
+    - "Optimize data partitioning strategies"
+    - "Tune parallelism in Spark jobs"
+    - "Implement caching for frequent operations"
+    
+    target: "20% latency improvement within 3 months"
+  
+  # Knowledge transfer
+  knowledge_transfer:
+    - "Comprehensive documentation of new architecture"
+    - "Training sessions for all teams"
+    - "Runbooks for common operations"
+    - "On-call rotation for unified platform"
+
+# -----------------------------------------------------------------------------
+# 11. SUCCESS CRITERIA
+# -----------------------------------------------------------------------------
+success_criteria:
+  technical:
+    - "100% of pipelines migrated successfully"
+    - "Zero data loss verified"
+    - "Data validation pass rate >= 99%"
+    - "Performance within 20% of legacy (or better)"
+    - "< 3 rollbacks per migration phase"
+  
+  business:
+    - "Reduced operational overhead by 50%"
+    - "Improved time-to-market for new pipelines by 40%"
+    - "Unified governance and compliance framework"
+    - "Cost neutral in first 6 months, 30% reduction by month 12"
+  
+  operational:
+    - "All teams trained on new platform"
+    - "24/7 monitoring and alerting operational"
+    - "Disaster recovery tested and validated"
+    - "Documentation complete and accurate"
+    - "Legacy systems decommissioned on schedule"
