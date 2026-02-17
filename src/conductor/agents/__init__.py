@@ -43,10 +43,16 @@ from conductor.agents.development.coding_agent import CodingAgent
 from conductor.agents.development.review_agent import ReviewAgent
 from conductor.agents.development.test_agent import TestAgent
 from conductor.agents.development.test_data_agent import TestDataAgent
+from conductor.agents.devops.deploying_agent import DeployingAgent
+from conductor.agents.devops.devops_agent import DevOpsAgent
+from conductor.agents.monitoring.monitor_agent import MonitorAgent
 
 __all__ = [
     "BaseAgent",
     "CodingAgent",
+    "DeployingAgent",
+    "DevOpsAgent",
+    "MonitorAgent",
     "ReviewAgent",
     "TestAgent",
     "TestDataAgent",

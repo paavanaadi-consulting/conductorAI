@@ -20,9 +20,9 @@ Each build day adds new components with detailed documentation:
 | [Day 04](./day-04-error-handler-policy-engine.md) | Resilience | ErrorHandler, PolicyEngine | ✅ Complete |
 | [Day 05](./day-05-coordinator-workflow.md) | Orchestration | Coordinator, WorkflowEngine | ✅ Complete |
 | [Day 06](./day-06-dev-agents-llm.md) | Dev Agents + LLM | CodingAgent, ReviewAgent, LLMProvider | ✅ Complete |
-| [Day 07](./day-07-test-devops-agents.md) | Test & DevOps | TestAgent, DevOpsAgent, DeployingAgent | 🔲 Pending |
-| [Day 08](./day-08-monitor-infrastructure.md) | Monitor & Infra | MonitorAgent, Storage, Feedback Loop | 🔲 Pending |
-| [Day 09](./day-09-integrations-facade.md) | Integrations | Notifications, CI/CD, ConductorAI Facade | 🔲 Pending |
+| [Day 07](./day-07-test-devops-agents.md) | Test & DevOps | TestDataAgent, TestAgent, DevOpsAgent, DeployingAgent | ✅ Complete |
+| [Day 08](./day-08-monitor-infrastructure.md) | Monitor & Infra | MonitorAgent, ArtifactStore, Feedback Loop | ✅ Complete |
+| [Day 09](./day-09-integrations-facade.md) | Facade | ConductorAI Facade, Public API | ✅ Complete |
 | [Day 10](./day-10-end-to-end.md) | E2E & Polish | Examples, Full Docs, Integration Tests | 🔲 Pending |
 
 ### Reference Guides (Built in Day 10)

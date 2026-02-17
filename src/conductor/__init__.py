@@ -35,11 +35,12 @@ __version__ = "0.1.0"
 # =============================================================================
 # Package-Level Exports
 # =============================================================================
-# We intentionally keep top-level imports minimal to avoid circular imports.
-# Users should import from submodules directly:
+# The ConductorAI facade is the main entry point for users.
+# For specific components, import from submodules directly:
 #   from conductor.core.config import ConductorConfig
 #   from conductor.core.enums import AgentType
 #   from conductor.core.models import TaskDefinition
-#
-# The ConductorAI facade class will be exported here once built (Day 9).
 # =============================================================================
+from conductor.facade import ConductorAI
+
+__all__ = ["ConductorAI", "__version__"]
