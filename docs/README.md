@@ -15,9 +15,9 @@ Each build day adds new components with detailed documentation:
 | Day | Topic | Components | Status |
 |-----|-------|------------|--------|
 | [Day 01](./day-01-foundations.md) | Foundations | Config, Enums, Models, Exceptions | ✅ Complete |
-| [Day 02](./day-02-core-abstractions.md) | Core Abstractions | BaseAgent, Messages, State | 🔲 Pending |
-| [Day 03](./day-03-message-bus-state.md) | Communication | MessageBus, StateManager | 🔲 Pending |
-| [Day 04](./day-04-error-handling-policies.md) | Resilience | ErrorHandler, PolicyEngine | 🔲 Pending |
+| [Day 02](./day-02-core-abstractions.md) | Core Abstractions | BaseAgent, Messages, State | ✅ Complete |
+| [Day 03](./day-03-message-bus-state.md) | Communication | MessageBus, StateManager | ✅ Complete |
+| [Day 04](./day-04-error-handler-policy-engine.md) | Resilience | ErrorHandler, PolicyEngine | ✅ Complete |
 | [Day 05](./day-05-coordinator-workflow.md) | Orchestration | Coordinator, WorkflowEngine | 🔲 Pending |
 | [Day 06](./day-06-dev-agents-llm.md) | Dev Agents + LLM | CodingAgent, ReviewAgent, LLMProvider | 🔲 Pending |
 | [Day 07](./day-07-test-devops-agents.md) | Test & DevOps | TestAgent, DevOpsAgent, DeployingAgent | 🔲 Pending |
