@@ -1,21 +1,2316 @@
 # =============================================================================
 # ML Pipeline Requirements Template
 # =============================================================================
-# Specialized template for end-to-end ML pipelines including training,
-# deployment, monitoring, and retraining automation (MLOps).
-# This is the comprehensive ai-ml-requirements-template.yaml renamed for clarity.
-# For full ML pipeline requirements, use ai-ml-requirements-template.yaml
+# Specialized template for end-to-end ML pipelines including data preparation,
+# model training, deployment, monitoring, and automated retraining (MLOps).
 # =============================================================================
 
-# Note: This template points to the comprehensive AI/ML template.
-# Use ai-ml-requirements-template.yaml for complete ML pipeline specifications.
+# -----------------------------------------------------------------------------
+# 1. PROJECT METADATA
+# -----------------------------------------------------------------------------
+project:
+  name: "customer-churn-prediction-ml-pipeline"
+  version: "1.0.0"
+  description: |
+    End-to-end ML pipeline for predicting customer churn with 14-day
+    prediction horizon. Includes automated feature engineering, model
+    training, deployment, monitoring, and retraining workflows.
+  
+  ml_type: "supervised_learning"  # supervised_learning | unsupervised_learning |
+                                  # reinforcement_learning | deep_learning |
+                                  # time_series | nlp | computer_vision
+  
+  problem_type: "binary_classification"  # binary_classification | multi_class |
+                                         # regression | ranking | clustering |
+                                         # anomaly_detection | forecasting
+  
+  deployment_pattern: "online_and_batch"  # online | batch | online_and_batch | edge
+  
+  domain: "customer_retention"
+  priority: "high"
+  deadline: "2026-07-31"
+  
+  stakeholders:
+    product_owner: "ml-platform@company.com"
+    ml_engineer: "ml-eng@company.com"
+    data_scientist: "ds-team@company.com"
+    business_owner: "retention@company.com"
+    team: "ml-engineering"
 
-# Quick Reference for ML Pipeline Components:
-# 1. Data Requirements - Training data, features, labels
-# 2. Model Requirements - Algorithms, hyperparameters, performance targets
-# 3. Training Pipeline - Orchestration, stages, compute resources
-# 4. Deployment Pipeline - Inference endpoints, batch processing
-# 5. Monitoring Pipeline - Performance tracking, drift detection
-# 6. Retraining Pipeline - Triggers, automation, CI/CD for ML
+# -----------------------------------------------------------------------------
+# 2. BUSINESS REQUIREMENTS & ML OBJECTIVES
+# -----------------------------------------------------------------------------
+business_requirements:
+  problem_statement: |
+    Predict which customers are likely to churn within next 14 days
+    to enable proactive retention campaigns. Current reactive approach
+    results in 25% annual churn rate costing $5M in lost revenue.
+  
+  business_impact:
+    - impact: "Revenue Protection"
+      description: "Reduce churn from 25% to 18% = $1.75M annual savings"
+      measurement: "Churn rate month-over-month"
+    
+    - impact: "Campaign Efficiency"
+      description: "Target high-risk customers instead of blanket campaigns"
+      measurement: "Campaign ROI improvement"
+    
+    - impact: "Customer Lifetime Value"
+      description: "Increase average CLV by 15%"
+      measurement: "CLV tracking"
+  
+  success_metrics:
+    - metric: "model_performance"
+      target: "AUC-ROC >= 0.85, Precision >= 0.70 at 30% recall"
+      measurement: "Validation set metrics"
+    
+    - metric: "prediction_latency"
+      target: "Online inference < 100ms p95, Batch < 4 hours"
+      measurement: "Inference time tracking"
+    
+    - metric: "model_freshness"
+      target: "Model retrained weekly, deployed within 24 hours"
+      measurement: "Training pipeline execution"
+    
+    - metric: "data_quality"
+      target: ">= 98% features pass validation checks"
+      measurement: "Great Expectations test pass rate"
+  
+  use_cases:
+    - use_case: "Proactive Retention Campaigns"
+      users: "Retention marketing team"
+      requirement: "Daily batch predictions for at-risk customers"
+      sla: "Predictions available by 8 AM daily"
+    
+    - use_case: "Real-time Risk Scoring"
+      users: "Customer success team"
+      requirement: "Real-time churn scores during support interactions"
+      sla: "< 100ms response time"
+    
+    - use_case: "Executive Dashboards"
+      users: "Executive team"
+      requirement: "Weekly churn risk trends and model performance"
+      sla: "Updated Monday mornings"
 
-# Refer to: ai-ml-requirements-template.yaml for the complete specification
+ml_objectives:
+  primary_objective: "Maximize precision while maintaining 30% recall"
+  
+  optimization_metric: "precision_at_recall_30"
+  
+  secondary_metrics:
+    - "auc_roc"
+    - "f1_score"
+    - "average_precision"
+  
+  prediction_horizon: "14 days"
+  
+  model_update_frequency: "weekly"
+  
+  target_definition: |
+    Churn = Customer cancels subscription or no activity for 30 days
+    within 14 days after prediction date.
+  
+  business_constraints:
+    - constraint: "Explainability Required"
+      description: "Must provide feature importance and SHAP values"
+      reason: "Regulatory compliance and business trust"
+    
+    - constraint: "No Demographic Bias"
+      description: "Model must not discriminate by age, gender, location"
+      reason: "Ethical AI requirements"
+    
+    - constraint: "Low False Positives"
+      description: "Minimize incorrect churn predictions"
+      reason: "Avoid wasting retention budget on stable customers"
+
+# -----------------------------------------------------------------------------
+# 3. DATA REQUIREMENTS
+# -----------------------------------------------------------------------------
+data_requirements:
+  # Feature sources
+  data_sources:
+    - source: "customer_database"
+      type: "postgresql"
+      connection: "postgresql://prod-db.company.com:5432/customers"
+      tables:
+        - table: "customers"
+          primary_key: "customer_id"
+          features: ["signup_date", "plan_type", "mrr", "account_age_days"]
+        
+        - table: "subscriptions"
+          primary_key: "subscription_id"
+          features: ["billing_cycle", "payment_method", "failed_payments"]
+      
+      refresh_frequency: "daily"
+      data_quality_sla: "99.5% uptime"
+    
+    - source: "product_analytics"
+      type: "snowflake"
+      connection: "snowflake://company.snowflake.com/analytics"
+      tables:
+        - table: "user_events"
+          features: ["sessions_last_7d", "sessions_last_30d", "feature_usage"]
+        
+        - table: "engagement_metrics"
+          features: ["dau", "wau", "mau", "engagement_score"]
+      
+      refresh_frequency: "hourly"
+    
+    - source: "support_system"
+      type: "api"
+      endpoint: "https://api.zendesk.com/v2"
+      authentication: "oauth2"
+      features: ["ticket_count_30d", "avg_resolution_time", "satisfaction_score"]
+      refresh_frequency: "daily"
+  
+  # Feature engineering
+  features:
+    # Demographic features
+    - feature_group: "demographics"
+      features:
+        - name: "account_age_days"
+          type: "numeric"
+          source: "customers.signup_date"
+          transformation: "days_since(signup_date)"
+          nullable: false
+        
+        - name: "plan_type"
+          type: "categorical"
+          source: "customers.plan_type"
+          categories: ["free", "basic", "pro", "enterprise"]
+          encoding: "one_hot"
+        
+        - name: "mrr"
+          type: "numeric"
+          source: "customers.mrr"
+          transformation: "log1p"
+          nullable: false
+    
+    # Behavioral features
+    - feature_group: "engagement"
+      features:
+        - name: "sessions_last_7d"
+          type: "numeric"
+          source: "user_events"
+          aggregation: "count(sessions) where timestamp > now() - 7 days"
+          nullable: false
+          default: 0
+        
+        - name: "sessions_last_30d"
+          type: "numeric"
+          source: "user_events"
+          aggregation: "count(sessions) where timestamp > now() - 30 days"
+        
+        - name: "session_trend"
+          type: "numeric"
+          transformation: "sessions_last_7d / sessions_last_30d"
+          description: "Recent engagement trend"
+        
+        - name: "days_since_last_login"
+          type: "numeric"
+          source: "user_events"
+          aggregation: "days_since(max(login_timestamp))"
+        
+        - name: "feature_adoption_score"
+          type: "numeric"
+          source: "user_events"
+          transformation: "count(distinct(feature_used)) / total_features"
+          range: [0, 1]
+    
+    # Transactional features
+    - feature_group: "transactions"
+      features:
+        - name: "failed_payments_count"
+          type: "numeric"
+          source: "subscriptions.failed_payments"
+          aggregation: "count(failed_payments) where timestamp > now() - 30 days"
+        
+        - name: "payment_method"
+          type: "categorical"
+          source: "subscriptions.payment_method"
+          categories: ["credit_card", "paypal", "bank_transfer", "other"]
+          encoding: "target_encoding"
+    
+    # Support features
+    - feature_group: "support"
+      features:
+        - name: "support_tickets_30d"
+          type: "numeric"
+          source: "support_system.ticket_count_30d"
+        
+        - name: "avg_satisfaction_score"
+          type: "numeric"
+          source: "support_system.satisfaction_score"
+          range: [1, 5]
+  
+  # Labels
+  label:
+    name: "churned"
+    type: "binary"
+    definition: |
+      churned = 1 if customer cancels OR no activity for 30 days
+      within 14 days after prediction_date, else 0
+    
+    source: "customers.status, user_events.last_activity"
+    
+    positive_class: 1
+    negative_class: 0
+    
+    label_window: "14 days forward"
+    observation_window: "90 days historical"
+  
+  # Data splits
+  data_splits:
+    strategy: "time_based"  # time_based | random | stratified
+    
+    train:
+      percentage: 70
+      date_range: "2024-01-01 to 2025-09-30"
+      expected_samples: ~500000
+    
+    validation:
+      percentage: 15
+      date_range: "2025-10-01 to 2025-12-31"
+      expected_samples: ~100000
+    
+    test:
+      percentage: 15
+      date_range: "2026-01-01 to 2026-03-31"
+      expected_samples: ~100000
+    
+    stratification: "churned label"
+    shuffle: false  # Time-based, no shuffle
+  
+  # Data quality
+  data_quality_requirements:
+    completeness:
+      - rule: "No more than 5% missing values per feature"
+        action: "Fail pipeline if violated"
+      
+      - rule: "Core features (account_age, mrr, sessions) must be 100% complete"
+        action: "Fail pipeline if violated"
+    
+    validity:
+      - rule: "All numerical features must be >= 0"
+        features: ["mrr", "sessions_last_7d", "account_age_days"]
+      
+      - rule: "Categorical features must match allowed categories"
+        features: ["plan_type", "payment_method"]
+    
+    consistency:
+      - rule: "sessions_last_7d <= sessions_last_30d"
+        action: "Log warning, investigate"
+      
+      - rule: "account_age_days must increase monotonically"
+    
+    timeliness:
+      - rule: "Feature data must be < 24 hours old"
+        action: "Fail pipeline if violated"
+    
+    validation_framework: "great_expectations"
+    
+    test_suites:
+      - suite: "feature_expectations"
+        tests: 50
+        threshold: "98% pass rate"
+
+# -----------------------------------------------------------------------------
+# 4. MODEL REQUIREMENTS
+# -----------------------------------------------------------------------------
+model_requirements:
+  # Algorithm selection
+  algorithms:
+    primary:
+      - name: "XGBoost"
+        version: "2.0.0"
+        framework: "xgboost"
+        rationale: "Best for tabular data, handles missing values, provides feature importance"
+        
+        hyperparameters:
+          max_depth: [3, 5, 7, 10]
+          learning_rate: [0.01, 0.05, 0.1]
+          n_estimators: [100, 200, 500]
+          subsample: [0.7, 0.8, 0.9]
+          colsample_bytree: [0.7, 0.8, 0.9]
+          min_child_weight: [1, 3, 5]
+          scale_pos_weight: [1, 2, 3]  # Handle class imbalance
+        
+        tuning_strategy: "bayesian_optimization"
+        tuning_trials: 50
+        tuning_metric: "precision_at_recall_30"
+    
+    baseline:
+      - name: "Logistic Regression"
+        version: "sklearn 1.3.0"
+        purpose: "Baseline comparison"
+        
+        hyperparameters:
+          C: [0.001, 0.01, 0.1, 1, 10]
+          penalty: ["l1", "l2"]
+          solver: "saga"
+          max_iter: 1000
+    
+    experimental:
+      - name: "LightGBM"
+        version: "4.0.0"
+        purpose: "Alternative gradient boosting"
+      
+      - name: "CatBoost"
+        version: "1.2.0"
+        purpose: "Better categorical handling"
+  
+  # Deep learning models
+  deep_learning:
+    - name: "Neural Network (MLP)"
+      framework: "pytorch"
+      version: "2.1.0"
+      architecture: "multi_layer_perceptron"
+      purpose: "Capture non-linear patterns, ensemble diversity"
+      
+      layers:
+        - type: "input"
+          size: 35  # Number of features
+        
+        - type: "dense"
+          size: 128
+          activation: "relu"
+          dropout: 0.3
+          batch_norm: true
+        
+        - type: "dense"
+          size: 64
+          activation: "relu"
+          dropout: 0.2
+          batch_norm: true
+        
+        - type: "dense"
+          size: 32
+          activation: "relu"
+          dropout: 0.1
+        
+        - type: "output"
+          size: 1
+          activation: "sigmoid"
+      
+      hyperparameters:
+        learning_rate: [0.001, 0.0001, 0.00001]
+        batch_size: [64, 128, 256]
+        epochs: [100, 200]
+        optimizer: ["adam", "adamw"]
+        weight_decay: [0.0001, 0.001]
+        early_stopping_patience: 15
+      
+      regularization:
+        - "L2 weight decay"
+        - "Dropout layers"
+        - "Batch normalization"
+        - "Early stopping on validation loss"
+      
+      training:
+        loss_function: "binary_cross_entropy"
+        class_weights: "balanced"  # Handle class imbalance
+        gradient_clipping: 1.0
+        
+      data_requirements:
+        preprocessing:
+          - "StandardScaler for numerical features"
+          - "Target encoding for categorical features"
+          - "Feature normalization to [0, 1]"
+    
+    - name: "CNN (1D Convolutional)"
+      framework: "tensorflow"
+      version: "2.15.0"
+      architecture: "1d_convolutional_neural_network"
+      purpose: "Extract temporal patterns from sequential features"
+      rationale: |
+        1D CNN for sequence features like engagement trends,
+        session patterns over time, transaction sequences.
+      
+      input_preparation:
+        sequence_features:
+          - "sessions_per_day_last_30d" # 30-day sequence
+          - "feature_usage_per_week_last_12w" # 12-week sequence
+          - "mrr_trend_last_6m" # 6-month sequence
+        
+        sequence_length: 30  # Days/weeks depending on feature
+        padding: "pre"
+      
+      layers:
+        - type: "input"
+          shape: [30, 10]  # [sequence_length, num_sequence_features]
+        
+        - type: "conv1d"
+          filters: 64
+          kernel_size: 3
+          activation: "relu"
+          padding: "same"
+        
+        - type: "max_pooling1d"
+          pool_size: 2
+        
+        - type: "conv1d"
+          filters: 128
+          kernel_size: 3
+          activation: "relu"
+          padding: "same"
+        
+        - type: "max_pooling1d"
+          pool_size: 2
+        
+        - type: "conv1d"
+          filters: 256
+          kernel_size: 3
+          activation: "relu"
+        
+        - type: "global_average_pooling"
+        
+        - type: "dense"
+          size: 128
+          activation: "relu"
+          dropout: 0.3
+        
+        - type: "dense"
+          size: 64
+          activation: "relu"
+          dropout: 0.2
+        
+        - type: "output"
+          size: 1
+          activation: "sigmoid"
+      
+      hyperparameters:
+        learning_rate: [0.001, 0.0001]
+        batch_size: [32, 64]
+        epochs: [150, 200]
+        optimizer: "adam"
+        early_stopping_patience: 20
+      
+      training:
+        loss_function: "binary_cross_entropy"
+        metrics: ["auc", "precision", "recall"]
+        callbacks:
+          - "early_stopping"
+          - "reduce_lr_on_plateau"
+          - "model_checkpoint"
+    
+    - name: "LSTM (Long Short-Term Memory)"
+      framework: "pytorch"
+      version: "2.1.0"
+      architecture: "bidirectional_lstm"
+      purpose: "Model long-term dependencies in customer behavior sequences"
+      rationale: |
+        LSTM for capturing temporal dependencies in customer engagement,
+        usage patterns, and behavioral sequences over time.
+      
+      input_preparation:
+        time_series_features:
+          - name: "engagement_sequence"
+            features: ["sessions", "feature_usage", "time_on_platform"]
+            window: "90 days"
+            granularity: "daily"
+          
+          - name: "transaction_sequence"
+            features: ["mrr", "payment_status", "support_tickets"]
+            window: "180 days"
+            granularity: "weekly"
+        
+        sequence_length: 90  # Days
+        feature_count: 8  # Time-varying features per timestep
+      
+      layers:
+        - type: "input"
+          shape: [90, 8]  # [sequence_length, features_per_timestep]
+        
+        - type: "bidirectional_lstm"
+          hidden_size: 128
+          num_layers: 2
+          dropout: 0.3
+          return_sequences: true
+        
+        - type: "attention"
+          description: "Self-attention over temporal sequence"
+          heads: 4
+        
+        - type: "bidirectional_lstm"
+          hidden_size: 64
+          num_layers: 1
+          dropout: 0.2
+          return_sequences: false  # Take last output
+        
+        - type: "dense"
+          size: 64
+          activation: "relu"
+          dropout: 0.2
+        
+        - type: "dense"
+          size: 32
+          activation: "relu"
+        
+        - type: "output"
+          size: 1
+          activation: "sigmoid"
+      
+      hyperparameters:
+        learning_rate: [0.001, 0.0001]
+        batch_size: [32, 64, 128]
+        epochs: [100, 150]
+        optimizer: "adamw"
+        weight_decay: 0.0001
+        gradient_clipping: 1.0
+        early_stopping_patience: 15
+      
+      training:
+        loss_function: "binary_cross_entropy"
+        sequence_padding: "pre"
+        handle_variable_length: true
+        
+      feature_engineering:
+        - "Create 90-day rolling sequences for each customer"
+        - "Pad shorter sequences with zeros"
+        - "Normalize each feature independently"
+        - "Handle missing timesteps with forward fill"
+  
+  # Ensemble configuration
+  ensemble:
+    enabled: true
+    strategy: "stacking"  # stacking | voting | weighted_average | blending
+    
+    base_models:
+      - model: "XGBoost"
+        weight: 0.35
+        role: "primary_predictor"
+        rationale: "Best for tabular features, provides interpretability"
+      
+      - model: "Neural Network (MLP)"
+        weight: 0.25
+        role: "non_linear_patterns"
+        rationale: "Captures complex non-linear relationships"
+      
+      - model: "LSTM"
+        weight: 0.20
+        role: "temporal_patterns"
+        rationale: "Models long-term behavioral trends"
+      
+      - model: "CNN"
+        weight: 0.15
+        role: "sequence_patterns"
+        rationale: "Extracts local patterns in engagement sequences"
+      
+      - model: "LightGBM"
+        weight: 0.05
+        role: "diversity"
+        rationale: "Alternative gradient boosting for ensemble diversity"
+    
+    meta_learner:
+      algorithm: "Logistic Regression"
+      purpose: "Combine base model predictions"
+      
+      input: "Out-of-fold predictions from all base models"
+      
+      regularization:
+        penalty: "l2"
+        C: 1.0
+      
+      training:
+        cross_validation: "5-fold stratified"
+        feature_importance: true  # Track which models contribute most
+    
+    training_strategy:
+      method: "k-fold_stacking"
+      folds: 5
+      stratified: true
+      
+      steps:
+        - "Split training data into K folds"
+        - "For each base model:"
+        - "  Train on K-1 folds, predict on held-out fold"
+        - "  Repeat K times to get out-of-fold predictions for all training data"
+        - "  Train final model on full training set"
+        - "Train meta-learner on out-of-fold predictions"
+        - "For inference: Average predictions from all base models, pass to meta-learner"
+    
+    diversity_requirements:
+      - requirement: "Model architectures must be different"
+        rationale: "Tree-based, neural network, sequential models"
+      
+      - requirement: "Feature representations should vary"
+        rationale: "Tabular features, sequences, engineered features"
+      
+      - requirement: "Correlation between base models < 0.85"
+        measurement: "Prediction correlation on validation set"
+    
+    performance_targets:
+      ensemble_improvement:
+        target: "Ensemble AUC >= 0.90 (5% improvement over best single model)"
+        measurement: "Validation set AUC"
+      
+      individual_models:
+        minimum_auc: 0.82
+        rationale: "Each base model must be strong individually"
+    
+    explainability:
+      model_contributions:
+        method: "SHAP on meta-learner"
+        output: "Contribution of each base model to final prediction"
+      
+      feature_importance:
+        method: "Aggregate SHAP from all base models"
+        weighting: "By model weight in ensemble"
+    
+    inference:
+      online:
+        mode: "parallel"
+        description: "Run all models in parallel, combine with meta-learner"
+        latency_target: "< 100ms p95"
+        optimization: "Model serving on GPU, batch inference where possible"
+      
+      batch:
+        mode: "sequential_with_caching"
+        description: "Cache intermediate predictions for efficiency"
+        throughput_target: "500K predictions in < 2 hours"
+  
+  # Performance targets
+  performance_targets:
+    primary_metric:
+      name: "precision_at_recall_30"
+      target: ">= 0.70"
+      critical_threshold: 0.65
+      measurement: "Validation set"
+    
+    secondary_metrics:
+      - metric: "auc_roc"
+        target: ">= 0.85"
+        critical_threshold: 0.80
+      
+      - metric: "f1_score"
+        target: ">= 0.60"
+      
+      - metric: "average_precision"
+        target: ">= 0.65"
+    
+    calibration:
+      requirement: "Well-calibrated probabilities"
+      metric: "brier_score"
+      target: "< 0.15"
+      calibration_method: "isotonic_regression"
+  
+  # Explainability
+  explainability:
+    # Tree-based models
+    tree_models:
+      global_explanations:
+        - method: "feature_importance"
+          framework: "xgboost.plot_importance"
+          output: "Top 20 features with importance scores"
+        
+        - method: "shap_summary"
+          framework: "shap.TreeExplainer"
+          output: "SHAP summary plot for all features"
+      
+      local_explanations:
+        - method: "shap_values"
+          framework: "shap.TreeExplainer"
+          output: "Per-prediction SHAP values"
+          requirement: "For all online predictions"
+        
+        - method: "feature_contributions"
+          output: "Top 5 features driving each prediction"
+    
+    # Neural network models
+    neural_network_models:
+      global_explanations:
+        - method: "integrated_gradients"
+          framework: "captum"
+          model: "MLP"
+          output: "Feature attribution across all predictions"
+        
+        - method: "layer_wise_relevance_propagation"
+          framework: "innvestigate"
+          model: "MLP"
+          output: "Neuron-level feature importance"
+        
+        - method: "permutation_importance"
+          description: "Measure AUC drop when feature is permuted"
+          iterations: 10
+      
+      local_explanations:
+        - method: "lime"
+          framework: "lime"
+          model: "MLP"
+          output: "Local linear approximation per prediction"
+          num_samples: 5000
+        
+        - method: "shap_deep"
+          framework: "shap.DeepExplainer"
+          model: "MLP"
+          output: "SHAP values for neural network predictions"
+        
+        - method: "gradient_based_attribution"
+          framework: "captum.Saliency"
+          output: "Input feature gradients"
+    
+    # CNN models
+    cnn_models:
+      global_explanations:
+        - method: "filter_visualization"
+          description: "Visualize what patterns each convolutional filter detects"
+          layers: ["conv1d_1", "conv1d_2", "conv1d_3"]
+        
+        - method: "activation_maximization"
+          description: "Find input patterns that maximize filter activations"
+      
+      local_explanations:
+        - method: "grad_cam"
+          framework: "pytorch_grad_cam"
+          description: "Class activation mapping for 1D sequences"
+          output: "Heatmap showing important time windows"
+        
+        - method: "attention_visualization"
+          description: "Visualize which sequence positions model attends to"
+          output: "Attention weights over time sequence"
+        
+        - method: "saliency_maps"
+          framework: "captum.Saliency"
+          output: "Input gradients highlighting important timesteps"
+    
+    # LSTM models
+    lstm_models:
+      global_explanations:
+        - method: "attention_weights"
+          description: "Aggregate attention over all predictions"
+          output: "Most important time windows in sequences"
+        
+        - method: "feature_temporal_importance"
+          description: "Which features matter at which time steps"
+          visualization: "Heatmap (features x time)"
+      
+      local_explanations:
+        - method: "attention_visualization"
+          framework: "custom (from attention layer)"
+          output: "Per-prediction attention weights over sequence"
+        
+        - method: "temporal_saliency"
+          framework: "captum.DeepLift"
+          output: "Feature importance at each timestep"
+        
+        - method: "lstm_cell_states"
+          description: "Visualize hidden states and cell states evolution"
+          output: "State trajectories showing what LSTM learns"
+    
+    # Ensemble explainability
+    ensemble_explainability:
+      model_contributions:
+        - method: "shap_on_metalearner"
+          description: "How much each base model contributes to final prediction"
+          output: "Model importance scores per prediction"
+        
+        - method: "model_agreement"
+          description: "Track when models agree vs disagree"
+          output: "Prediction variance across base models"
+      
+      aggregated_feature_importance:
+        method: "weighted_average_shap"
+        description: "Combine SHAP values from all models weighted by ensemble weights"
+        output: "Unified feature importance for ensemble"
+      
+      uncertainty_quantification:
+        - method: "prediction_std"
+          description: "Standard deviation of base model predictions"
+          output: "Uncertainty score per prediction"
+        
+        - method: "model_disagreement"
+          description: "Measure of how much models disagree"
+          threshold: "High disagreement = uncertain prediction"
+    
+    model_card:
+      required: true
+      template: "model_card_toolkit"
+      sections:
+        - "Model details (algorithm, version, date)"
+        - "Intended use cases"
+        - "Performance metrics"
+        - "Training data description"
+        - "Ethical considerations"
+        - "Limitations and biases"
+  
+  # Fairness & bias
+  fairness_requirements:
+    protected_attributes:
+      - attribute: "age_group"
+        groups: ["18-30", "31-50", "51+"]
+        requirement: "No more than 5% difference in false positive rate"
+      
+      - attribute: "account_country"
+        requirement: "Model performs within 10% AUC across all countries"
+    
+    bias_metrics:
+      - metric: "demographic_parity"
+        threshold: 0.1
+      
+      - metric: "equal_opportunity"
+        threshold: 0.1
+    
+    mitigation:
+      - technique: "Reweighting training samples"
+      - technique: "Post-processing threshold adjustment"
+    
+    monitoring:
+      frequency: "Every model training run"
+      dashboard: "MLflow fairness dashboard"
+
+# -----------------------------------------------------------------------------
+# 5. TRAINING PIPELINE
+# -----------------------------------------------------------------------------
+training_pipeline:
+  orchestration:
+    framework: "apache_airflow"
+    version: "2.7.0"
+    
+    dag_id: "ml_churn_training_pipeline"
+    schedule: "0 2 * * 0"  # Every Sunday at 2 AM
+    
+    timeout: "6 hours"
+    retries: 2
+    retry_delay: "30 minutes"
+  
+  # Pipeline stages
+  stages:
+    - stage: "data_extraction"
+      description: "Extract features and labels from source systems"
+      
+      tasks:
+        - task: "extract_customer_features"
+          operator: "PostgresOperator"
+          query: "sql/extract_customer_features.sql"
+          output: "s3://ml-pipeline/data/raw/customer_features/"
+        
+        - task: "extract_engagement_features"
+          operator: "SnowflakeOperator"
+          query: "sql/extract_engagement.sql"
+          output: "s3://ml-pipeline/data/raw/engagement/"
+        
+        - task: "extract_labels"
+          operator: "PythonOperator"
+          function: "ml.data.extract_labels"
+          output: "s3://ml-pipeline/data/raw/labels/"
+      
+      sla: "30 minutes"
+    
+    - stage: "data_validation"
+      description: "Validate data quality using Great Expectations"
+      
+      tasks:
+        - task: "validate_features"
+          operator: "GreatExpectationsOperator"
+          expectation_suite: "feature_expectations"
+          checkpoint: "feature_checkpoint"
+          fail_on_error: true
+        
+        - task: "validate_labels"
+          operator: "GreatExpectationsOperator"
+          expectation_suite: "label_expectations"
+          fail_on_error: true
+        
+        - task: "check_data_drift"
+          operator: "PythonOperator"
+          function: "ml.monitoring.check_feature_drift"
+          threshold: "psi < 0.2"  # Population Stability Index
+          action: "warn_if_violated"
+      
+      sla: "15 minutes"
+    
+    - stage: "feature_engineering"
+      description: "Transform and engineer features"
+      
+      tasks:
+        - task: "join_features"
+          operator: "SparkOperator"
+          script: "spark/join_features.py"
+          output: "s3://ml-pipeline/data/processed/features_joined/"
+        
+        - task: "create_derived_features"
+          operator: "SparkOperator"
+          script: "spark/feature_engineering.py"
+          features: ["session_trend", "feature_adoption_score"]
+          output: "s3://ml-pipeline/data/processed/features_engineered/"
+        
+        - task: "encode_categoricals"
+          operator: "PythonOperator"
+          function: "ml.features.encode_categoricals"
+          strategy: "target_encoding"
+        
+        - task: "split_train_val_test"
+          operator: "PythonOperator"
+          function: "ml.data.create_splits"
+          strategy: "time_based"
+          ratios: [0.7, 0.15, 0.15]
+          output: "s3://ml-pipeline/data/splits/"
+      
+      sla: "45 minutes"
+      compute:
+        executor: "spark"
+        nodes: 5
+        instance_type: "r5.2xlarge"
+    
+    - stage: "model_training"
+      description: "Train and tune models"
+      
+      tasks:
+        - task: "hyperparameter_tuning"
+          operator: "PythonOperator"
+          function: "ml.training.tune_hyperparameters"
+          algorithm: "xgboost"
+          tuning_strategy: "bayesian_optimization"
+          trials: 50
+          metric: "precision_at_recall_30"
+          tracking: "mlflow"
+        
+        - task: "train_best_model"
+          operator: "PythonOperator"
+          function: "ml.training.train_model"
+          hyperparameters: "from_tuning_task"
+          output: "mlflow://models/churn_model"
+        
+        - task: "train_baseline_models"
+          operator: "PythonOperator"
+          function: "ml.training.train_baselines"
+          models: ["logistic_regression", "random_forest"]
+          purpose: "comparison"
+        
+        - task: "train_neural_network"
+          operator: "PythonOperator"
+          function: "ml.training.train_mlp"
+          framework: "pytorch"
+          architecture: "multi_layer_perceptron"
+          epochs: 100
+          early_stopping: true
+          output: "mlflow://models/churn_model_nn"
+        
+        - task: "prepare_sequence_data"
+          operator: "PythonOperator"
+          function: "ml.data.create_sequences"
+          sequence_length: 90
+          features: ["sessions", "mrr", "feature_usage", "support_tickets"]
+          output: "s3://ml-pipeline/data/sequences/"
+        
+        - task: "train_cnn"
+          operator: "PythonOperator"
+          function: "ml.training.train_cnn"
+          framework: "tensorflow"
+          architecture: "1d_cnn"
+          input_data: "s3://ml-pipeline/data/sequences/"
+          epochs: 150
+          output: "mlflow://models/churn_model_cnn"
+        
+        - task: "train_lstm"
+          operator: "PythonOperator"
+          function: "ml.training.train_lstm"
+          framework: "pytorch"
+          architecture: "bidirectional_lstm_attention"
+          input_data: "s3://ml-pipeline/data/sequences/"
+          epochs: 100
+          output: "mlflow://models/churn_model_lstm"
+        
+        - task: "train_lightgbm"
+          operator: "PythonOperator"
+          function: "ml.training.train_lgbm"
+          hyperparameters: "optimized"
+          output: "mlflow://models/churn_model_lgbm"
+      
+      sla: "4 hours"  # Extended for multiple models including deep learning
+      compute:
+        executor: "kubernetes"
+        instance_type: "p3.2xlarge"  # GPU for neural networks
+        memory: "64GB"  # Increased for multiple models
+        cpu: "16 cores"
+        gpu: "1 x NVIDIA V100"
+    
+    - stage: "ensemble_training"
+      description: "Train ensemble meta-learner on base model predictions"
+      
+      tasks:
+        - task: "generate_oof_predictions"
+          operator: "PythonOperator"
+          function: "ml.ensemble.generate_out_of_fold_predictions"
+          base_models:
+            - "xgboost"
+            - "neural_network"
+            - "cnn"
+            - "lstm"
+            - "lightgbm"
+          folds: 5
+          stratified: true
+          output: "s3://ml-pipeline/ensemble/oof_predictions/"
+        
+        - task: "validate_model_diversity"
+          operator: "PythonOperator"
+          function: "ml.ensemble.check_diversity"
+          correlation_threshold: 0.85
+          action: "warn_if_high_correlation"
+        
+        - task: "train_meta_learner"
+          operator: "PythonOperator"
+          function: "ml.ensemble.train_stacking_ensemble"
+          meta_model: "logistic_regression"
+          input: "s3://ml-pipeline/ensemble/oof_predictions/"
+          output: "mlflow://models/churn_ensemble"
+        
+        - task: "compute_model_weights"
+          operator: "PythonOperator"
+          function: "ml.ensemble.compute_contributions"
+          method: "shap_on_metalearner"
+          output: "s3://ml-pipeline/ensemble/model_weights/"
+      
+      sla: "1 hour"
+      compute:
+        executor: "kubernetes"
+        instance_type: "c5.4xlarge"
+        memory: "32GB"
+        cpu: "8 cores"
+    
+    - stage: "model_evaluation"
+      description: "Evaluate model performance and fairness"
+      
+      tasks:
+        - task: "evaluate_metrics"
+          operator: "PythonOperator"
+          function: "ml.evaluation.compute_metrics"
+          metrics: ["auc_roc", "precision_recall", "f1", "calibration"]
+          dataset: "validation"
+        
+        - task: "compare_to_baseline"
+          operator: "PythonOperator"
+          function: "ml.evaluation.compare_models"
+          baseline_model: "logistic_regression"
+          candidate_model: "xgboost"
+          improvement_threshold: "5%"
+        
+        - task: "evaluate_all_base_models"
+          operator: "PythonOperator"
+          function: "ml.evaluation.evaluate_models"
+          models: 
+            - "xgboost"
+            - "neural_network"
+            - "cnn"
+            - "lstm"
+            - "lightgbm"
+          metrics: ["auc_roc", "precision_at_recall_30", "f1_score"]
+          output: "mlflow://experiments/model_comparison"
+        
+        - task: "evaluate_ensemble"
+          operator: "PythonOperator"
+          function: "ml.evaluation.evaluate_ensemble"
+          ensemble_model: "churn_ensemble"
+          base_models_comparison: true
+          improvement_threshold: "3%"
+          output: "mlflow://experiments/ensemble_evaluation"
+        
+        - task: "evaluate_fairness"
+          operator: "PythonOperator"
+          function: "ml.fairness.evaluate_bias"
+          protected_attributes: ["age_group", "account_country"]
+          metrics: ["demographic_parity", "equal_opportunity"]
+        
+        - task: "generate_shap_explanations"
+          operator: "PythonOperator"
+          function: "ml.explainability.compute_shap"
+          output: "s3://ml-pipeline/artifacts/shap/"
+        
+        - task: "create_model_card"
+          operator: "PythonOperator"
+          function: "ml.documentation.generate_model_card"
+          output: "s3://ml-pipeline/artifacts/model_cards/"
+      
+      sla: "30 minutes"
+    
+    - stage: "model_validation"
+      description: "Validate model meets requirements"
+      
+      tasks:
+        - task: "check_performance_thresholds"
+          operator: "PythonOperator"
+          function: "ml.validation.check_thresholds"
+          thresholds:
+            precision_at_recall_30: 0.65
+            auc_roc: 0.80
+          action: "fail_if_not_met"
+        
+        - task: "check_fairness_constraints"
+          operator: "PythonOperator"
+          function: "ml.validation.check_fairness"
+          thresholds:
+            demographic_parity: 0.1
+            equal_opportunity: 0.1
+          action: "fail_if_not_met"
+        
+        - task: "validate_model_predictions"
+          operator: "PythonOperator"
+          function: "ml.validation.validate_predictions"
+          checks:
+            - "All predictions in [0, 1]"
+            - "No NaN predictions"
+            - "Inference time < 100ms p95"
+      
+      sla: "15 minutes"
+    
+    - stage: "model_registration"
+      description: "Register model in MLflow registry"
+      
+      tasks:
+        - task: "register_model"
+          operator: "PythonOperator"
+          function: "ml.registry.register_model"
+          model_uri: "mlflow://models/churn_model"
+          model_name: "churn_prediction"
+          tags:
+            algorithm: "xgboost"
+            version: "{{execution_date}}"
+            performance: "{{auc_roc}}"
+        
+        - task: "transition_to_staging"
+          operator: "PythonOperator"
+          function: "ml.registry.transition_stage"
+          model_name: "churn_prediction"
+          version: "latest"
+          stage: "Staging"
+      
+      sla: "5 minutes"
+  
+  # Artifact storage
+  artifacts:
+    storage_backend: "s3"
+    
+    locations:
+      raw_data: "s3://ml-pipeline/data/raw/"
+      processed_data: "s3://ml-pipeline/data/processed/"
+      trained_models: "s3://ml-pipeline/models/"
+      shap_values: "s3://ml-pipeline/artifacts/shap/"
+      model_cards: "s3://ml-pipeline/artifacts/model_cards/"
+    
+    retention:
+      raw_data: "90 days"
+      processed_data: "180 days"
+      trained_models: "All versions indefinitely"
+      artifacts: "1 year"
+  
+  # Experiment tracking
+  experiment_tracking:
+    framework: "mlflow"
+    server: "https://mlflow.company.com"
+    
+    tracking:
+      - "Hyperparameters"
+      - "Metrics (train, validation, test)"
+      - "Model artifacts"
+      - "Feature importance"
+      - "Training duration"
+      - "Compute resources used"
+      - "Git commit SHA"
+      - "Data version"
+    
+    experiment_name: "churn_prediction"
+    auto_log: true
+
+# -----------------------------------------------------------------------------
+# 6. MODEL DEPLOYMENT
+# -----------------------------------------------------------------------------
+deployment_pipeline:
+  # Deployment strategies
+  strategies:
+    - deployment: "online_inference"
+      description: "Real-time API for customer success tool"
+      
+      infrastructure:
+        platform: "kubernetes"
+        cluster: "ml-inference-prod"
+        namespace: "ml-models"
+        
+        serving_framework: "seldon_core"
+        version: "1.16.0"
+        
+        ensemble_serving:
+          enabled: true
+          mode: "parallel"
+          description: "Run all 5 base models in parallel, combine with meta-learner"
+          
+          model_servers:
+            - model: "xgboost"
+              runtime: "mlserver"
+              replicas: 2
+              resources:
+                cpu: "1 core"
+                memory: "2GB"
+            
+            - model: "neural_network"
+              runtime: "triton"
+              replicas: 2
+              resources:
+                cpu: "2 cores"
+                memory: "4GB"
+                gpu: "0.5"  # Shared GPU
+            
+            - model: "cnn"
+              runtime: "triton"
+              replicas: 2
+              resources:
+                cpu: "2 cores"
+                memory: "4GB"
+                gpu: "0.5"
+            
+            - model: "lstm"
+              runtime: "triton"
+              replicas: 2
+              resources:
+                cpu: "2 cores"
+                memory: "4GB"
+                gpu: "0.5"
+            
+            - model: "lightgbm"
+              runtime: "mlserver"
+              replicas: 2
+              resources:
+                cpu: "1 core"
+                memory: "2GB"
+            
+            - model: "meta_learner"
+              runtime: "mlserver"
+              replicas: 3
+              resources:
+                cpu: "0.5 core"
+                memory: "1GB"
+          
+          aggregation:
+            method: "service_mesh"
+            description: "Istio routes request to all models, aggregates predictions"
+            timeout: "80ms"  # Individual model timeout
+        
+        replicas:
+          min: 3
+          max: 10
+          autoscaling:
+            metric: "requests_per_second"
+            target: 100
+        
+        resources:
+          cpu: "8 cores total"  # Across all model servers
+          memory: "20GB total"
+          gpu: "2 x NVIDIA T4"  # For neural network models
+          instance_type: "g4dn.2xlarge"  # GPU instances
+      
+      api:
+        endpoint: "https://api.company.com/ml/v1/churn/predict"
+        protocol: "REST"
+        authentication: "api_key"
+        
+        request_schema:
+          customer_id: "string"
+          features: "object (35 features)"
+        
+        response_schema:
+          customer_id: "string"
+          churn_probability: "float [0-1]"
+          risk_category: "high|medium|low"
+          
+          ensemble_details:
+            base_model_predictions:
+              xgboost: "float [0-1]"
+              neural_network: "float [0-1]"
+              cnn: "float [0-1]"
+              lstm: "float [0-1]"
+              lightgbm: "float [0-1]"
+            
+            model_contributions:
+              description: "How much each model influenced final prediction"
+              xgboost_weight: "float"
+              nn_weight: "float"
+              cnn_weight: "float"
+              lstm_weight: "float"
+              lgbm_weight: "float"
+            
+            prediction_confidence:
+              score: "float [0-1]"
+              description: "Based on model agreement (low std = high confidence)"
+              uncertainty: "float"
+          
+          shap_values: "array of objects"
+          top_risk_factors: "array of strings"
+          
+          temporal_patterns:
+            description: "From CNN and LSTM models"
+            critical_time_windows: "array of time ranges"
+            trend: "increasing|decreasing|stable"
+        
+        sla:
+          latency_p50: "< 30ms"
+          latency_p95: "< 100ms"
+          latency_p99: "< 200ms"
+          availability: "99.9%"
+        
+        rate_limits:
+          per_api_key: "1000 requests/minute"
+          global: "10000 requests/minute"
+      
+      deployment_strategy: "blue_green"
+      
+      rollout_phases:
+        - phase: "Canary"
+          traffic: "10%"
+          duration: "2 hours"
+          success_criteria: "error_rate < 1%, latency_p95 < 100ms"
+        
+        - phase: "Progressive"
+          traffic: "50%"
+          duration: "6 hours"
+          success_criteria: "error_rate < 0.5%, latency_p95 < 100ms"
+        
+        - phase: "Full deployment"
+          traffic: "100%"
+          success_criteria: "error_rate < 0.1%"
+      
+      rollback:
+        automatic: true
+        triggers:
+          - "error_rate > 2%"
+          - "latency_p99 > 500ms"
+          - "prediction_drift > 0.3"
+        rollback_time: "< 5 minutes"
+    
+    - deployment: "batch_inference"
+      description: "Daily batch predictions for retention campaigns"
+      
+      infrastructure:
+        platform: "apache_spark"
+        cluster: "emr-prod"
+        
+        ensemble_batch_processing:
+          strategy: "sequential_with_caching"
+          description: "Run models sequentially, cache intermediate predictions"
+          
+          model_execution_order:
+            - "xgboost"  # Fastest, run first
+            - "lightgbm"
+            - "neural_network"
+            - "cnn"  # Requires sequences
+            - "lstm"  # Requires sequences
+            - "meta_learner"  # Combines all
+          
+          optimization:
+            - "Batch size 10000 for tree models"
+            - "Batch size 512 for neural networks (GPU)"
+            - "Parallel execution within model type"
+            - "Cache predictions to reduce recomputation"
+        
+        resources:
+          master: "r5.2xlarge"
+          workers: 10
+          worker_type: "g4dn.2xlarge"  # GPU workers for neural networks
+          gpu_workers: 3  # Dedicated for NN, CNN, LSTM
+          cpu_workers: 7  # For tree models and data prep
+      
+      schedule: "0 3 * * *"  # Daily at 3 AM
+      
+      input:
+        source: "s3://customer-data/active-customers/"
+        format: "parquet"
+        expected_volume: "500K customers"
+        
+        sequence_data:
+          source: "s3://customer-data/engagement-sequences/"
+          description: "Time series data for CNN and LSTM models"
+          format: "parquet"
+          partitioning: "customer_id"
+      
+      output:
+        destination: "s3://predictions/churn-daily/"
+        format: "parquet"
+        partitioning: "date"
+        
+        schema:
+          prediction_date: "date"
+          customer_id: "string"
+          
+          # Ensemble prediction
+          churn_probability: "float"
+          risk_category: "string"
+          prediction_confidence: "float"
+          
+          # Base model predictions
+          xgboost_prediction: "float"
+          nn_prediction: "float"
+          cnn_prediction: "float"
+          lstm_prediction: "float"
+          lgbm_prediction: "float"
+          
+          # Model contributions
+          model_contributions: "struct"
+          prediction_uncertainty: "float"
+          
+          # Explainability
+          shap_values: "array"
+          top_risk_factors: "array"
+          
+          # Temporal insights (from CNN/LSTM)
+          critical_time_windows: "array"
+          engagement_trend: "string"
+        
+        downstream_consumers:
+          - "Snowflake retention.churn_predictions table"
+          - "Snowflake retention.model_insights table (ensemble details)"
+          - "Salesforce Marketing Cloud"
+          - "Tableau dashboard"
+      
+      sla:
+        completion_time: "< 6 hours"  # Extended for ensemble processing
+        data_availability: "By 9 AM daily"
+        success_rate: ">= 99.5%"
+  
+  # Deployment automation
+  ci_cd:
+    pipeline_tool: "github_actions"
+    
+    triggers:
+      - trigger: "Model registered in MLflow with stage=Staging"
+        action: "Run automated tests"
+      
+      - trigger: "Manual approval after tests pass"
+        action: "Deploy to production"
+    
+    automated_tests:
+      - test: "Integration tests"
+        description: "Test model loading and prediction"
+        framework: "pytest"
+      
+      - test: "Performance tests"
+        description: "Load test with 1000 req/s"
+        tool: "locust"
+        threshold: "p95 < 100ms"
+      
+      - test: "Shadow mode testing"
+        description: "Run new model alongside current, compare"
+        duration: "24 hours"
+        comparison_metric: "prediction_correlation > 0.95"
+      
+      - test: "Prediction validation"
+        description: "Check prediction distribution"
+        checks:
+          - "Mean prediction within 10% of validation set"
+          - "No predictions outside [0, 1]"
+          - "Class distribution similar to training"
+      
+      - test: "Ensemble validation"
+        description: "Validate ensemble model components"
+        checks:
+          - "All 5 base models return valid predictions"
+          - "Meta-learner successfully combines predictions"
+          - "Ensemble prediction within bounds of base model range"
+          - "Model contributions sum to 1.0"
+          - "Prediction confidence scores calculated correctly"
+      
+      - test: "Deep learning model validation"
+        description: "Test neural network models"
+        checks:
+          - "NN/CNN/LSTM models load on GPU successfully"
+          - "Sequence data preprocessing works correctly"
+          - "Attention weights visualization available (LSTM)"
+          - "Grad-CAM works for CNN model"
+          - "No NaN or Inf in model weights"
+      
+      - test: "Model diversity check"
+        description: "Ensure base models are sufficiently diverse"
+        threshold: "Correlation < 0.85 between all model pairs"
+        measurement: "Pearson correlation on validation predictions"
+    
+    manual_approval:
+      required_approvers: 2
+      approvers: ["ml-lead@company.com", "product-owner@company.com"]
+      approval_timeout: "24 hours"
+  
+  # Model versioning
+  versioning:
+    strategy: "semantic_versioning"
+    format: "MAJOR.MINOR.PATCH"
+    
+    version_control:
+      - "MLflow model registry"
+      - "Git tags for code"
+      - "Docker image tags for containers"
+    
+    backward_compatibility:
+      requirement: "New models must accept same input schema"
+      validation: "Automated schema compatibility check"
+    
+    model_lifecycle:
+      stages:
+        - "Staging"
+        - "Production"
+        - "Archived"
+      
+      retention:
+        staging: "30 days"
+        production: "All production models indefinitely"
+        archived: "1 year"
+
+# -----------------------------------------------------------------------------
+# 7. MONITORING PIPELINE
+# -----------------------------------------------------------------------------
+monitoring:
+  # Model performance monitoring
+  model_monitoring:
+    - metric_group: "prediction_quality"
+      metrics:
+        - metric: "prediction_distribution"
+          description: "Monitor distribution of predicted probabilities"
+          alert_threshold: "KL divergence > 0.3 from training"
+          check_frequency: "hourly"
+        
+        - metric: "class_balance"
+          description: "Monitor ratio of positive vs negative predictions"
+          baseline: "15% positive (from training)"
+          alert_threshold: "Deviation > 20%"
+        
+        - metric: "shap_feature_importance"
+          description: "Track if feature importance changes"
+          alert_threshold: "Top 10 features change significantly"
+      
+      dashboards:
+        - "Grafana ML Model Performance"
+        - "MLflow Model Metrics"
+    
+    - metric_group: "ground_truth_validation"
+      description: "Compare predictions to actual churn (14-day lag)"
+      
+      metrics:
+        - metric: "online_auc_roc"
+          calculation: "Compute AUC on predictions from 14 days ago"
+          frequency: "daily"
+          alert_threshold: "< 0.80"
+        
+        - metric: "online_precision_at_recall_30"
+          calculation: "Compute precision@30% recall on recent predictions"
+          frequency: "daily"
+          alert_threshold: "< 0.65"
+        
+        - metric: "calibration_drift"
+          description: "Check if predicted probabilities match actual rates"
+          tool: "calibration_plot"
+          frequency: "weekly"
+      
+      feedback_loop:
+        - "Store (prediction, actual) pairs in metrics database"
+        - "Trigger retraining if performance degrades"
+  
+  # Data drift monitoring
+  drift_monitoring:
+    - drift_type: "feature_drift"
+      description: "Monitor if feature distributions change"
+      
+      method: "population_stability_index"
+      
+      features_monitored: "All 35 features"
+      
+      baseline: "Training data distribution"
+      
+      thresholds:
+        psi_warning: 0.1
+        psi_critical: 0.2
+      
+      frequency: "daily"
+      
+      alerts:
+        - threshold: "Any feature PSI > 0.2"
+          action: "Alert ML team, investigate"
+        
+        - threshold: "5+ features PSI > 0.1"
+          action: "Trigger retraining evaluation"
+    
+    - drift_type: "concept_drift"
+      description: "Monitor if relationship between features and label changes"
+      
+      detection_method: "model_performance_degradation"
+      
+      baseline: "Validation set performance"
+      
+      thresholds:
+        performance_drop_warning: "5%"
+        performance_drop_critical: "10%"
+      
+      frequency: "daily"
+      
+      alerts:
+        - threshold: "Performance drops > 10%"
+          action: "Trigger immediate retraining"
+  
+  # Infrastructure monitoring
+  infrastructure_monitoring:
+    - component: "online_inference_api"
+      metrics:
+        - "latency_p50, p95, p99"
+        - "requests_per_second"
+        - "error_rate"
+        - "model_loading_time"
+        - "cpu_utilization"
+        - "memory_utilization"
+      
+      alerts:
+        - condition: "latency_p95 > 100ms for 5 minutes"
+          severity: "warning"
+          action: "Check autoscaling, alert on-call"
+        
+        - condition: "error_rate > 1% for 5 minutes"
+          severity: "critical"
+          action: "Page on-call engineer"
+        
+        - condition: "memory_utilization > 85%"
+          severity: "warning"
+          action: "Scale up replicas"
+      
+      dashboards:
+        - "Grafana API Performance Dashboard"
+    
+    - component: "batch_inference_job"
+      metrics:
+        - "job_duration"
+        - "records_processed"
+        - "job_success_rate"
+        - "output_data_quality"
+      
+      alerts:
+        - condition: "job_duration > 4 hours"
+          action: "Alert ML team, investigate performance"
+        
+        - condition: "job_fails"
+          action: "Page on-call, retry with backoff"
+  
+  # Observability stack
+  observability:
+    metrics:
+      backend: "prometheus"
+      storage_retention: "90 days"
+      scrape_interval: "15s"
+    
+    logs:
+      backend: "elasticsearch"
+      log_level: "INFO"
+      retention: "30 days"
+      
+      structured_logging:
+        format: "JSON"
+        fields:
+          - "timestamp"
+          - "model_version"
+          - "customer_id"
+          - "prediction"
+          - "inference_time_ms"
+          - "features (sampled 1%)"
+    
+    traces:
+      backend: "jaeger"
+      sampling_rate: "1%"  # Sample 1% of requests
+      retention: "7 days"
+      
+      instrumentation:
+        - "API request → Feature retrieval → Model inference → Response"
+    
+    dashboards:
+      tool: "grafana"
+      dashboards:
+        - "ML Model Performance"
+        - "API Health & Latency"
+        - "Batch Job Monitoring"
+        - "Data Drift Monitoring"
+        - "Feature Drift Heatmap"
+        - "Ground Truth Performance Tracking"
+
+# -----------------------------------------------------------------------------
+# 8. RETRAINING PIPELINE
+# -----------------------------------------------------------------------------
+retraining:
+  # Retraining triggers
+  triggers:
+    scheduled:
+      frequency: "weekly"
+      schedule: "0 2 * * 0"  # Every Sunday 2 AM
+      reason: "Regular model refresh with latest data"
+    
+    performance_based:
+      - trigger: "online_auc < 0.80"
+        evaluation_window: "7 days"
+        action: "Trigger immediate retraining"
+      
+      - trigger: "online_precision_at_recall_30 < 0.65"
+        evaluation_window: "7 days"
+        action: "Trigger immediate retraining"
+    
+    drift_based:
+      - trigger: "feature_drift PSI > 0.2 for 5+ features"
+        evaluation_window: "3 days"
+        action: "Trigger retraining within 48 hours"
+      
+      - trigger: "concept_drift detected"
+        method: "performance_drop > 10%"
+        action: "Trigger immediate retraining"
+    
+    data_based:
+      - trigger: "new_data_volume > 100K labeled samples"
+        action: "Trigger retraining"
+        reason: "Sufficient new data to improve model"
+  
+  # Retraining process
+  process:
+    data_window: "Last 12 months"
+    
+    incremental_training: false  # Full retraining each time
+    
+    steps:
+      - "Extract latest features and labels"
+      - "Validate data quality"
+      - "Create new train/val/test splits (time-based)"
+      - "Hyperparameter tuning on new data"
+      - "Train with best hyperparameters"
+      - "Evaluate performance"
+      - "Compare to current production model"
+      - "If new model better by >= 3%, promote to staging"
+      - "Run automated tests"
+      - "Deploy via blue-green strategy"
+    
+    automation: "Fully automated except final deployment approval"
+    
+    approval_requirement:
+      required: true
+      bypass_if: "performance_improvement > 10%"
+  
+  # Continuous learning
+  continuous_learning:
+    ground_truth_collection:
+      source: "Customer churn events (cancel or 30-day inactivity)"
+      lag: "14 days"
+      storage: "s3://ml-pipeline/ground-truth/"
+      
+      pipeline:
+        - "Daily job to identify churned customers"
+        - "Join predictions made 14 days ago with actual outcomes"
+        - "Store (features, prediction, actual, timestamp)"
+        - "Use for model performance monitoring"
+        - "Accumulate for next retraining"
+    
+    feedback_incorporation:
+      - "Append new labeled data to training dataset"
+      - "Retrain model weekly with expanded dataset"
+      - "Track performance improvement from feedback loop"
+
+# -----------------------------------------------------------------------------
+# 9. MLOPS INFRASTRUCTURE
+# -----------------------------------------------------------------------------
+mlops_infrastructure:
+  # Feature store
+  feature_store:
+    platform: "feast"
+    version: "0.31.0"
+    
+    registry: "s3://ml-infrastructure/feast-registry/"
+    
+    offline_store:
+      type: "snowflake"
+      connection: "snowflake://company.snowflake.com/ml_features"
+      materialization: "Daily at midnight"
+    
+    online_store:
+      type: "redis"
+      cluster: "ml-feature-cache.company.com:6379"
+      ttl: "24 hours"
+      
+      features_cached: 35
+      cache_hit_rate_target: "> 95%"
+    
+    feature_versioning: true
+    
+    feature_serving_sla:
+      online: "< 5ms p99"
+      offline: "< 30 seconds for 1M rows"
+  
+  # Model registry
+  model_registry:
+    platform: "mlflow"
+    server: "https://mlflow.company.com"
+    
+    backend_store: "postgresql://mlflow-db.company.com:5432/mlflow"
+    artifact_store: "s3://ml-models/"
+    
+    model_stages:
+      - "None (newly registered)"
+      - "Staging (automated tests passed)"
+      - "Production (deployed)"
+      - "Archived (deprecated)"
+    
+    model_metadata:
+      - "Training date"
+      - "Training data version"
+      - "Hyperparameters"
+      - "Performance metrics"
+      - "Feature list and versions"
+      - "SHAP values"
+      - "Model card"
+      - "Fairness metrics"
+      - "Git commit SHA"
+  
+  # Experiment tracking
+  experiment_tracking:
+    platform: "mlflow"
+    server: "https://mlflow.company.com"
+    
+    auto_logging: true
+    
+    tracked_items:
+      - "Hyperparameters"
+      - "Metrics (training, validation)"
+      - "Artifacts (model, plots, SHAP)"
+      - "Environment (Python version, packages)"
+      - "Code version (Git SHA)"
+      - "Training duration"
+      - "Compute resources"
+  
+  # Data versioning
+  data_versioning:
+    tool: "dvc"
+    storage: "s3://ml-data-versions/"
+    
+    versioned_assets:
+      - "Training datasets"
+      - "Feature definitions"
+      - "Data quality expectations"
+    
+    integration: "Git for metadata, S3 for data"
+  
+  # Compute resources
+  compute:
+    training:
+      platform: "kubernetes"
+      cluster: "ml-training-cluster"
+      
+      node_pools:
+        - name: "cpu-training"
+          instance_type: "c5.4xlarge"
+          purpose: "Tree-based models (XGBoost, LightGBM)"
+          min_nodes: 0
+          max_nodes: 10
+          resources:
+            cpu: "16 cores"
+            memory: "32GB"
+        
+        - name: "gpu-training"
+          instance_type: "p3.2xlarge"
+          purpose: "Neural networks (MLP, CNN, LSTM)"
+          min_nodes: 0
+          max_nodes: 5
+          gpu: "NVIDIA V100 16GB"
+          resources:
+            cpu: "8 cores"
+            memory: "61GB"
+            gpu_memory: "16GB"
+          
+          deep_learning_frameworks:
+            - framework: "pytorch"
+              version: "2.1.0"
+              cuda_version: "12.1"
+            
+            - framework: "tensorflow"
+              version: "2.15.0"
+              cuda_version: "12.1"
+            
+            - framework: "onnx_runtime"
+              version: "1.16.0"
+              purpose: "Model optimization and inference"
+          
+          optimizations:
+            - "Mixed precision training (FP16)"
+            - "Gradient accumulation for larger batch sizes"
+            - "Model parallelism for large models"
+            - "TensorFlow XLA compilation"
+            - "PyTorch JIT compilation"
+        
+        - name: "gpu-tuning"
+          instance_type: "p3.8xlarge"
+          purpose: "Parallel hyperparameter tuning"
+          min_nodes: 0
+          max_nodes: 2
+          gpu: "4 x NVIDIA V100"
+          use_case: "Simultaneous training of multiple configurations"
+      
+      job_orchestration: "kubeflow"
+      
+      distributed_training:
+        enabled: true
+        strategy: "data_parallelism"
+        framework: "pytorch_distributed"
+        description: "Distribute training across multiple GPUs for faster training"
+    
+    inference:
+      online:
+        platform: "kubernetes"
+        cluster: "ml-inference-prod"
+        serving_framework: "seldon_core"
+        
+        model_serving_runtimes:
+          - runtime: "triton_inference_server"
+            version: "2.40.0"
+            purpose: "Serve PyTorch/TensorFlow models (NN, CNN, LSTM)"
+            gpu_support: true
+            
+            optimizations:
+              - "TensorRT optimization"
+              - "ONNX format conversion"
+              - "Dynamic batching"
+              - "Model ensemble support"
+          
+          - runtime: "mlserver"
+            version: "1.4.0"
+            purpose: "Serve XGBoost and LightGBM models"
+            frameworks: ["xgboost", "lightgbm", "sklearn"]
+          
+          - runtime: "torchserve"
+            version: "0.9.0"
+            purpose: "Alternative PyTorch serving"
+            gpu_support: true
+        
+        gpu_instances:
+          type: "g4dn.2xlarge"
+          gpu: "NVIDIA T4 16GB"
+          count: 3
+          scheduling: "Time-sliced GPU sharing (3 models per GPU)"
+      
+      batch:
+        platform: "amazon_emr"
+        cluster_mode: "transient"
+        spark_version: "3.4.0"
+        
+        gpu_instances:
+          driver: "g4dn.2xlarge"
+          workers: "g4dn.2xlarge"
+          worker_count: 3
+          gpu_per_worker: "1 x NVIDIA T4"
+        
+        frameworks:
+          - "Spark with GPU support"
+          - "Rapids.ai for GPU-accelerated Spark"
+          - "PyTorch/TensorFlow with Spark integration"
+
+# -----------------------------------------------------------------------------
+# 10. GOVERNANCE & COMPLIANCE
+# -----------------------------------------------------------------------------
+governance:
+  # Data privacy
+  data_privacy:
+    regulations: ["GDPR", "CCPA"]
+    
+    requirements:
+      - requirement: "PII Handling"
+        description: "customer_id pseudonymized, no names/emails in features"
+        validation: "Automated PII detection in feature pipeline"
+      
+      - requirement: "Right to be Forgotten"
+        description: "Remove customer data from training sets on request"
+        implementation: "Data deletion pipeline"
+      
+      - requirement: "Data Minimization"
+        description: "Only collect features necessary for prediction"
+        validation: "Feature importance > 0.001 or remove"
+    
+    audit_logging:
+      - "Log all model predictions with customer_id"
+      - "Log data access for training/inference"
+      - "Retain audit logs for 2 years"
+  
+  # Model governance
+  model_governance:
+    approval_process:
+      - stage: "Model Development"
+        approver: "ML Engineer"
+      
+      - stage: "Model Validation"
+        approver: "Senior Data Scientist"
+        checks: ["Performance thresholds", "Fairness metrics"]
+      
+      - stage: "Production Deployment"
+        approver: "ML Lead + Product Owner"
+        checks: ["Business impact", "Risk assessment"]
+    
+    documentation_requirements:
+      - "Model card (use case, performance, limitations)"
+      - "Data card (sources, quality, representativeness)"
+      - "Fairness assessment report"
+      - "Deployment runbook"
+      - "Incident response plan"
+    
+    change_management:
+      - "All model changes tracked in MLflow"
+      - "Code changes in Git with pull request reviews"
+      - "Deployment changes in GitOps repository"
+  
+  # Ethical AI
+  ethical_ai:
+    principles:
+      - "Fairness: No discrimination by protected attributes"
+      - "Transparency: Explainable predictions"
+      - "Accountability: Clear ownership and monitoring"
+      - "Privacy: Handle customer data responsibly"
+    
+    review_process:
+      frequency: "Quarterly"
+      reviewers: ["ML Ethics Board", "Legal team"]
+      
+      review_items:
+        - "Fairness metrics across segments"
+        - "Model usage and impact"
+        - "Bias incidents and mitigations"
+        - "Compliance with regulations"
+  
+  # Security
+  security:
+    model_security:
+      - "Model artifacts encrypted at rest (S3 SSE)"
+      - "Model artifacts signed and versioned"
+      - "Access control via IAM roles"
+    
+    api_security:
+      - "API authentication via API keys"
+      - "Rate limiting per key"
+      - "Input validation to prevent injection"
+      - "TLS 1.3 for all traffic"
+    
+    data_security:
+      - "Training data encrypted at rest and in transit"
+      - "Access logged and monitored"
+      - "Least privilege access control"
+
+# -----------------------------------------------------------------------------
+# 11. SUCCESS CRITERIA & ACCEPTANCE
+# -----------------------------------------------------------------------------
+success_criteria:
+  # Model performance
+  model_performance:
+    - criterion: "Ensemble Primary Metric"
+      metric: "precision_at_recall_30 >= 0.70"
+      target: "Ensemble outperforms best single model by >= 3%"
+      measurement: "Validation set"
+      status: "Required for production"
+    
+    - criterion: "Ensemble Secondary Metrics"
+      metric: "auc_roc >= 0.90 (ensemble target, 0.85 single model)"
+      measurement: "Validation set"
+      status: "Required for production"
+    
+    - criterion: "Individual Model Performance"
+      metric: "Each base model AUC >= 0.82"
+      rationale: "All models must be strong individually"
+      measurement: "Validation set"
+      status: "Required for ensemble"
+    
+    - criterion: "Model Diversity"
+      metric: "Prediction correlation between models < 0.85"
+      rationale: "Models must provide complementary information"
+      measurement: "Validation set predictions"
+      status: "Required for ensemble"
+    
+    - criterion: "Baseline Improvement"
+      metric: "Ensemble outperforms logistic regression by >= 15%"
+      measurement: "AUC comparison"
+      status: "Required for production"
+    
+    - criterion: "Deep Learning Models"
+      metric: "NN/CNN/LSTM each contribute >= 10% to ensemble performance"
+      measurement: "Ablation study (remove model, measure AUC drop)"
+      status: "Validation of model value"
+  
+  # Operational metrics
+  operational:
+    - criterion: "Ensemble Inference Latency"
+      metric: "p95 < 100ms for online ensemble (5 models + meta-learner)"
+      measurement: "Production monitoring"
+      status: "Required for production"
+      optimization: "Parallel model execution, GPU batching"
+    
+    - criterion: "Batch Processing Time"
+      metric: "batch < 6 hours for 500K customers (ensemble predictions)"
+      measurement: "EMR job completion time"
+      status: "Required for production"
+    
+    - criterion: "Training Pipeline Duration"
+      metric: "Full training pipeline (all models + ensemble) < 8 hours"
+      measurement: "Airflow DAG duration"
+      status: "Required for weekly retraining"
+    
+    - criterion: "Pipeline Reliability"
+      metric: "Training pipeline succeeds >= 95% of runs"
+      measurement: "Airflow success rate"
+      status: "Required for production"
+    
+    - criterion: "Data Quality"
+      metric: "Feature validation pass rate >= 98%"
+      measurement: "Great Expectations"
+      status: "Required for production"
+    
+    - criterion: "GPU Utilization"
+      metric: "Training GPU utilization >= 70%, Inference >= 60%"
+      measurement: "CloudWatch metrics"
+      status: "Cost efficiency target"
+  
+  # Business impact
+  business_impact:
+    - criterion: "Churn Reduction"
+      metric: "Churn rate decreases from 25% to <= 20% within 3 months"
+      measurement: "Business KPI tracking"
+      status: "Success indicator"
+      validation: "A/B test vs. no model"
+    
+    - criterion: "Campaign ROI"
+      metric: "Retention campaign ROI improves by >= 25%"
+      measurement: "Marketing analytics"
+      status: "Success indicator"
+    
+    - criterion: "Cost Efficiency"
+      metric: "ML infrastructure cost < $10K/month"
+      measurement: "Cloud billing"
+      status: "Required for sustainability"
+  
+  # Governance
+  governance:
+    - criterion: "Fairness"
+      metric: "Demographic parity < 0.1, Equal opportunity < 0.1"
+      measurement: "Fairness metrics on validation set"
+      status: "Required for production"
+    
+    - criterion: "Explainability"
+      metric: "SHAP values available for 100% of predictions"
+      measurement: "Inference pipeline"
+      status: "Required for production"
+    
+    - criterion: "Compliance"
+      metric: "Pass data privacy and security audit"
+      measurement: "Compliance team review"
+      status: "Required for production"
+  
+  # Acceptance criteria
+  acceptance:
+    requirements:
+      - "All 'Required for production' criteria met"
+      - "Ensemble performance exceeds best single model by >= 3%"
+      - "All 5 base models meet individual performance thresholds"
+      - "Model diversity validated (correlation < 0.85)"
+      - "Deep learning models (NN/CNN/LSTM) successfully trained and deployed"
+      - "GPU infrastructure functioning correctly for training and inference"
+      - "Ensemble explainability working (model contributions, aggregated SHAP)"
+      - "Sequence data pipeline working for CNN and LSTM models"
+      - "Model card and documentation complete for all models"
+      - "Runbook includes ensemble-specific operations and troubleshooting"
+      - "Automated tests passing (including ensemble and deep learning tests)"
+      - "Shadow mode testing completed successfully"
+      - "Performance benchmarks met on GPU infrastructure"
+      - "Final approval from ML Lead and Product Owner"
+    
+    sign_off:
+      - role: "ML Engineer"
+        responsibility: "Technical implementation, GPU infrastructure, model serving"
+      
+      - role: "Deep Learning Engineer"
+        responsibility: "NN/CNN/LSTM architecture, training, optimization"
+      
+      - role: "Senior Data Scientist"
+        responsibility: "Model performance, ensemble design, fairness validation"
+      
+      - role: "ML Lead"
+        responsibility: "Overall architecture, MLOps quality, cost optimization"
+      
+      - role: "Product Owner"
+        responsibility: "Business value and requirements met"
+
+# -----------------------------------------------------------------------------
+# NOTES & ADDITIONAL CONTEXT
+# -----------------------------------------------------------------------------
+notes: |
+  This template provides a comprehensive specification for a production-grade
+  ML pipeline with ensemble learning covering the full lifecycle from data to deployment.
+  
+  Key considerations:
+  1. MLOps Maturity: This assumes Level 3-4 MLOps maturity with automated
+     pipelines, monitoring, and retraining.
+  
+  2. Team Skills: Requires ML engineers with expertise in:
+     - Traditional ML: Python, scikit-learn, XGBoost, LightGBM
+     - Deep Learning: PyTorch, TensorFlow, CNNs, LSTMs, attention mechanisms
+     - MLOps: Airflow, Kubernetes, MLflow, Kubeflow
+     - Infrastructure: Cloud platforms, GPU management, model serving
+  
+  3. Infrastructure Costs: Estimated $15-20K/month including:
+     - GPU instances for training (p3.2xlarge): ~$3K/month
+     - GPU instances for inference (g4dn.2xlarge): ~$2K/month
+     - EMR with GPU for batch: ~$1K/month
+     - Storage, networking, managed services: ~$4K/month
+     - Development/staging environments: ~$5K/month
+  
+  4. Timeline: 12-16 weeks for full implementation:
+     - Weeks 1-4: Data pipeline and feature engineering
+     - Weeks 5-8: Train individual models (tree-based + deep learning)
+     - Weeks 9-10: Ensemble training and validation
+     - Weeks 11-12: Deployment and integration
+     - Weeks 13-14: Monitoring and retraining pipelines
+     - Weeks 15-16: Testing, optimization, and production rollout
+  
+  5. Ensemble Strategy: 5-model stacking ensemble:
+     - XGBoost (35% weight): Primary predictor for tabular features
+     - Neural Network (25%): Non-linear patterns
+     - LSTM (20%): Temporal dependencies
+     - CNN (15%): Sequential patterns
+     - LightGBM (5%): Diversity
+     Meta-learner combines predictions for final output.
+  
+  6. Deep Learning Considerations:
+     - Sequence preparation is critical for CNN and LSTM models
+     - GPU availability affects training time significantly
+     - Model optimization (TensorRT, ONNX) crucial for latency
+     - Explainability requires specialized methods (Grad-CAM, attention viz)
+  
+  7. Iterative Deployment:
+     - Phase 1: Start with XGBoost single model (baseline)
+     - Phase 2: Add neural network and evaluate improvement
+     - Phase 3: Add temporal models (CNN, LSTM) with sequence features
+     - Phase 4: Implement full ensemble with meta-learner
+     - Phase 5: Optimize inference latency and cost
+  
+  8. Monitoring First: Implement comprehensive monitoring before automated
+     retraining to understand:
+     - Individual model performance drift
+     - Model agreement/disagreement patterns
+     - Ensemble contribution stability
+     - Deep learning model behavior (attention patterns, activations)
+  
+  9. Start Simple: If new to ensemble or deep learning:
+     - Begin with XGBoost + simple neural network ensemble
+     - Add CNN/LSTM only if temporal patterns are critical
+     - Validate each model adds value before including in ensemble
+  
+  10. GPU Resource Management:
+      - Use time-sliced GPU sharing for inference (3 models per GPU)
+      - Implement model caching to reduce memory requirements
+      - Consider mixed precision (FP16) to reduce GPU memory by 50%
+      - Use CPU fallback for peak traffic periods
+
+# -----------------------------------------------------------------------------
+# TEMPLATE VERSION
+# -----------------------------------------------------------------------------
+template_version: "2.0.0"
+template_last_updated: "2026-02-16"
+
+# Changelog:
+# v2.0.0 (2026-02-16):
+#   - Added ensemble learning with 5-model stacking (XGBoost, NN, CNN, LSTM, LightGBM)
+#   - Integrated deep learning models: Neural Networks (MLP), CNN (1D), LSTM with attention
+#   - Enhanced explainability for neural networks (LIME, Grad-CAM, attention visualization)
+#   - Added GPU infrastructure specifications for training and inference
+#   - Expanded deployment to support parallel ensemble inference
+#   - Added model diversity requirements and validation
+#   - Included sequence data preparation for temporal models
+#   - Enhanced monitoring for ensemble model contributions
+#   - Updated success criteria for ensemble performance
+#   - Added deep learning-specific testing and validation
+# v1.0.0 (2026-02-16):
+#   - Initial ML pipeline template with single model focus
