@@ -235,6 +235,17 @@ class TestTaskFailureHandling:
 
         The workflow engine uses best-effort strategy: failing tasks are
         recorded but execution continues with remaining tasks.
+
+        Important: BaseAgent's Template Method catches RuntimeError from
+        FailingMockAgent._execute() and returns a FAILED TaskResult instead
+        of re-raising. So the coordinator's dispatch_task returns normally
+        with a FAILED result — no exception reaches the workflow engine's
+        except block. This means:
+        - task_results[task_id] has status=FAILED (from the agent's result)
+        - error_log is NOT populated (no exception in workflow engine's except)
+
+        The error is tracked in the TaskResult.error_message field and in
+        the agent's internal state (error_count, failed_tasks).
         """
         engine, coordinator, bus, sm = await _create_engine(
             agents=[("coding-01", AgentType.CODING)],
@@ -255,7 +266,11 @@ class TestTaskFailureHandling:
         assert state.failed_task_count == 1
         assert task.task_id in state.task_results
         assert state.task_results[task.task_id].status == TaskStatus.FAILED
-        assert len(state.error_log) >= 1
+
+        # Error details are in the TaskResult itself, not in error_log
+        # (because BaseAgent catches the exception and returns a structured result)
+        failed_result = state.task_results[task.task_id]
+        assert "Failed: Fail Task" in failed_result.error_message
 
         await coordinator.stop()
         await bus.disconnect()

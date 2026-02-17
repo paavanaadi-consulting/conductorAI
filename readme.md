@@ -70,8 +70,8 @@ This project is built incrementally, a few components per day:
 | 2 | BaseAgent, Messages, State | ✅ Complete (116 tests) |
 | 3 | Message Bus, State Manager | ✅ Complete (166 tests) |
 | 4 | Error Handler, Policy Engine | ✅ Complete (237 tests) |
-| 5 | Agent Coordinator, Workflow Engine | Pending |
-| 6 | LLM Provider, Coding Agent, Review Agent | Pending |
+| 5 | Agent Coordinator, Workflow Engine | ✅ Complete (278 tests) |
+| 6 | LLM Provider, Coding Agent, Review Agent | ✅ Complete (381 tests) |
 | 7 | Test Agents, DevOps Agents | Pending |
 | 8 | Monitor Agent, Infrastructure, Feedback Loop | Pending |
 | 9 | Integrations, ConductorAI Facade | Pending |

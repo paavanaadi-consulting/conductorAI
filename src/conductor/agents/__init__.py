@@ -39,5 +39,15 @@ Usage:
 """
 
 from conductor.agents.base import BaseAgent
+from conductor.agents.development.coding_agent import CodingAgent
+from conductor.agents.development.review_agent import ReviewAgent
+from conductor.agents.development.test_agent import TestAgent
+from conductor.agents.development.test_data_agent import TestDataAgent
 
-__all__ = ["BaseAgent"]
+__all__ = [
+    "BaseAgent",
+    "CodingAgent",
+    "ReviewAgent",
+    "TestAgent",
+    "TestDataAgent",
+]
