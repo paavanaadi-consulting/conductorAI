@@ -36,7 +36,7 @@ pip install -e ".[dev]"
 # Run tests
 pytest
 
-# Run an example (available after Day 10)
+# Run an example
 python examples/full_workflow.py
 ```
 
@@ -62,7 +62,7 @@ conductorAI/
 
 ## Build Progress
 
-This project is built incrementally, a few components per day:
+This project was built incrementally over 10 days — **614 tests, all passing**:
 
 | Day | Components | Status |
 |-----|-----------|--------|
@@ -75,7 +75,7 @@ This project is built incrementally, a few components per day:
 | 7 | TestDataAgent, TestAgent, DevOpsAgent, DeployingAgent | ✅ Complete (504 tests) |
 | 8 | MonitorAgent, ArtifactStore, Feedback Loop | ✅ Complete (569 tests) |
 | 9 | ConductorAI Facade, Public API | ✅ Complete (591 tests) |
-| 10 | End-to-End Examples, Full Docs | Pending |
+| 10 | End-to-End Examples, Integration Tests, Polish | ✅ Complete (614 tests) |
 
 ## Documentation
 

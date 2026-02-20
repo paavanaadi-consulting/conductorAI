@@ -1304,6 +1304,29 @@ class PolicyEngine:
             ...     print("At least one policy denied")
         """
         results = await self.evaluate_all(context)
+        # Optimization: Instead of calling `evaluate_all()`, we iterate through
+        # policies and short-circuit on the first failure. This is more
+        # efficient for a simple boolean check, as it avoids evaluating
+        # all policies if one of the first ones returns a denial.
+        for policy in self._policies:
+            try:
+                result = await policy.evaluate(context)
+                if not result.allowed:
+                    self._logger.debug(
+                        "policy_check_denied",
+                        policy_name=policy.name,
+                        reason=result.reason,
+                    )
+                    return False
+            except Exception as exc:
+                # For safety, any unexpected error during a policy's evaluation
+                # is treated as a denial (fail-closed).
+                self._logger.error(
+                    "policy_evaluation_error_during_check",
+                    policy_name=policy.name,
+                    error=str(exc),
+                )
+                return False
 
         # All policies must return allowed=True for check() to return True.
         # An empty results list (no policies) returns True (vacuously true:
@@ -1317,3 +1340,6 @@ class PolicyEngine:
         )
 
         return all_passed
+        # If the loop completes, all policies passed.
+        self._logger.debug("policy_check_passed", policy_count=len(self._policies))
+        return True

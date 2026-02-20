@@ -102,9 +102,9 @@ This project is built incrementally, a few components per day:
 | 4 | Error Handler, Policy Engine | ✅ Complete (237 tests) |
 | 5 | Agent Coordinator, Workflow Engine | ✅ Complete (278 tests) |
 | 6 | LLM Provider, Coding Agent, Review Agent | ✅ Complete (381 tests) |
-| 7 | Test Agents, DevOps Agents | Pending |
-| 8 | Monitor Agent, Infrastructure, Feedback Loop | Pending |
-| 9 | Integrations, ConductorAI Facade | Pending |
+| 7 | TestDataAgent, TestAgent, DevOpsAgent, DeployingAgent | ✅ Complete (504 tests) |
+| 8 | MonitorAgent, ArtifactStore, Feedback Loop | ✅ Complete (569 tests) |
+| 9 | ConductorAI Facade, Public API | ✅ Complete (591 tests) |
 | 10 | End-to-End Examples, Full Docs | Pending |
 
 ## Documentation
