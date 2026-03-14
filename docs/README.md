@@ -25,6 +25,12 @@ Each build day adds new components with detailed documentation:
 | [Day 09](./day-09-integrations-facade.md) | Facade | ConductorAI Facade, Public API | ✅ Complete |
 | [Day 10](./day-10-end-to-end.md) | E2E & Polish | Examples, Integration Tests, Conftest | ✅ Complete |
 
+### Pipeline & Strategy
+- **[Pipeline: YAML to ZIP](./pipeline-yaml-to-zip.md)** - End-to-end pipeline from
+  unstructured business requirements to production-ready code packages. Covers the
+  infrastructure registry, business intake templates, `.context/` handoff package,
+  agent ownership model, and developer workflow from ZIP to production.
+
 ### Reference Guides (Built in Day 10)
 - **[Getting Started](./getting-started.md)** - Installation, quick start, first workflow
 - **[API Reference](./api-reference.md)** - Complete API docs for all public classes
