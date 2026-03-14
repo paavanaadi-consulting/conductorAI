@@ -9,9 +9,9 @@ Usage:
     >>> from conductor.integrations.llm import create_llm_provider
     >>> from conductor.core.config import LLMConfig
     >>>
-    >>> config = LLMConfig(provider="mock")
+    >>> config = LLMConfig(provider="anthropic", api_key="sk-ant-...")
     >>> provider = create_llm_provider(config)
-    >>> type(provider)  # MockLLMProvider
+    >>> type(provider)  # AnthropicProvider
 """
 
 from __future__ import annotations
@@ -25,9 +25,13 @@ def create_llm_provider(config: LLMConfig) -> BaseLLMProvider:
 
     This factory function maps the config.provider string to a concrete
     BaseLLMProvider implementation:
-        - "mock" → MockLLMProvider (for testing, no API key needed)
-        - "openai" → (Future: OpenAIProvider)
-        - "anthropic" → (Future: AnthropicProvider)
+        - "mock"      → MockLLMProvider (for testing, no API key needed)
+        - "openai"    → OpenAIProvider (GPT-4o, GPT-4, GPT-3.5-turbo, etc.)
+        - "anthropic" → AnthropicProvider (Claude models)
+
+    All imports are lazy — the openai/anthropic packages are only imported
+    when the corresponding provider is requested. This means users who only
+    use ``"mock"`` never need those packages installed.
 
     Args:
         config: LLM configuration with provider name, model, API key, etc.
@@ -48,16 +52,15 @@ def create_llm_provider(config: LLMConfig) -> BaseLLMProvider:
         from conductor.integrations.llm.mock import MockLLMProvider
         return MockLLMProvider(config)
 
-    # Future providers (Day 9):
-    # elif provider_name == "openai":
-    #     from conductor.integrations.llm.openai import OpenAIProvider
-    #     return OpenAIProvider(config)
-    # elif provider_name == "anthropic":
-    #     from conductor.integrations.llm.anthropic import AnthropicProvider
-    #     return AnthropicProvider(config)
+    elif provider_name == "openai":
+        from conductor.integrations.llm.openai_provider import OpenAIProvider
+        return OpenAIProvider(config)
+
+    elif provider_name == "anthropic":
+        from conductor.integrations.llm.anthropic_provider import AnthropicProvider
+        return AnthropicProvider(config)
 
     raise ValueError(
         f"Unknown LLM provider: '{provider_name}'. "
-        f"Available providers: 'mock'. "
-        f"OpenAI and Anthropic providers coming in Day 9."
+        f"Available providers: 'mock', 'openai', 'anthropic'."
     )

@@ -25,9 +25,11 @@ src/conductor/infrastructure/__init__.py
 src/conductor/infrastructure/artifact_store.py
 src/conductor/integrations/__init__.py
 src/conductor/integrations/llm/__init__.py
+src/conductor/integrations/llm/anthropic_provider.py
 src/conductor/integrations/llm/base.py
 src/conductor/integrations/llm/factory.py
 src/conductor/integrations/llm/mock.py
+src/conductor/integrations/llm/openai_provider.py
 src/conductor/orchestration/__init__.py
 src/conductor/orchestration/agent_coordinator.py
 src/conductor/orchestration/error_handler.py

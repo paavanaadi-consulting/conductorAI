@@ -13,7 +13,8 @@ Exception Hierarchy:
         ├── WorkflowError          - Workflow orchestration failures
         ├── MessageBusError        - Message publishing/subscribing failures
         ├── StateError             - State read/write failures
-        └── PolicyViolationError   - Policy rule violations
+        ├── PolicyViolationError   - Policy rule violations
+        └── LLMProviderError       - LLM API call failures (auth, rate limit, etc.)
 
 Design Principles:
     1. Every exception carries structured context (not just a string message)
@@ -369,3 +370,55 @@ class PolicyViolationError(ConductorError):
 
         self.policy_name = policy_name
         self.violation_details = violation_details
+
+
+# =============================================================================
+# LLM Provider Error
+# =============================================================================
+# Raised when an LLM provider API call fails. Carries provider name and
+# optional HTTP status code for programmatic error handling and retry logic.
+# =============================================================================
+class LLMProviderError(ConductorError):
+    """Raised when an LLM provider API call fails.
+
+    Used by concrete LLM providers (Anthropic, OpenAI) to signal API failures
+    with structured context. The ErrorHandler can use the error_code to decide
+    retry strategy (e.g., retry on rate limits, abort on auth errors).
+
+    Common Error Codes:
+        - LLM_AUTH_ERROR:        Invalid API key (401)
+        - LLM_RATE_LIMIT:       Rate limit exceeded (429)
+        - LLM_CONNECTION_ERROR:  Network/connection failure
+        - LLM_API_ERROR:         General API error (500, etc.)
+        - LLM_MISSING_DEPENDENCY: SDK package not installed
+
+    Attributes:
+        provider: Name of the LLM provider ('openai', 'anthropic').
+        status_code: HTTP status code from the API (if applicable).
+
+    Example:
+        >>> raise LLMProviderError(
+        ...     message="Anthropic rate limit exceeded",
+        ...     provider="anthropic",
+        ...     status_code=429,
+        ...     error_code="LLM_RATE_LIMIT",
+        ... )
+    """
+
+    def __init__(
+        self,
+        message: str,
+        provider: str,
+        status_code: Optional[int] = None,
+        error_code: str = "LLM_PROVIDER_ERROR",
+        details: Optional[dict[str, Any]] = None,
+    ) -> None:
+        enriched_details = details or {}
+        enriched_details["provider"] = provider
+        if status_code is not None:
+            enriched_details["status_code"] = status_code
+
+        super().__init__(message=message, error_code=error_code, details=enriched_details)
+
+        self.provider = provider
+        self.status_code = status_code
