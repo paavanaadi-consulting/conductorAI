@@ -46,6 +46,7 @@ from conductor.agents.development.test_data_agent import TestDataAgent
 from conductor.agents.devops.deploying_agent import DeployingAgent
 from conductor.agents.devops.devops_agent import DevOpsAgent
 from conductor.agents.monitoring.monitor_agent import MonitorAgent
+from conductor.agents.pipeline.pipeline_yaml_generator import PipelineYamlGeneratorAgent
 
 __all__ = [
     "BaseAgent",
@@ -53,6 +54,7 @@ __all__ = [
     "DeployingAgent",
     "DevOpsAgent",
     "MonitorAgent",
+    "PipelineYamlGeneratorAgent",
     "ReviewAgent",
     "TestAgent",
     "TestDataAgent",

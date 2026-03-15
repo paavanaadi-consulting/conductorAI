@@ -72,6 +72,9 @@ class AgentType(str, Enum):
     # --- Monitoring & Feedback Phase Agents ---
     MONITOR = "monitor"         # Monitors deployed systems, generates feedback
 
+    # --- Pipeline Generation (Pre-Workflow) ---
+    PIPELINE_GENERATOR = "pipeline_generator"  # Generates pipeline YAML from requirements + infra
+
 
 # =============================================================================
 # Agent Status Enumeration

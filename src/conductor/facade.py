@@ -436,6 +436,49 @@ class ConductorAI:
         return await self._coordinator.dispatch_task(task)
 
     # =========================================================================
+    # Pipeline YAML Generation
+    # =========================================================================
+
+    async def generate_pipeline_yaml(
+        self,
+        requirements_yaml: str,
+        infra_yaml: str,
+        *,
+        pipeline_type: str = "auto",
+    ) -> dict[str, Any]:
+        """Generate a pipeline YAML from requirements and infrastructure inputs.
+
+        Convenience method that creates a TaskDefinition for pipeline generation,
+        dispatches it to a registered PipelineYamlGeneratorAgent, and returns
+        the structured output.
+
+        Args:
+            requirements_yaml: Raw YAML string from templates/requirements/.
+            infra_yaml: Raw YAML string from templates/infrastructure/.
+            pipeline_type: Override auto-detection. One of: auto, data_pipeline,
+                ml_pipeline, rag_llm, agentic_ops, integration, general.
+
+        Returns:
+            Dict with pipeline_yaml, pipeline_type, validation_result, etc.
+
+        Raises:
+            RuntimeError: If ConductorAI has not been initialized.
+        """
+        self._ensure_initialized()
+        task = TaskDefinition(
+            name="Generate Pipeline YAML",
+            assigned_to=AgentType.PIPELINE_GENERATOR,
+            input_data={
+                "requirements_yaml": requirements_yaml,
+                "infra_yaml": infra_yaml,
+                "pipeline_type": pipeline_type,
+            },
+            timeout_seconds=300,
+        )
+        result = await self._coordinator.dispatch_task(task)
+        return result.output_data
+
+    # =========================================================================
     # Artifact Management
     # =========================================================================
 
