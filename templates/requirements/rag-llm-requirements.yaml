@@ -1,0 +1,83 @@
+# =============================================================================
+# Business Requirements: RAG / LLM Application
+# =============================================================================
+# Simplified intake form for RAG systems, chatbots, and LLM applications.
+# Fill in the fields below and submit to ConductorAI to generate
+# a full rag-llm-pipeline-template.yaml for pipeline execution.
+#
+# Reference: templates/rag-llm-pipeline-template.yaml
+# =============================================================================
+
+# --- WHO ---
+project_name: ""                        # e.g. "enterprise-knowledge-assistant"
+team: ""
+contact_email: ""
+priority: "high"                        # low | medium | high | critical
+target_date: ""                         # YYYY-MM-DD
+
+# --- WHAT ---
+description: |
+  Describe the AI assistant or LLM application you need.
+  Include what questions it should answer and for whom.
+
+project_type: ""                        # rag_application | chatbot | summarization |
+                                        # content_generation | code_assistant
+use_case: ""                            # question_answering | summarization | generation |
+                                        # classification | extraction | chat
+
+# --- KNOWLEDGE SOURCES ---
+knowledge_sources:
+  - name: ""                            # e.g. "Confluence Wiki"
+    type: ""                            # documentation | codebase | database | api | files
+    estimated_size: ""                  # e.g. "10K pages", "500 repos", "50GB"
+    update_frequency: ""                # e.g. "daily", "on commit", "weekly"
+
+  - name: ""
+    type: ""
+    estimated_size: ""
+    update_frequency: ""
+
+# --- USER EXPERIENCE ---
+users:
+  audience: ""                          # e.g. "All employees", "Engineering team", "Customers"
+  estimated_count: ""                   # e.g. "2000 employees"
+  interface: ""                         # web_chat | slack_bot | api | mobile | teams_bot
+  languages: []                         # e.g. ["english", "spanish"]
+
+# --- QUALITY EXPECTATIONS ---
+quality:
+  accuracy_target: ""                   # e.g. ">= 85% factually correct"
+  hallucination_tolerance: ""           # e.g. "< 5%"
+  source_citations: true                # Must cite sources in answers?
+  response_time: ""                     # e.g. "< 5 seconds"
+
+# --- LLM PREFERENCES (optional) ---
+preferences:
+  llm_provider: ""                      # openai | anthropic | aws_bedrock | self_hosted
+  model: ""                             # e.g. "gpt-4o", "claude-sonnet", "llama-3"
+  vector_database: ""                   # pinecone | weaviate | qdrant | pgvector | chroma
+  embedding_model: ""                   # e.g. "text-embedding-3-large", "cohere-embed-v3"
+  cloud_provider: ""                    # aws | gcp | azure
+
+# --- SECURITY & COMPLIANCE ---
+compliance:
+  data_sensitivity: ""                  # public | internal | confidential | restricted
+  regulations: []                       # e.g. [SOC2, HIPAA, GDPR]
+  pii_in_sources: false                 # Do knowledge sources contain PII?
+  access_control: ""                    # open | role_based | department_based
+
+# --- COST ---
+budget:
+  monthly_llm_budget: ""                # e.g. "$5K/month"
+  cost_per_query_target: ""             # e.g. "< $0.05"
+
+# --- SUCCESS CRITERIA ---
+success_criteria:
+  - ""                                  # e.g. "85% answer accuracy on test set"
+  - ""                                  # e.g. "User satisfaction >= 4.0/5.0"
+  - ""                                  # e.g. "< 5% hallucination rate"
+
+# --- ADDITIONAL NOTES ---
+notes: |
+  Any extra context: existing search tools being replaced, known
+  gaps in documentation, sensitive topics to handle carefully, etc.

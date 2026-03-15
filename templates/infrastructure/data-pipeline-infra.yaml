@@ -1,0 +1,133 @@
+# =============================================================================
+# Sample Infrastructure Dictionary: Data Pipeline
+# =============================================================================
+# Structured inventory of infrastructure available for data/ETL/streaming
+# pipelines. The YAML engine queries this registry directly — no AI
+# interpretation needed for infrastructure availability.
+#
+# Customize values to match your organisation's environment.
+# =============================================================================
+
+registry_version: "1.0"
+organization: ""                            # e.g. "Acme Corp"
+last_updated: ""                            # YYYY-MM-DD
+
+# --- COMPUTE ---
+compute:
+  kubernetes:
+    clusters: ["eks-prod", "eks-staging"]
+    max_nodes: 50
+    node_types: ["m5.xlarge", "r5.2xlarge"]
+  lambda:
+    runtime: ["python3.11", "python3.12"]
+    timeout_max: 900                        # seconds
+    memory_max_mb: 10240
+  ecs:
+    cluster: "ecs-data-prod"
+    fargate: true
+    max_tasks: 20
+
+# --- STORAGE ---
+storage:
+  s3:
+    buckets_allowed: true
+    max_size_tb: 50
+    encryption: "AES-256"
+    lifecycle_policies: true
+  rds:
+    engines: ["postgres15", "mysql8"]
+    max_instances: 5
+    max_storage_gb: 2000
+  redshift:
+    cluster: "rs-analytics-prod"
+    node_type: "ra3.xlplus"
+    max_nodes: 8
+  snowflake:
+    account: ""                             # e.g. "acme.us-east-1"
+    warehouse_sizes: ["XSMALL", "SMALL", "MEDIUM", "LARGE"]
+    max_credits_daily: 200
+
+# --- DATA PROCESSING ---
+data_processing:
+  glue:
+    spark_version: "3.4"
+    max_dpu: 100
+    job_types: ["spark", "python_shell"]
+  emr:
+    release: "emr-7.0"
+    max_instances: 30
+    instance_types: ["m5.xlarge", "r5.2xlarge"]
+  spark:
+    version: "3.5"
+    deployment: "emr"                       # emr | databricks | standalone
+  dbt:
+    version: "1.7"
+    target: "snowflake"                     # snowflake | redshift | bigquery
+  flink:
+    version: "1.18"
+    deployment: "ecs"
+    max_parallelism: 32
+
+# --- STREAMING ---
+streaming:
+  kinesis:
+    shards_max: 50
+    retention_hours: 168                    # 7 days
+  kafka:
+    brokers: ["kafka-prod-01", "kafka-prod-02", "kafka-prod-03"]
+    version: "3.6"
+    max_partitions_per_topic: 100
+  sqs:
+    fifo_available: true
+    max_message_size_kb: 256
+
+# --- ORCHESTRATION ---
+orchestration:
+  airflow:
+    version: "2.8"
+    deployment: "mwaa"                      # mwaa | self-hosted | astronomer
+    max_dag_concurrency: 32
+    worker_type: "mw1.medium"
+  step_functions:
+    max_execution_duration: 31536000        # 1 year in seconds
+    express_workflow: true
+
+# --- NETWORKING ---
+networking:
+  vpc: ["vpc-data-prod-01", "vpc-data-staging-01"]
+  dns: "route53"
+  private_link: true
+  allowed_ports: [443, 5432, 3306, 6379, 9092, 8080]
+  nat_gateway: true
+  vpn_to_on_prem: false
+
+# --- DATA QUALITY & GOVERNANCE ---
+data_governance:
+  catalog: "glue_catalog"                   # glue_catalog | datahub | unity_catalog
+  quality_framework: "great_expectations"   # great_expectations | dbt_tests | soda
+  lineage: "openlineage"                    # openlineage | datahub | manual
+  access_control: "lake_formation"          # lake_formation | iam | ranger
+
+# --- CI/CD ---
+ci_cd:
+  provider: "github_actions"
+  artifact_registry: "ecr"
+  environments: ["dev", "staging", "prod"]
+  iac_tool: "terraform"                     # terraform | pulumi | cloudformation
+
+# --- MONITORING ---
+monitoring:
+  metrics: "cloudwatch"                     # cloudwatch | datadog | prometheus
+  logging: "cloudwatch_logs"                # cloudwatch_logs | elk | splunk
+  alerting: "pagerduty"                     # pagerduty | opsgenie | sns
+  dashboards: "grafana"                     # grafana | cloudwatch | datadog
+
+# --- CONSTRAINTS ---
+constraints:
+  cloud_provider: "aws"
+  region: "us-east-1"
+  multi_region: false
+  compliance: ["SOC2", "GDPR"]
+  data_residency: "US"
+  banned_services: []
+  cost_budget_monthly: ""                   # e.g. "$10K"

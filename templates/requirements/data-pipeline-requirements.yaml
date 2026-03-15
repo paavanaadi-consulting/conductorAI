@@ -1,0 +1,86 @@
+# =============================================================================
+# Business Requirements: Data Pipeline
+# =============================================================================
+# Simplified intake form for data/ETL/streaming pipeline requests.
+# Fill in the fields below and submit to ConductorAI to generate
+# a full data-pipeline-requirements-template.yaml for pipeline execution.
+#
+# Reference: templates/data-pipeline-requirements-template.yaml
+# =============================================================================
+
+# --- WHO ---
+project_name: ""                        # e.g. "customer-360-pipeline"
+team: ""                                # Owning team
+contact_email: ""
+priority: "high"                        # low | medium | high | critical
+target_date: ""                         # YYYY-MM-DD
+
+# --- WHAT ---
+description: |
+  Describe what data needs to flow, from where to where, and why.
+
+pipeline_type: ""                       # batch | streaming | batch_and_streaming
+architecture: ""                        # medallion | lambda | kappa | simple_etl
+
+# --- DATA SOURCES ---
+sources:
+  - name: ""                            # e.g. "Salesforce CRM"
+    type: ""                            # database | api | file | stream | webhook
+    technology: ""                      # e.g. "PostgreSQL 15", "REST API", "S3 CSV"
+    update_frequency: ""                # e.g. "real-time", "daily", "every 15 min"
+    estimated_volume: ""                # e.g. "500K records", "10GB/day"
+
+  - name: ""
+    type: ""
+    technology: ""
+    update_frequency: ""
+    estimated_volume: ""
+
+# --- DATA DESTINATION ---
+destination:
+  target: ""                            # e.g. "Snowflake", "BigQuery", "S3 data lake"
+  format: ""                            # e.g. "parquet", "delta", "json"
+  partitioning: ""                      # e.g. "by date", "by customer_id"
+
+# --- DATA QUALITY ---
+quality_requirements:
+  freshness: ""                         # e.g. "Data available within 1 hour of source change"
+  accuracy: ""                          # e.g. ">= 99% pass validation rules"
+  completeness: ""                      # e.g. "No null values in required fields"
+  deduplication: true                   # true | false
+
+# --- SCHEDULE ---
+schedule:
+  batch_frequency: ""                   # e.g. "hourly", "daily at 2AM UTC", "every 15 min"
+  streaming_latency: ""                 # e.g. "< 5 minutes end-to-end" (if streaming)
+  sla: ""                               # e.g. "Data available by 7 AM for BI dashboards"
+
+# --- CONSUMERS ---
+consumers:
+  - team: ""                            # e.g. "Marketing", "Data Science", "BI"
+    use_case: ""                        # e.g. "Customer segmentation", "Churn prediction"
+    data_needed: []                     # e.g. ["demographics", "purchase_history"]
+
+# --- TECHNOLOGY PREFERENCES (optional) ---
+preferences:
+  orchestrator: ""                      # airflow | dagster | prefect | step_functions
+  processing_engine: ""                 # spark | dbt | pandas | flink
+  cloud_provider: ""                    # aws | gcp | azure
+
+# --- COMPLIANCE & GOVERNANCE ---
+compliance:
+  regulations: []                       # e.g. [GDPR, CCPA, HIPAA]
+  pii_handling: ""                      # mask | encrypt | tokenize | exclude
+  retention_period: ""                  # e.g. "7 years", "90 days"
+  lineage_required: true
+
+# --- SUCCESS CRITERIA ---
+success_criteria:
+  - ""                                  # e.g. "All batch jobs complete within SLA window"
+  - ""                                  # e.g. ">= 99% data quality score on Great Expectations"
+  - ""                                  # e.g. "Pipeline cost under $3K/month"
+
+# --- ADDITIONAL NOTES ---
+notes: |
+  Any extra context: existing pipelines to replace, known data quirks,
+  vendor API limitations, etc.

@@ -1,0 +1,86 @@
+# =============================================================================
+# Business Requirements: Pipeline Integration / Migration
+# =============================================================================
+# Simplified intake form for integrating or migrating existing pipelines.
+# Fill in the fields below and submit to ConductorAI to generate
+# a full pipeline-integration-template.yaml for pipeline execution.
+#
+# Reference: templates/pipeline-integration-template.yaml
+# =============================================================================
+
+# --- WHO ---
+project_name: ""                        # e.g. "unified-data-platform-migration"
+team: ""
+contact_email: ""
+priority: "high"                        # low | medium | high | critical
+target_date: ""                         # YYYY-MM-DD
+
+# --- WHAT ---
+description: |
+  Describe what you are integrating or migrating. Why is the current
+  state insufficient? What does the target state look like?
+
+integration_type: ""                    # legacy_modernization | multi_pipeline_integration |
+                                        # platform_consolidation | single_pipeline_migration
+scope: ""                               # data_only | ml_only | ai_only | end_to_end
+
+# --- CURRENT STATE ---
+existing_systems:
+  - name: ""                            # e.g. "Customer ETL (Legacy)"
+    technology: ""                      # e.g. "Jenkins + Python 2.7 scripts"
+    status: ""                          # working | degraded | end_of_life
+    data_volume: ""                     # e.g. "500GB/day"
+    issues: []                          # e.g. ["no monitoring", "manual recovery", "no tests"]
+    action: ""                          # migrate | enhance_in_place | decommission | keep
+
+  - name: ""
+    technology: ""
+    status: ""
+    data_volume: ""
+    issues: []
+    action: ""
+
+# --- TARGET STATE ---
+target:
+  platform: ""                          # e.g. "Airflow + dbt + Snowflake"
+  architecture: ""                      # e.g. "Medallion lakehouse", "Event-driven microservices"
+  key_improvements: []                  # e.g. ["automated quality checks", "lineage tracking",
+                                        #        "self-service analytics", "unified monitoring"]
+
+# --- MIGRATION STRATEGY ---
+strategy:
+  approach: ""                          # big_bang | phased | strangler_fig | parallel_run
+  phases: []                            # e.g. ["Phase 1: data pipelines", "Phase 2: ML models",
+                                        #        "Phase 3: decommission legacy"]
+  rollback_plan: ""                     # e.g. "Keep legacy running in parallel for 30 days"
+  data_migration: ""                    # full_reload | incremental | cdc
+
+# --- CONSTRAINTS ---
+constraints:
+  downtime_tolerance: ""                # e.g. "zero downtime", "4-hour maintenance window"
+  data_freeze_possible: false           # Can we pause writes during migration?
+  parallel_run_duration: ""             # e.g. "2 weeks" (run old and new side by side)
+  budget: ""                            # e.g. "$50K for migration, $10K/month ongoing"
+
+# --- TECHNOLOGY PREFERENCES (optional) ---
+preferences:
+  orchestrator: ""                      # airflow | dagster | prefect | step_functions
+  cloud_provider: ""                    # aws | gcp | azure
+  iac_tool: ""                          # terraform | pulumi | cloudformation | cdk
+
+# --- COMPLIANCE ---
+compliance:
+  regulations: []                       # e.g. [SOC2, HIPAA, GDPR]
+  data_residency: ""                    # e.g. "US only", "EU only"
+  audit_requirements: ""                # e.g. "Full lineage and change log"
+
+# --- SUCCESS CRITERIA ---
+success_criteria:
+  - ""                                  # e.g. "All pipelines migrated with zero data loss"
+  - ""                                  # e.g. "Legacy systems decommissioned by target date"
+  - ""                                  # e.g. "New platform monitoring covers 100% of pipelines"
+
+# --- ADDITIONAL NOTES ---
+notes: |
+  Any extra context: vendor contracts expiring, team skill gaps,
+  compliance deadlines, known risks, etc.

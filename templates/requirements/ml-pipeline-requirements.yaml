@@ -1,0 +1,91 @@
+# =============================================================================
+# Business Requirements: ML Pipeline
+# =============================================================================
+# Simplified intake form for ML/MLOps pipeline requests.
+# Fill in the fields below and submit to ConductorAI to generate
+# a full ml-pipeline-requirements-template.yaml for pipeline execution.
+#
+# Reference: templates/ml-pipeline-requirements-template.yaml
+# =============================================================================
+
+# --- WHO ---
+project_name: ""                        # e.g. "churn-prediction-model"
+team: ""
+contact_email: ""
+priority: "high"                        # low | medium | high | critical
+target_date: ""                         # YYYY-MM-DD
+
+# --- WHAT ---
+description: |
+  Describe the prediction or ML problem you want to solve.
+  Include the business impact and current baseline.
+
+problem_type: ""                        # binary_classification | multi_class | regression |
+                                        # ranking | clustering | anomaly_detection | forecasting
+ml_type: ""                             # supervised | unsupervised | deep_learning |
+                                        # time_series | nlp | computer_vision
+deployment: ""                          # online | batch | online_and_batch | edge
+
+# --- BUSINESS CONTEXT ---
+business_impact:
+  current_state: ""                     # e.g. "25% annual churn rate, reactive retention"
+  desired_outcome: ""                   # e.g. "Reduce churn to 18%, proactive campaigns"
+  estimated_value: ""                   # e.g. "$1.75M annual savings"
+
+# --- DATA ---
+training_data:
+  source: ""                            # e.g. "Snowflake warehouse", "S3 parquet files"
+  size: ""                              # e.g. "5M rows, 200 features"
+  label_column: ""                      # e.g. "churned (0/1)"
+  label_availability: ""                # available | needs_labeling | partially_labeled
+  update_frequency: ""                  # e.g. "daily", "weekly"
+
+features:
+  known_important: []                   # e.g. ["days_since_login", "support_tickets", "plan_type"]
+  feature_engineering_needed: true      # true | false
+  feature_store: ""                     # existing | create_new | not_needed
+
+# --- MODEL REQUIREMENTS ---
+model_requirements:
+  target_metric: ""                     # e.g. "AUC-ROC >= 0.85"
+  secondary_metrics: []                 # e.g. ["precision >= 0.70", "recall >= 0.30"]
+  prediction_horizon: ""                # e.g. "14 days", "next month"
+  explainability_required: true         # Must explain why prediction was made?
+  fairness_constraints: []              # e.g. ["no bias by age", "no bias by gender"]
+
+# --- INFERENCE ---
+inference:
+  type: ""                              # batch | real-time | both
+  latency_target: ""                    # e.g. "< 100ms" (for real-time)
+  batch_schedule: ""                    # e.g. "daily at 6 AM" (for batch)
+  output_destination: ""                # e.g. "S3", "database table", "API response"
+
+# --- RETRAINING ---
+retraining:
+  frequency: ""                         # e.g. "weekly", "monthly", "on drift detection"
+  drift_monitoring: true
+  auto_deploy: false                    # Auto-deploy new model or require approval?
+
+# --- TECHNOLOGY PREFERENCES (optional) ---
+preferences:
+  framework: ""                         # scikit-learn | xgboost | pytorch | tensorflow
+  experiment_tracking: ""               # mlflow | wandb | sagemaker_experiments
+  serving: ""                           # sagemaker | seldon | kserve | fastapi
+  cloud_provider: ""                    # aws | gcp | azure
+
+# --- COMPLIANCE ---
+compliance:
+  regulations: []                       # e.g. [GDPR, SOC2]
+  model_governance: true                # Model registry, approval workflow
+  audit_trail: true                     # Log all predictions and versions
+
+# --- SUCCESS CRITERIA ---
+success_criteria:
+  - ""                                  # e.g. "AUC-ROC >= 0.85 on holdout set"
+  - ""                                  # e.g. "Batch predictions available by 8 AM daily"
+  - ""                                  # e.g. "Model retrained weekly with zero downtime"
+
+# --- ADDITIONAL NOTES ---
+notes: |
+  Any extra context: previous model attempts, known data issues,
+  stakeholder constraints, etc.

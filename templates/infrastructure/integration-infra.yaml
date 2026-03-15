@@ -1,0 +1,137 @@
+# =============================================================================
+# Sample Infrastructure Dictionary: Pipeline Integration / Migration
+# =============================================================================
+# Structured inventory of infrastructure available for integrating or
+# migrating existing pipelines. Covers both legacy and target environments.
+# The YAML engine queries this registry directly.
+#
+# Customize values to match your organisation's environment.
+# =============================================================================
+
+registry_version: "1.0"
+organization: ""                            # e.g. "Acme Corp"
+last_updated: ""                            # YYYY-MM-DD
+
+# --- LEGACY ENVIRONMENT (source) ---
+legacy:
+  compute:
+    servers:
+      - name: "etl-server-01"
+        type: "on-prem"                     # on-prem | ec2 | vm
+        os: "centos-7"
+        cpu_cores: 16
+        memory_gb: 64
+      - name: "jenkins-master"
+        type: "ec2"
+        instance_type: "m5.xlarge"
+    cron_jobs:
+      scheduler: "crontab"
+      job_count: 45
+  storage:
+    databases:
+      - name: "oracle-prod"
+        engine: "oracle-19c"
+        size_gb: 2000
+      - name: "mysql-reporting"
+        engine: "mysql-5.7"
+        size_gb: 500
+    file_systems:
+      - type: "nfs"
+        mount: "/data/etl"
+        size_tb: 5
+  networking:
+    vpn_to_cloud: true
+    direct_connect: false
+    firewall_rules: "manual"
+  ci_cd:
+    provider: "jenkins"
+    version: "2.414"
+
+# --- TARGET ENVIRONMENT (destination) ---
+target:
+  compute:
+    kubernetes:
+      clusters: ["eks-prod", "eks-staging"]
+      max_nodes: 50
+      node_types: ["m5.xlarge", "r5.2xlarge"]
+    ecs:
+      cluster: "ecs-data-prod"
+      fargate: true
+      max_tasks: 30
+    lambda:
+      runtime: ["python3.11", "python3.12"]
+      timeout_max: 900
+  storage:
+    s3:
+      buckets_allowed: true
+      max_size_tb: 50
+      encryption: "AES-256"
+    rds:
+      engines: ["postgres15", "mysql8"]
+      max_instances: 10
+    snowflake:
+      account: ""
+      warehouse_sizes: ["XSMALL", "SMALL", "MEDIUM", "LARGE"]
+    redis:
+      version: "7.x"
+      cluster_mode: true
+      max_memory_gb: 32
+  data_processing:
+    glue:
+      spark_version: "3.4"
+      max_dpu: 100
+    dbt:
+      version: "1.7"
+      target: "snowflake"
+    spark:
+      version: "3.5"
+      deployment: "emr"
+  orchestration:
+    airflow:
+      version: "2.8"
+      deployment: "mwaa"
+      max_dag_concurrency: 32
+    step_functions:
+      available: true
+  networking:
+    vpc: ["vpc-prod-01", "vpc-staging-01"]
+    dns: "route53"
+    private_link: true
+    allowed_ports: [443, 5432, 3306, 6379, 8080]
+    nat_gateway: true
+  monitoring:
+    metrics: "cloudwatch"
+    logging: "cloudwatch_logs"
+    alerting: "pagerduty"
+    dashboards: "grafana"
+  ci_cd:
+    provider: "github_actions"
+    artifact_registry: "ecr"
+    environments: ["dev", "staging", "prod"]
+    iac_tool: "terraform"
+
+# --- MIGRATION TOOLING ---
+migration_tools:
+  dms:
+    available: true                         # AWS Database Migration Service
+    replication_instances: 3
+    max_instance_class: "dms.r5.2xlarge"
+  schema_conversion:
+    available: true                         # AWS Schema Conversion Tool
+  data_sync:
+    datasync: true                          # AWS DataSync
+    max_tasks: 10
+  testing:
+    parallel_run_infra: true                # Can run old and new side by side
+    comparison_framework: "great_expectations"
+
+# --- CONSTRAINTS ---
+constraints:
+  cloud_provider: "aws"
+  region: "us-east-1"
+  compliance: ["SOC2", "HIPAA"]
+  downtime_budget: "4_hours"                # Max allowed migration downtime
+  data_freeze_possible: false
+  parallel_run_max_duration: "30_days"
+  banned_services: []
+  cost_budget_monthly: ""                   # e.g. "$20K during migration"

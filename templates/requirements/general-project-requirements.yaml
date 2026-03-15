@@ -1,0 +1,74 @@
+# =============================================================================
+# Business Requirements: General Project
+# =============================================================================
+# Simplified intake form for business stakeholders.
+# Fill in the fields below and submit to ConductorAI to generate
+# a full project-requirements-template.yaml for pipeline execution.
+#
+# Reference: templates/project-requirements-template.yaml
+# =============================================================================
+
+# --- WHO ---
+project_name: ""                        # Short name, e.g. "order-management-api"
+team: ""                                # Owning team or department
+contact_email: ""                       # Business owner email
+priority: "high"                        # low | medium | high | critical
+target_date: ""                         # YYYY-MM-DD
+
+# --- WHAT ---
+description: |
+  Describe in plain language what you need built and why.
+  Include the business problem this solves.
+
+domain: ""                              # e.g. fintech, healthcare, e-commerce, logistics
+
+features:
+  - name: ""
+    description: ""
+    must_have: true                      # true = launch blocker, false = nice to have
+
+  - name: ""
+    description: ""
+    must_have: false
+
+# --- WHO USES IT ---
+users:
+  type: ""                              # internal | external | both
+  estimated_count: ""                   # e.g. "500 internal", "100K customers"
+  authentication: ""                    # email_password | sso | oauth2 | api_key | none
+
+# --- HOW FAST / HOW BIG ---
+performance:
+  expected_throughput: ""               # e.g. "1000 requests/min", "5GB/day"
+  response_time_target: ""             # e.g. "< 300ms", "< 2 seconds"
+  availability: ""                      # e.g. "99.9%", "business hours only"
+
+# --- TECHNOLOGY PREFERENCES (optional) ---
+preferences:
+  language: ""                          # e.g. python, java, go (leave blank for auto)
+  framework: ""                         # e.g. fastapi, spring-boot, express
+  database: ""                          # e.g. postgresql, mongodb, dynamodb
+  cloud_provider: ""                    # aws | gcp | azure | on-prem
+
+# --- COMPLIANCE & SECURITY ---
+compliance:
+  regulations: []                       # e.g. [SOC2, HIPAA, GDPR, PCI-DSS]
+  data_sensitivity: ""                  # public | internal | confidential | restricted
+  encryption_required: true
+
+# --- INTEGRATIONS ---
+integrations:
+  - system: ""                          # e.g. "Salesforce", "Stripe", "Slack"
+    direction: ""                       # inbound | outbound | bidirectional
+    protocol: ""                        # REST | GraphQL | webhook | SFTP | SDK
+
+# --- SUCCESS CRITERIA ---
+success_criteria:
+  - ""                                  # e.g. "Users can create and track orders end-to-end"
+  - ""                                  # e.g. "Processing latency < 500ms at p95"
+  - ""                                  # e.g. "Zero critical security findings in pen-test"
+
+# --- ADDITIONAL NOTES ---
+notes: |
+  Any extra context, constraints, links to design docs, or things
+  the engineering team should know before they start.

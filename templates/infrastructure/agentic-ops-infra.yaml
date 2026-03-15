@@ -1,0 +1,163 @@
+# =============================================================================
+# Sample Infrastructure Dictionary: Agentic Operations
+# =============================================================================
+# Structured inventory of infrastructure available for autonomous agent
+# systems and multi-agent orchestration. The YAML engine queries this
+# registry directly — no AI interpretation needed.
+#
+# Customize values to match your organisation's environment.
+# =============================================================================
+
+registry_version: "1.0"
+organization: ""                            # e.g. "Acme Corp"
+last_updated: ""                            # YYYY-MM-DD
+
+# --- COMPUTE ---
+compute:
+  kubernetes:
+    clusters: ["eks-ops-prod", "eks-ops-staging"]
+    max_nodes: 30
+    node_types: ["m5.xlarge", "c5.2xlarge"]
+    pod_autoscaling: true
+  ecs:
+    cluster: "ecs-agents-prod"
+    fargate: true
+    max_tasks: 50
+  lambda:
+    runtime: ["python3.11", "python3.12"]
+    timeout_max: 900
+    memory_max_mb: 10240
+    reserved_concurrency: 100
+
+# --- LLM PROVIDERS ---
+llm_providers:
+  openai:
+    available: true
+    models: ["gpt-4o", "gpt-4o-mini"]
+    rate_limit_tpm: 2000000
+    api_key_location: "secrets_manager"
+  anthropic:
+    available: true
+    models: ["claude-sonnet-4-6", "claude-haiku-4-5"]
+    rate_limit_tpm: 1000000
+    api_key_location: "secrets_manager"
+  aws_bedrock:
+    available: true
+    models: ["anthropic.claude-3-sonnet", "anthropic.claude-3-haiku"]
+    region: "us-east-1"
+
+# --- AGENT INFRASTRUCTURE ---
+agent_infrastructure:
+  message_bus:
+    type: "sqs"                             # sqs | kafka | rabbitmq | sns
+    fifo: true
+    max_message_size_kb: 256
+    dlq_enabled: true
+  state_store:
+    type: "dynamodb"                        # dynamodb | redis | postgres
+    max_throughput_rcu: 5000
+    max_throughput_wcu: 2000
+    point_in_time_recovery: true
+  workflow_engine:
+    step_functions:
+      max_execution_duration: 86400         # 24 hours
+      express_workflow: true
+    temporal:
+      available: false
+  event_bus:
+    eventbridge:
+      available: true
+      max_rules: 100
+      archive_enabled: true
+
+# --- TOOL INTEGRATIONS ---
+tool_integrations:
+  kubernetes_api:
+    access: "read_write"
+    namespaces: ["default", "production", "staging"]
+  datadog:
+    access: "read_write"
+    api_key_location: "secrets_manager"
+  pagerduty:
+    access: "read_write"
+    api_key_location: "secrets_manager"
+  github:
+    access: "read_write"
+    api_key_location: "secrets_manager"
+  jira:
+    access: "read_write"
+    api_key_location: "secrets_manager"
+  slack:
+    access: "read_write"
+    webhook_url_location: "secrets_manager"
+
+# --- STORAGE ---
+storage:
+  s3:
+    buckets_allowed: true
+    max_size_tb: 5
+    encryption: "AES-256"
+  dynamodb:
+    max_tables: 20
+    on_demand: true
+  redis:
+    version: "7.x"
+    cluster_mode: true
+    max_memory_gb: 16
+
+# --- SAFETY & GUARDRAILS ---
+safety_infrastructure:
+  kill_switch:
+    type: "parameter_store"                 # parameter_store | dynamodb | redis
+    check_interval_seconds: 5
+  approval_gateway:
+    type: "step_functions_human_task"       # step_functions_human_task | slack_approval | custom
+    timeout_minutes: 5
+    escalation: "pagerduty"
+  audit_log:
+    type: "cloudwatch_logs"                 # cloudwatch_logs | s3 | opensearch
+    retention_days: 365
+    tamper_proof: true
+  blast_radius:
+    max_concurrent_actions: 5
+    cooldown_seconds: 30
+    rollback_enabled: true
+
+# --- NETWORKING ---
+networking:
+  vpc: ["vpc-ops-prod-01"]
+  private_endpoints: true
+  api_gateway:
+    type: "rest"
+    throttle_rps: 500
+    waf_enabled: true
+  allowed_ports: [443, 8080, 6379, 9090]   # 9090 = Prometheus
+
+# --- MONITORING ---
+monitoring:
+  metrics: "datadog"                        # cloudwatch | datadog | prometheus
+  logging: "cloudwatch_logs"
+  tracing: "x-ray"                          # x-ray | jaeger | datadog_apm
+  alerting: "pagerduty"
+  dashboards: "grafana"
+  agent_observability:
+    langfuse: true
+    custom_metrics: true
+
+# --- CI/CD ---
+ci_cd:
+  provider: "github_actions"
+  artifact_registry: "ecr"
+  environments: ["dev", "staging", "prod"]
+  iac_tool: "terraform"
+  canary_deployments: true
+
+# --- CONSTRAINTS ---
+constraints:
+  cloud_provider: "aws"
+  region: "us-east-1"
+  compliance: ["SOC2"]
+  max_autonomous_actions_per_hour: 100
+  human_approval_required_for: ["production_deploy", "data_deletion", "dns_changes"]
+  banned_services: []
+  cost_budget_monthly: ""                   # e.g. "$8K"

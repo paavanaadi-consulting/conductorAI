@@ -1,0 +1,150 @@
+# =============================================================================
+# Sample Infrastructure Dictionary: ML Pipeline
+# =============================================================================
+# Structured inventory of infrastructure available for ML/MLOps pipelines.
+# The YAML engine queries this registry directly — no AI interpretation needed.
+#
+# Customize values to match your organisation's environment.
+# =============================================================================
+
+registry_version: "1.0"
+organization: ""                            # e.g. "Acme Corp"
+last_updated: ""                            # YYYY-MM-DD
+
+# --- COMPUTE ---
+compute:
+  training:
+    sagemaker:
+      instance_types: ["ml.m5.xlarge", "ml.g5.2xlarge", "ml.p4d.24xlarge"]
+      max_spot_instances: 10
+      max_on_demand_instances: 4
+      distributed_training: true
+    kubernetes:
+      clusters: ["eks-ml-prod", "eks-ml-staging"]
+      gpu_nodes: 4
+      gpu_type: "nvidia-a10g"
+      max_nodes: 20
+  inference:
+    sagemaker_endpoints:
+      instance_types: ["ml.m5.xlarge", "ml.g5.xlarge"]
+      max_endpoints: 10
+      autoscaling: true
+      serverless: true
+    lambda:
+      runtime: ["python3.11"]
+      timeout_max: 300
+      memory_max_mb: 10240
+
+# --- STORAGE ---
+storage:
+  s3:
+    buckets_allowed: true
+    max_size_tb: 20
+    encryption: "AES-256"
+  model_registry:
+    sagemaker_model_registry: true
+    mlflow:
+      version: "2.10"
+      backend: "rds-postgres"
+      artifact_store: "s3"
+  feature_store:
+    sagemaker_feature_store: true
+    feast:
+      version: "0.37"
+      online_store: "dynamodb"
+      offline_store: "s3"
+
+# --- DATA PROCESSING ---
+data_processing:
+  glue:
+    spark_version: "3.4"
+    max_dpu: 50
+  sagemaker_processing:
+    instance_types: ["ml.m5.xlarge", "ml.r5.2xlarge"]
+    max_instances: 5
+  spark:
+    version: "3.5"
+    deployment: "emr"
+
+# --- EXPERIMENT TRACKING ---
+experiment_tracking:
+  mlflow:
+    version: "2.10"
+    tracking_uri: ""                        # e.g. "https://mlflow.internal.acme.com"
+    backend: "rds-postgres"
+  wandb:
+    available: false
+  sagemaker_experiments:
+    available: true
+
+# --- MODEL SERVING ---
+model_serving:
+  sagemaker:
+    real_time_endpoints: true
+    batch_transform: true
+    multi_model_endpoints: true
+    inference_pipeline: true
+  seldon:
+    available: false
+  kserve:
+    available: false
+  fastapi:
+    deployment: "ecs"
+    max_replicas: 10
+
+# --- ORCHESTRATION ---
+orchestration:
+  sagemaker_pipelines:
+    available: true
+  airflow:
+    version: "2.8"
+    deployment: "mwaa"
+    max_dag_concurrency: 16
+  step_functions:
+    available: true
+
+# --- NETWORKING ---
+networking:
+  vpc: ["vpc-ml-prod-01", "vpc-ml-staging-01"]
+  private_endpoints: true
+  allowed_ports: [443, 8080, 5000, 8265]   # 8265 = Ray dashboard
+  nat_gateway: true
+
+# --- MONITORING ---
+monitoring:
+  model_monitoring:
+    sagemaker_model_monitor: true
+    evidently:
+      version: "0.4"
+    custom_drift_detection: false
+  metrics: "cloudwatch"
+  logging: "cloudwatch_logs"
+  alerting: "pagerduty"
+
+# --- CI/CD ---
+ci_cd:
+  provider: "github_actions"
+  artifact_registry: "ecr"
+  environments: ["dev", "staging", "prod"]
+  iac_tool: "terraform"
+  model_approval_workflow: true             # Require manual approval for prod deploy
+
+# --- GPU / ACCELERATORS ---
+accelerators:
+  gpu_types: ["nvidia-a10g", "nvidia-t4"]
+  gpu_quota: 8                              # Max concurrent GPUs
+  spot_gpu_available: true
+  inferentia:
+    available: true
+    chip_type: "inf2"
+
+# --- CONSTRAINTS ---
+constraints:
+  cloud_provider: "aws"
+  region: "us-east-1"
+  compliance: ["SOC2", "GDPR"]
+  model_governance_required: true
+  audit_trail_required: true
+  max_training_cost_per_run: ""             # e.g. "$500"
+  banned_services: []
+  cost_budget_monthly: ""                   # e.g. "$15K"

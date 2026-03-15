@@ -1,0 +1,117 @@
+# =============================================================================
+# Sample Infrastructure Dictionary: General Project
+# =============================================================================
+# Structured inventory of general-purpose infrastructure available for
+# software projects. The YAML engine queries this registry directly — no
+# AI interpretation needed for infrastructure availability.
+#
+# Customize values to match your organisation's environment.
+# =============================================================================
+
+registry_version: "1.0"
+organization: ""                            # e.g. "Acme Corp"
+last_updated: ""                            # YYYY-MM-DD
+
+# --- COMPUTE ---
+compute:
+  kubernetes:
+    clusters: ["eks-prod", "eks-staging"]
+    max_nodes: 30
+    node_types: ["m5.large", "m5.xlarge", "c5.xlarge"]
+    pod_autoscaling: true
+  ecs:
+    cluster: "ecs-app-prod"
+    fargate: true
+    max_tasks: 20
+  lambda:
+    runtime: ["python3.11", "python3.12", "nodejs20"]
+    timeout_max: 900
+    memory_max_mb: 10240
+  ec2:
+    instance_types: ["t3.medium", "m5.large", "c5.xlarge"]
+    max_instances: 10
+    spot_allowed: true
+
+# --- STORAGE ---
+storage:
+  s3:
+    buckets_allowed: true
+    max_size_tb: 10
+    encryption: "AES-256"
+  rds:
+    engines: ["postgres15", "mysql8"]
+    max_instances: 5
+    max_storage_gb: 1000
+    multi_az: true
+  dynamodb:
+    max_tables: 20
+    on_demand: true
+  redis:
+    version: "7.x"
+    cluster_mode: false
+    max_memory_gb: 16
+  efs:
+    available: true
+    throughput_mode: "bursting"
+
+# --- NETWORKING ---
+networking:
+  vpc: ["vpc-prod-01", "vpc-staging-01"]
+  dns: "route53"
+  cdn: "cloudfront"
+  api_gateway:
+    type: "http"                            # rest | http | websocket
+    throttle_rps: 1000
+    waf_enabled: true
+  load_balancer:
+    type: "alb"                             # alb | nlb
+    ssl_termination: true
+  allowed_ports: [443, 8080, 5432, 6379]
+  nat_gateway: true
+
+# --- CI/CD ---
+ci_cd:
+  provider: "github_actions"
+  artifact_registry: "ecr"
+  environments: ["dev", "staging", "prod"]
+  iac_tool: "terraform"
+  deployment_strategies: ["rolling", "blue_green", "canary"]
+
+# --- MONITORING ---
+monitoring:
+  metrics: "cloudwatch"                     # cloudwatch | datadog | prometheus
+  logging: "cloudwatch_logs"                # cloudwatch_logs | elk | splunk
+  tracing: "x-ray"                          # x-ray | jaeger | datadog_apm
+  alerting: "pagerduty"                     # pagerduty | opsgenie | sns
+  dashboards: "grafana"                     # grafana | cloudwatch | datadog
+  uptime: "route53_health_checks"           # route53 | pingdom | custom
+
+# --- SECURITY ---
+security:
+  secrets_manager: "aws_secrets_manager"    # aws_secrets_manager | vault | ssm
+  certificate_manager: "acm"
+  waf: true
+  shield: false
+  auth:
+    cognito: true
+    iam: true
+
+# --- MESSAGING ---
+messaging:
+  sqs:
+    fifo_available: true
+    max_message_size_kb: 256
+  sns:
+    available: true
+  eventbridge:
+    available: true
+    max_rules: 50
+
+# --- CONSTRAINTS ---
+constraints:
+  cloud_provider: "aws"
+  region: "us-east-1"
+  multi_region: false
+  compliance: ["SOC2"]
+  banned_services: []
+  cost_budget_monthly: ""                   # e.g. "$5K"

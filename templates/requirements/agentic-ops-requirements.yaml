@@ -1,0 +1,83 @@
+# =============================================================================
+# Business Requirements: Agentic Operations
+# =============================================================================
+# Simplified intake form for autonomous agent systems and multi-agent
+# orchestration projects.
+# Fill in the fields below and submit to ConductorAI to generate
+# a full agentic-ops-pipeline-template.yaml for pipeline execution.
+#
+# Reference: templates/agentic-ops-pipeline-template.yaml
+# =============================================================================
+
+# --- WHO ---
+project_name: ""                        # e.g. "autonomous-incident-response"
+team: ""
+contact_email: ""
+priority: "high"                        # low | medium | high | critical
+target_date: ""                         # YYYY-MM-DD
+
+# --- WHAT ---
+description: |
+  Describe the autonomous system you need. What should agents do?
+  What decisions should they make? What actions should they take?
+
+agent_architecture: ""                  # single_agent | multi_agent | hierarchical | swarm
+orchestration: ""                       # conductor | choreography | event_driven | hybrid
+domain: ""                              # devops_automation | customer_service | data_ops |
+                                        # security_ops | workflow_automation
+
+# --- AGENTS ---
+agents:
+  - name: ""                            # e.g. "Incident Detector"
+    role: ""                            # e.g. "Monitor metrics and detect anomalies"
+    autonomy: ""                        # fully_autonomous | semi_autonomous | human_in_loop
+    actions: []                         # e.g. ["query metrics", "send alerts", "open tickets"]
+
+  - name: ""
+    role: ""
+    autonomy: ""
+    actions: []
+
+  - name: ""
+    role: ""
+    autonomy: ""
+    actions: []
+
+# --- DECISION BOUNDARIES ---
+autonomy_rules:
+  auto_approve: []                      # Actions agents can take without approval
+                                        # e.g. ["scale up pods", "restart service", "send alert"]
+  require_approval: []                  # Actions requiring human sign-off
+                                        # e.g. ["deploy to prod", "delete data", "change DNS"]
+  approval_timeout: ""                  # e.g. "5 minutes" (what happens if no human responds)
+  fallback_action: ""                   # e.g. "escalate to on-call", "do nothing", "safe mode"
+
+# --- SYSTEMS TO INTERACT WITH ---
+integrations:
+  - system: ""                          # e.g. "Kubernetes", "Datadog", "PagerDuty"
+    access_type: ""                     # read_only | read_write
+    purpose: ""                         # e.g. "Monitor pods", "Execute remediations"
+
+# --- LLM BACKBONE ---
+llm_config:
+  provider: ""                          # openai | anthropic | aws_bedrock | self_hosted
+  model: ""                             # e.g. "gpt-4o", "claude-sonnet"
+  use_for: []                           # e.g. ["root cause analysis", "decision making", "summarization"]
+
+# --- SAFETY & GUARDRAILS ---
+safety:
+  max_actions_per_incident: ""          # e.g. "5"
+  rollback_capability: true             # Can agents undo their actions?
+  blast_radius_limit: ""                # e.g. "single service", "single cluster"
+  kill_switch: true                     # Emergency stop all agents?
+
+# --- SUCCESS CRITERIA ---
+success_criteria:
+  - ""                                  # e.g. "MTTR reduced by 70%"
+  - ""                                  # e.g. ">= 60% incidents auto-resolved"
+  - ""                                  # e.g. "< 5% false positive remediation rate"
+
+# --- ADDITIONAL NOTES ---
+notes: |
+  Any extra context: current incident response process, runbooks
+  to automate, team on-call structure, etc.

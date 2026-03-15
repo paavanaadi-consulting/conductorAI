@@ -1,0 +1,167 @@
+# =============================================================================
+# Sample Infrastructure Dictionary: RAG / LLM Application
+# =============================================================================
+# Structured inventory of infrastructure available for RAG systems, chatbots,
+# and LLM applications. The YAML engine queries this registry directly.
+#
+# Customize values to match your organisation's environment.
+# =============================================================================
+
+registry_version: "1.0"
+organization: ""                            # e.g. "Acme Corp"
+last_updated: ""                            # YYYY-MM-DD
+
+# --- COMPUTE ---
+compute:
+  kubernetes:
+    clusters: ["eks-ai-prod", "eks-ai-staging"]
+    max_nodes: 20
+    node_types: ["m5.xlarge", "r5.2xlarge"]
+  ecs:
+    cluster: "ecs-ai-prod"
+    fargate: true
+    max_tasks: 30
+  lambda:
+    runtime: ["python3.11", "python3.12"]
+    timeout_max: 300
+    memory_max_mb: 10240
+
+# --- LLM PROVIDERS ---
+llm_providers:
+  openai:
+    available: true
+    models: ["gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo"]
+    rate_limit_tpm: 1000000                 # tokens per minute
+    api_key_location: "secrets_manager"
+  anthropic:
+    available: true
+    models: ["claude-sonnet-4-6", "claude-haiku-4-5"]
+    rate_limit_tpm: 500000
+    api_key_location: "secrets_manager"
+  aws_bedrock:
+    available: true
+    models: ["anthropic.claude-3-sonnet", "amazon.titan-embed-text-v2"]
+    region: "us-east-1"
+  self_hosted:
+    available: false
+
+# --- VECTOR DATABASES ---
+vector_databases:
+  pgvector:
+    available: true
+    host: "rds-pgvector-prod"
+    version: "0.7"
+    max_dimensions: 3072
+    max_storage_gb: 500
+  pinecone:
+    available: true
+    environment: "us-east-1-aws"
+    max_namespaces: 50
+    pod_type: "p2.x1"
+  opensearch:
+    available: true
+    cluster: "opensearch-ai-prod"
+    version: "2.11"
+    knn_enabled: true
+
+# --- EMBEDDING ---
+embedding:
+  models:
+    - name: "text-embedding-3-large"
+      provider: "openai"
+      dimensions: 3072
+    - name: "text-embedding-3-small"
+      provider: "openai"
+      dimensions: 1536
+    - name: "amazon.titan-embed-text-v2"
+      provider: "bedrock"
+      dimensions: 1024
+
+# --- STORAGE ---
+storage:
+  s3:
+    buckets_allowed: true
+    max_size_tb: 10
+    encryption: "AES-256"
+  document_store:
+    type: "s3"                              # s3 | efs | fsx
+    max_size_tb: 5
+  cache:
+    redis:
+      version: "7.x"
+      cluster_mode: true
+      max_memory_gb: 32
+    elasticache: true
+
+# --- DOCUMENT PROCESSING ---
+document_processing:
+  textract:
+    available: true
+    pdf_support: true
+  unstructured_io:
+    available: true
+    version: "0.12"
+  langchain:
+    version: "0.2"
+    loaders: ["pdf", "html", "docx", "csv", "markdown", "confluence"]
+
+# --- ORCHESTRATION ---
+orchestration:
+  langchain:
+    version: "0.2"
+  llamaindex:
+    version: "0.10"
+  custom_fastapi:
+    deployment: "ecs"
+  step_functions:
+    available: true
+
+# --- NETWORKING ---
+networking:
+  vpc: ["vpc-ai-prod-01"]
+  api_gateway:
+    type: "rest"                            # rest | http | websocket
+    throttle_rps: 1000
+    waf_enabled: true
+  cloudfront:
+    available: true
+  allowed_ports: [443, 8080, 6379]
+
+# --- MONITORING ---
+monitoring:
+  metrics: "cloudwatch"
+  logging: "cloudwatch_logs"
+  alerting: "pagerduty"
+  llm_observability:
+    langsmith: false
+    langfuse: true
+    custom: false
+
+# --- CI/CD ---
+ci_cd:
+  provider: "github_actions"
+  artifact_registry: "ecr"
+  environments: ["dev", "staging", "prod"]
+  iac_tool: "terraform"
+
+# --- SECURITY ---
+security:
+  guardrails:
+    aws_bedrock_guardrails: true
+    custom_content_filter: true
+  pii_detection:
+    comprehend: true
+    presidio: false
+  auth:
+    cognito: true
+    api_keys: true
+
+# --- CONSTRAINTS ---
+constraints:
+  cloud_provider: "aws"
+  region: "us-east-1"
+  compliance: ["SOC2"]
+  data_sensitivity: "internal"              # public | internal | confidential | restricted
+  max_llm_cost_monthly: ""                  # e.g. "$5K"
+  banned_services: []
+  cost_budget_monthly: ""                   # e.g. "$12K"
