@@ -1,4 +1,4 @@
-.PHONY: install test lint type-check format clean docker-build help
+.PHONY: install test lint type-check format clean docker-build help ui-api ui-frontend ui ui-install
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -33,3 +33,16 @@ docker-build: ## Build Docker image
 
 docker-run: ## Run Docker container
 	docker run --rm -it conductorai:latest
+
+ui-install: ## Install UI dependencies (backend + frontend)
+	pip install -r ui/api/requirements.txt
+	cd ui/frontend && npm install
+
+ui-api: ## Start FastAPI backend (port 8000)
+	cd ui && python -m uvicorn api.main:app --reload --port 8000
+
+ui-frontend: ## Start Next.js frontend (port 3000)
+	cd ui/frontend && npm run dev
+
+ui: ## Start both backend and frontend
+	$(MAKE) -j2 ui-api ui-frontend
