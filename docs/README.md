@@ -24,12 +24,21 @@ Each build day adds new components with detailed documentation:
 | [Day 08](./day-08-monitor-infrastructure.md) | Monitor & Infra | MonitorAgent, ArtifactStore, Feedback Loop | ✅ Complete |
 | [Day 09](./day-09-integrations-facade.md) | Facade | ConductorAI Facade, Public API | ✅ Complete |
 | [Day 10](./day-10-end-to-end.md) | E2E & Polish | Examples, Integration Tests, Conftest | ✅ Complete |
+| [Day 11](./day-11-context-generation.md) | Context Generation | ContextEntry, ContextContribution, ContextBundler | ✅ Complete |
+| [Day 12](./day-12-templates-infra.md) | Templates & Infra | Business Requirement Templates, Infrastructure Dictionaries | ✅ Complete |
+| [Day 13](./day-13-pipeline-yaml-generator.md) | Pipeline Generator | PipelineYamlGeneratorAgent, Schema Extractor, Validators | ✅ Complete |
 
 ### Pipeline & Strategy
 - **[Pipeline: YAML to ZIP](./pipeline-yaml-to-zip.md)** - End-to-end pipeline from
   unstructured business requirements to production-ready code packages. Covers the
   infrastructure registry, business intake templates, `.context/` handoff package,
   agent ownership model, and developer workflow from ZIP to production.
+- **[Business Requirement Templates & Infrastructure Dictionaries](./day-12-templates-infra.md)** -
+  Simplified YAML intake forms for business stakeholders and structured infrastructure
+  inventories for IT teams. The two inputs that feed pipeline generation.
+- **[Pipeline YAML Generator](./day-13-pipeline-yaml-generator.md)** - The YAML
+  generation engine that auto-detects pipeline type from requirements, loads schema
+  skeletons, and produces complete pipeline specifications via LLM.
 
 ### Reference Guides (Built in Day 10)
 - **[Getting Started](./getting-started.md)** - Installation, quick start, first workflow
