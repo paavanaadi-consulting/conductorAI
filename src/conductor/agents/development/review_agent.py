@@ -58,6 +58,7 @@ import structlog
 
 from conductor.agents.base import BaseAgent
 from conductor.core.config import ConductorConfig
+from conductor.core.context_models import ContextContribution, ContextEntry
 from conductor.core.enums import AgentType, TaskStatus
 from conductor.core.models import TaskDefinition, TaskResult
 from conductor.integrations.llm.base import BaseLLMProvider
@@ -91,6 +92,23 @@ Provide your review as a structured report with:
 4. A list of actionable recommendations
 
 Be constructive and specific in your feedback."""
+
+
+# =============================================================================
+# Context Generation System Prompt
+# =============================================================================
+REVIEW_CONTEXT_SYSTEM_PROMPT = """You are documenting the quality validation results for code you just reviewed.
+
+Produce a structured report with EXACTLY this section, separated by the marker shown:
+
+### VALIDATION_SUMMARY
+Summarise the review outcome:
+- Overall quality verdict (approved / rejected) and score
+- Key strengths observed in the code
+- Critical issues that must be addressed before deployment
+- Confidence level in the review (high / medium / low) with rationale
+
+Be specific, concise, and operational. Use markdown formatting."""
 
 
 class ReviewAgent(BaseAgent):
@@ -467,3 +485,50 @@ class ReviewAgent(BaseAgent):
             result["recommendations"] = [r.strip() for r in rec_items if r.strip()]
 
         return result
+
+    # =========================================================================
+    # Context Generation
+    # =========================================================================
+
+    async def _generate_context(
+        self, task: TaskDefinition, result: TaskResult
+    ) -> ContextContribution:
+        """Generate .context/ entries: validation summary for confidence report."""
+        review_text = result.output_data.get("review", "")
+        score = result.output_data.get("score", 7)
+        approved = result.output_data.get("approved", True)
+        language = result.output_data.get("language", "python")
+
+        context_prompt = (
+            f"You just reviewed {language} code and produced the following review.\n\n"
+            f"## Review Output\nScore: {score}/10 — {'APPROVED' if approved else 'REJECTED'}\n\n"
+            f"{review_text}\n\n"
+            f"Now produce the structured context report with the VALIDATION_SUMMARY section."
+        )
+
+        llm_response = await self._llm_provider.generate_with_system(
+            system_prompt=REVIEW_CONTEXT_SYSTEM_PROMPT,
+            user_prompt=context_prompt,
+            temperature=0.3,
+            max_tokens=self._config.llm.max_tokens,
+        )
+
+        entries: list[ContextEntry] = []
+        summary = self._parse_review_context(llm_response.content)
+        if summary:
+            entries.append(ContextEntry(
+                context_file="confidence-report.md",
+                section_heading="## Review Validation",
+                content=summary,
+                agent_id=self.agent_id,
+            ))
+
+        return ContextContribution(entries=entries)
+
+    @staticmethod
+    def _parse_review_context(text: str) -> str:
+        """Extract VALIDATION_SUMMARY section from LLM response."""
+        match = re.search(r"###\s*VALIDATION_SUMMARY", text, re.IGNORECASE)
+        if not match:
+            return text.strip()
+        return text[match.end():].strip()

@@ -68,10 +68,12 @@ from typing import Any, Optional
 
 import structlog
 
+from conductor.core.context_models import ContextEntry
 from conductor.core.enums import AgentType, TaskStatus, WorkflowPhase
 from conductor.core.exceptions import AgentError, WorkflowError
 from conductor.core.models import TaskDefinition, TaskResult, WorkflowDefinition
 from conductor.core.state import WorkflowState
+from conductor.infrastructure.artifact_store import Artifact, ArtifactStore
 from conductor.orchestration.agent_coordinator import AgentCoordinator
 from conductor.orchestration.policy_engine import PolicyEngine
 from conductor.orchestration.state_manager import StateManager
@@ -148,6 +150,7 @@ class WorkflowEngine:
         state_manager: StateManager,
         policy_engine: Optional[PolicyEngine] = None,
         max_feedback_loops: int = 3,
+        artifact_store: Optional[ArtifactStore] = None,
     ) -> None:
         """Initialize the Workflow Engine.
 
@@ -158,11 +161,14 @@ class WorkflowEngine:
                 If None, phase gates are skipped (all phases auto-advance).
             max_feedback_loops: Maximum MONITORING → DEVELOPMENT cycles.
                 Default is 3. Set to 0 to disable feedback loops entirely.
+            artifact_store: Optional ArtifactStore for persisting context
+                entries produced by agents. If None, context is not saved.
         """
         self._coordinator = coordinator
         self._state_manager = state_manager
         self._policy_engine = policy_engine
         self._max_feedback_loops = max_feedback_loops
+        self._artifact_store = artifact_store
         self._logger = logger.bind(component="workflow_engine")
 
     # =========================================================================
@@ -370,6 +376,11 @@ class WorkflowEngine:
                 task_results[task.task_id] = result
                 state = state.model_copy(update={"task_results": task_results})
 
+                # Save context entries as artifacts (if artifact store available)
+                await self._save_context_entries(
+                    result, task.task_id, workflow_id
+                )
+
             except Exception as e:
                 # Record the failure but continue with other tasks
                 self._logger.warning(
@@ -496,6 +507,55 @@ class WorkflowEngine:
             return True
 
         return await self._policy_engine.check({"workflow_state": state})
+
+    # =========================================================================
+    # Context Entry Persistence
+    # =========================================================================
+
+    async def _save_context_entries(
+        self,
+        result: TaskResult,
+        task_id: str,
+        workflow_id: str,
+    ) -> None:
+        """Save context entries from a task result as artifacts.
+
+        Extracts context_entries from result.metadata and persists each
+        as a context artifact in the artifact store.
+
+        Args:
+            result: The task result that may contain context entries.
+            task_id: The task ID.
+            workflow_id: The workflow ID.
+        """
+        if self._artifact_store is None:
+            return
+
+        context_entries = result.metadata.get("context_entries", [])
+        if not context_entries:
+            return
+
+        for entry_data in context_entries:
+            try:
+                entry = ContextEntry(**entry_data)
+                artifact = Artifact(
+                    workflow_id=workflow_id,
+                    task_id=task_id,
+                    agent_id=result.agent_id,
+                    artifact_type="context",
+                    content=entry.model_dump_json(),
+                    metadata={
+                        "context_file": entry.context_file,
+                        "section_heading": entry.section_heading,
+                    },
+                )
+                await self._artifact_store.save(artifact)
+            except Exception as e:
+                self._logger.warning(
+                    "context_entry_save_failed",
+                    task_id=task_id,
+                    error=str(e),
+                )
 
     # =========================================================================
     # Internal Helpers

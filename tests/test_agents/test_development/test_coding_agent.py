@@ -239,7 +239,8 @@ class TestCodingAgentLLMInteraction:
         await agent.execute_task(task)
 
         # Check that generate_with_system was called (has system_prompt)
-        assert provider.call_count == 1
+        # call_count == 2 because context generation makes a second LLM call
+        assert provider.call_count == 2
         call = provider.call_history[0]
         assert call["system_prompt"] is not None
         assert call["system_prompt"] == CODING_SYSTEM_PROMPT

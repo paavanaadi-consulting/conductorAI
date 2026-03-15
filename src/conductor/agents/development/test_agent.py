@@ -63,10 +63,13 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
+import re
+
 import structlog
 
 from conductor.agents.base import BaseAgent
 from conductor.core.config import ConductorConfig
+from conductor.core.context_models import ContextContribution, ContextEntry
 from conductor.core.enums import AgentType, TaskStatus
 from conductor.core.models import TaskDefinition, TaskResult
 from conductor.integrations.llm.base import BaseLLMProvider
@@ -100,6 +103,23 @@ Guidelines:
 - Generate ONLY the test code — no explanations or markdown formatting unless requested.
 
 If test data or fixtures are provided, incorporate them into the tests."""
+
+
+# =============================================================================
+# Context Generation System Prompt
+# =============================================================================
+TEST_CONTEXT_SYSTEM_PROMPT = """You are documenting test coverage gaps and known limitations for a test suite you just generated.
+
+Produce a structured report with EXACTLY this section, separated by the marker shown:
+
+### KNOWN_GAPS
+List areas where test coverage is incomplete or where real-world behaviour
+cannot be fully validated in unit tests. For each gap explain:
+- What is not covered and why
+- The risk level (low / medium / high)
+- Suggested follow-up (integration test, manual QA, monitoring, etc.)
+
+Be specific, concise, and operational. Use markdown formatting."""
 
 
 class TestAgent(BaseAgent):
@@ -367,3 +387,50 @@ class TestAgent(BaseAgent):
         )
 
         return "\n".join(parts)
+
+    # =========================================================================
+    # Context Generation
+    # =========================================================================
+
+    async def _generate_context(
+        self, task: TaskDefinition, result: TaskResult
+    ) -> ContextContribution:
+        """Generate .context/ entries: known test gaps."""
+        tests_content = result.output_data.get("tests", "")
+        code = task.input_data.get("code", "")
+        language = result.output_data.get("language", "python")
+        framework = result.output_data.get("test_framework", "pytest")
+
+        context_prompt = (
+            f"You just generated the following {framework} test suite in {language}.\n\n"
+            f"## Original Code\n```\n{code}\n```\n\n"
+            f"## Generated Tests\n```\n{tests_content}\n```\n\n"
+            f"Now produce the structured context report with the KNOWN_GAPS section."
+        )
+
+        llm_response = await self._llm_provider.generate_with_system(
+            system_prompt=TEST_CONTEXT_SYSTEM_PROMPT,
+            user_prompt=context_prompt,
+            temperature=0.3,
+            max_tokens=self._config.llm.max_tokens,
+        )
+
+        entries: list[ContextEntry] = []
+        gaps_content = self._parse_test_context(llm_response.content)
+        if gaps_content:
+            entries.append(ContextEntry(
+                context_file="known-gaps.md",
+                section_heading="## Test Coverage Gaps",
+                content=gaps_content,
+                agent_id=self.agent_id,
+            ))
+
+        return ContextContribution(entries=entries)
+
+    @staticmethod
+    def _parse_test_context(text: str) -> str:
+        """Extract KNOWN_GAPS section from LLM response."""
+        match = re.search(r"###\s*KNOWN_GAPS", text, re.IGNORECASE)
+        if not match:
+            return text.strip()
+        return text[match.end():].strip()

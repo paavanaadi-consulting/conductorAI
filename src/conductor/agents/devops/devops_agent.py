@@ -69,8 +69,11 @@ from typing import Any, Optional
 
 import structlog
 
+import re
+
 from conductor.agents.base import BaseAgent
 from conductor.core.config import ConductorConfig
+from conductor.core.context_models import ContextContribution, ContextEntry
 from conductor.core.enums import AgentType, TaskStatus
 from conductor.core.models import TaskDefinition, TaskResult
 from conductor.integrations.llm.base import BaseLLMProvider
@@ -101,6 +104,33 @@ Guidelines:
 - Generate ONLY the configuration — no explanations or markdown formatting unless requested.
 
 If a specific platform is specified, use its idioms and conventions."""
+
+
+# =============================================================================
+# Context Generation System Prompt
+# =============================================================================
+DEVOPS_CONTEXT_SYSTEM_PROMPT = """You are documenting the infrastructure decisions and operational setup for configurations you just generated.
+
+Produce a structured report with EXACTLY these three sections, separated by the markers shown:
+
+### INFRA_DECISIONS
+Explain why you chose specific CI/CD stages, Docker base images, caching strategies,
+security settings, and deployment approaches. Each decision should reference the project needs.
+
+### INFRA_BINDINGS
+List all infrastructure dependencies: service versions, ports, environment variables,
+external services, volume mounts, network requirements. Format as a checklist that
+a DevOps engineer can verify against their actual environment.
+
+### RUNBOOK
+Write a step-by-step getting started guide:
+1. Prerequisites (tools, accounts, access)
+2. Environment setup (env vars, secrets)
+3. Local build and run commands
+4. Deployment sequence and order
+5. Verification steps (health checks, smoke tests)
+
+Be specific, concise, and operational. Use markdown formatting."""
 
 
 # =============================================================================
@@ -394,3 +424,86 @@ class DevOpsAgent(BaseAgent):
             parts.append(f"## Additional Requirements\n{additional_requirements}\n")
 
         return "\n".join(parts)
+
+    # =========================================================================
+    # Context Generation
+    # =========================================================================
+
+    async def _generate_context(
+        self, task: TaskDefinition, result: TaskResult
+    ) -> ContextContribution:
+        """Generate .context/ entries: infra decisions, bindings, runbook."""
+        config_content = result.output_data.get("config", "")
+        platform = result.output_data.get("platform", "github_actions")
+        language = result.output_data.get("language", "python")
+
+        context_prompt = (
+            f"You just generated the following {platform} configuration "
+            f"for a {language} project.\n\n"
+            f"## Generated Configuration\n```\n{config_content}\n```\n\n"
+            f"Now produce the structured context report with "
+            f"INFRA_DECISIONS, INFRA_BINDINGS, and RUNBOOK sections."
+        )
+
+        llm_response = await self._llm_provider.generate_with_system(
+            system_prompt=DEVOPS_CONTEXT_SYSTEM_PROMPT,
+            user_prompt=context_prompt,
+            temperature=0.3,
+            max_tokens=self._config.llm.max_tokens,
+        )
+
+        parsed = self._parse_devops_context(llm_response.content)
+        entries: list[ContextEntry] = []
+
+        if parsed.get("infra_decisions"):
+            entries.append(ContextEntry(
+                context_file="decisions.md",
+                section_heading="## Infrastructure Decisions",
+                content=parsed["infra_decisions"],
+                agent_id=self.agent_id,
+            ))
+
+        if parsed.get("infra_bindings"):
+            entries.append(ContextEntry(
+                context_file="infra-bindings.md",
+                section_heading="## Infrastructure Dependencies",
+                content=parsed["infra_bindings"],
+                agent_id=self.agent_id,
+            ))
+
+        if parsed.get("runbook"):
+            entries.append(ContextEntry(
+                context_file="runbook.md",
+                section_heading="## Getting Started",
+                content=parsed["runbook"],
+                agent_id=self.agent_id,
+            ))
+
+        return ContextContribution(entries=entries)
+
+    @staticmethod
+    def _parse_devops_context(text: str) -> dict[str, str]:
+        """Parse structured context sections from LLM response."""
+        result: dict[str, str] = {}
+        section_markers = [
+            ("infra_decisions", r"###\s*INFRA_DECISIONS"),
+            ("infra_bindings", r"###\s*INFRA_BINDINGS"),
+            ("runbook", r"###\s*RUNBOOK"),
+        ]
+
+        for i, (key, pattern) in enumerate(section_markers):
+            match = re.search(pattern, text, re.IGNORECASE)
+            if not match:
+                continue
+            start = match.end()
+            end = len(text)
+            for _, next_pattern in section_markers[i + 1:]:
+                next_match = re.search(next_pattern, text[start:], re.IGNORECASE)
+                if next_match:
+                    end = start + next_match.start()
+                    break
+            content = text[start:end].strip()
+            if content:
+                result[key] = content
+
+        return result

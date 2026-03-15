@@ -65,8 +65,11 @@ from typing import Any, Optional
 
 import structlog
 
+import re
+
 from conductor.agents.base import BaseAgent
 from conductor.core.config import ConductorConfig
+from conductor.core.context_models import ContextContribution, ContextEntry
 from conductor.core.enums import AgentType, TaskStatus
 from conductor.core.models import TaskDefinition, TaskResult
 from conductor.integrations.llm.base import BaseLLMProvider
@@ -97,6 +100,32 @@ Guidelines:
 - Generate ONLY the code — no explanations or markdown formatting unless requested.
 
 If a framework is specified, use its idioms and conventions."""
+
+
+# =============================================================================
+# Context Generation System Prompt
+# =============================================================================
+CODING_CONTEXT_SYSTEM_PROMPT = """You are documenting the architectural decisions and traceability of code you just generated.
+
+Produce a structured report with EXACTLY these four sections, separated by the markers shown:
+
+### DECISIONS
+Explain why you chose specific patterns, libraries, data structures, and architecture approaches.
+Each decision should reference the requirement that drove it.
+
+### TRACEABILITY
+Map each business requirement to the specific code construct (file, class, function) that implements it.
+Use a table or bullet list: requirement -> implementation location.
+
+### KNOWN_GAPS
+List stubs, incomplete error handling, missing edge cases, hardcoded values, and anything that
+needs human review or completion before production.
+
+### CONFIDENCE
+Rate your confidence (0-100%) in each major section of the generated code.
+Explain what you're certain about vs what was ambiguous in the specification.
+
+Be specific, concise, and honest. Use markdown formatting."""
 
 
 class CodingAgent(BaseAgent):
@@ -366,6 +395,127 @@ class CodingAgent(BaseAgent):
         )
 
         return "\n".join(parts)
+
+    # =========================================================================
+    # Context Generation
+    # =========================================================================
+
+    async def _generate_context(
+        self, task: TaskDefinition, result: TaskResult
+    ) -> ContextContribution:
+        """Generate .context/ entries: decisions, traceability, gaps, confidence."""
+        spec = task.input_data.get("specification", "")
+        code = result.output_data.get("code", "")
+        language = result.output_data.get("language", "python")
+        framework = result.output_data.get("framework")
+
+        context_prompt = self._build_context_prompt(spec, code, language, framework)
+        llm_response = await self._llm_provider.generate_with_system(
+            system_prompt=CODING_CONTEXT_SYSTEM_PROMPT,
+            user_prompt=context_prompt,
+            temperature=0.3,
+            max_tokens=self._config.llm.max_tokens,
+        )
+
+        parsed = self._parse_context_response(llm_response.content)
+        entries: list[ContextEntry] = []
+
+        if parsed.get("decisions"):
+            entries.append(ContextEntry(
+                context_file="decisions.md",
+                section_heading="## Code Architecture Decisions",
+                content=parsed["decisions"],
+                agent_id=self.agent_id,
+            ))
+
+        if parsed.get("traceability"):
+            entries.append(ContextEntry(
+                context_file="traceability.md",
+                section_heading="## Requirements to Code Mapping",
+                content=parsed["traceability"],
+                agent_id=self.agent_id,
+            ))
+
+        if parsed.get("known_gaps"):
+            entries.append(ContextEntry(
+                context_file="known-gaps.md",
+                section_heading="## Code Gaps and TODOs",
+                content=parsed["known_gaps"],
+                agent_id=self.agent_id,
+            ))
+
+        if parsed.get("confidence"):
+            confidence_score = parsed.get("confidence_score")
+            entries.append(ContextEntry(
+                context_file="confidence-report.md",
+                section_heading="## Code Generation Confidence",
+                content=parsed["confidence"],
+                agent_id=self.agent_id,
+                confidence=confidence_score,
+            ))
+
+        return ContextContribution(entries=entries)
+
+    @staticmethod
+    def _build_context_prompt(
+        specification: str,
+        code: str,
+        language: str,
+        framework: Optional[str] = None,
+    ) -> str:
+        """Build the context generation prompt."""
+        parts = [
+            f"You just generated the following {language} code from a specification.\n",
+            f"## Original Specification\n{specification}\n",
+            f"## Generated Code\n```{language}\n{code}\n```\n",
+        ]
+        if framework:
+            parts.append(f"## Framework Used\n{framework}\n")
+        parts.append(
+            "Now produce the structured context report with "
+            "DECISIONS, TRACEABILITY, KNOWN_GAPS, and CONFIDENCE sections."
+        )
+        return "\n".join(parts)
+
+    @staticmethod
+    def _parse_context_response(text: str) -> dict[str, Any]:
+        """Parse structured context sections from LLM response."""
+        result: dict[str, Any] = {}
+
+        section_markers = [
+            ("decisions", r"###\s*DECISIONS"),
+            ("traceability", r"###\s*TRACEABILITY"),
+            ("known_gaps", r"###\s*KNOWN_GAPS"),
+            ("confidence", r"###\s*CONFIDENCE"),
+        ]
+
+        for i, (key, pattern) in enumerate(section_markers):
+            match = re.search(pattern, text, re.IGNORECASE)
+            if not match:
+                continue
+
+            start = match.end()
+            # Find where the next section starts
+            end = len(text)
+            for _, next_pattern in section_markers[i + 1:]:
+                next_match = re.search(next_pattern, text[start:], re.IGNORECASE)
+                if next_match:
+                    end = start + next_match.start()
+                    break
+
+            content = text[start:end].strip()
+            if content:
+                result[key] = content
+
+        # Try to extract a confidence score from the confidence section
+        if "confidence" in result:
+            score_match = re.search(r"(\d{1,3})%", result["confidence"])
+            if score_match:
+                score_val = int(score_match.group(1))
+                if 0 <= score_val <= 100:
+                    result["confidence_score"] = score_val / 100.0
+
+        return result
 
     # =========================================================================
     # Utility

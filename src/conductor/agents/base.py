@@ -68,6 +68,7 @@ from typing import Any, Optional
 import structlog
 
 from conductor.core.config import ConductorConfig
+from conductor.core.context_models import ContextContribution
 from conductor.core.enums import AgentStatus, AgentType, MessageType, TaskStatus
 from conductor.core.exceptions import AgentError
 from conductor.core.messages import AgentMessage
@@ -336,6 +337,26 @@ class BaseAgent(ABC):
             # etc.
             result = await self._execute(task)
 
+            # --- Step 3.5: Generate context (optional, no-op by default) ---
+            if getattr(self._config, "enable_context_generation", True):
+                try:
+                    context = await self._generate_context(task, result)
+                    if context.entries:
+                        result.metadata["context_entries"] = [
+                            entry.model_dump() for entry in context.entries
+                        ]
+                        self._logger.info(
+                            "context_generated",
+                            task_id=task.task_id,
+                            entry_count=len(context.entries),
+                        )
+                except Exception as ctx_err:
+                    self._logger.warning(
+                        "context_generation_failed",
+                        task_id=task.task_id,
+                        error=str(ctx_err),
+                    )
+
             # --- Step 4a: Transition to COMPLETED ---
             completed_at = datetime.now(timezone.utc)
             duration = (completed_at - started_at).total_seconds()
@@ -476,6 +497,26 @@ class BaseAgent(ABC):
         Default implementation does nothing.
         """
         pass
+
+    async def _generate_context(
+        self, task: TaskDefinition, result: TaskResult
+    ) -> ContextContribution:
+        """Hook called after successful task execution to generate .context/ entries.
+
+        Override this in subclasses that should produce context files for the
+        .context/ handoff directory. Each entry targets a specific file
+        (e.g., decisions.md, known-gaps.md).
+
+        Default implementation returns an empty contribution.
+
+        Args:
+            task: The task that was executed.
+            result: The result produced by _execute().
+
+        Returns:
+            ContextContribution with entries for .context/ files.
+        """
+        return ContextContribution()
 
     # =========================================================================
     # Message Handling

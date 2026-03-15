@@ -239,6 +239,10 @@ class ConductorConfig(BaseSettings):
         default=False,
         description="Use Redis for persistence (False = in-memory for dev/test)",
     )
+    enable_context_generation: bool = Field(
+        default=True,
+        description="Generate .context/ files alongside code output (extra LLM calls per agent)",
+    )
 
     # -------------------------------------------------------------------------
     # Nested Configurations

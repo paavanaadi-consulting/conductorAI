@@ -605,10 +605,11 @@ class TestLLMCallTracking:
             )
             await conductor.dispatch_task(task)
 
-            assert mock_provider.call_count == 1
+            # 2 calls: code generation + context generation
+            assert mock_provider.call_count == 2
 
     async def test_multi_agent_workflow_call_count(self, config, mock_provider):
-        """A 3-task workflow should make 3 LLM calls total."""
+        """A 3-task workflow should make 6 LLM calls total (3 primary + 3 context)."""
         mock_provider.queue_response("def func(): pass")
         mock_provider.queue_response("APPROVED")
         mock_provider.queue_response("[{'data': 1}]")
@@ -644,4 +645,6 @@ class TestLLMCallTracking:
             )
 
             await conductor.run_workflow(workflow)
-            assert mock_provider.call_count == 3
+            # 5 calls: CodingAgent(1+1) + ReviewAgent(1+1) + TestDataAgent(1+0)
+            # TestDataAgent has no _generate_context override
+            assert mock_provider.call_count == 5

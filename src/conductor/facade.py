@@ -75,6 +75,7 @@ from conductor.infrastructure.artifact_store import (
     ArtifactStore,
     InMemoryArtifactStore,
 )
+from conductor.infrastructure.context_bundler import ContextBundler
 from conductor.integrations.llm.base import BaseLLMProvider
 from conductor.integrations.llm.factory import create_llm_provider
 from conductor.orchestration.agent_coordinator import AgentCoordinator
@@ -186,7 +187,9 @@ class ConductorAI:
             state_manager=self._state_manager,
             policy_engine=self._policy_engine,
             max_feedback_loops=max_feedback_loops,
+            artifact_store=self._artifact_store,
         )
+        self._context_bundler = ContextBundler(self._artifact_store)
 
         # --- Tracking ---
         self._initialized = False
@@ -465,6 +468,25 @@ class ConductorAI:
             List of artifacts for that workflow, sorted by creation time.
         """
         return await self._artifact_store.list_by_workflow(workflow_id)
+
+    # =========================================================================
+    # Context Assembly
+    # =========================================================================
+
+    async def assemble_context(self, workflow_id: str) -> dict[str, str]:
+        """Assemble .context/ directory content for a completed workflow.
+
+        Collects all context artifacts produced by agents during the
+        workflow and bundles them into the final .context/ file structure.
+
+        Args:
+            workflow_id: The workflow to assemble context for.
+
+        Returns:
+            Dict mapping filename (e.g., "decisions.md") to markdown content.
+            Only files with contributions are included.
+        """
+        return await self._context_bundler.bundle(workflow_id)
 
     # =========================================================================
     # Internal Helpers
