@@ -8,6 +8,7 @@ import asyncio
 import json
 import uuid
 from datetime import datetime, timezone
+from typing import Optional
 
 import structlog
 from fastapi import APIRouter, HTTPException, Request
@@ -89,7 +90,7 @@ async def create_project(req: ProjectCreateRequest, request: Request):
 @router.get("/", response_model=list[ProjectSummary])
 async def list_projects(
     request: Request,
-    github_repo: str | None = None,
+    github_repo: Optional[str] = None,
 ):
     db = await get_db()
     if github_repo:
