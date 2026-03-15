@@ -1,0 +1,109 @@
+# =============================================================================
+# ConductorAI Helm Values
+# =============================================================================
+# Default configuration values for the ConductorAI Helm chart.
+# Override these in your own values file or via --set flags.
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Image
+# ---------------------------------------------------------------------------
+image:
+  repository: conductorai
+  tag: latest
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# ---------------------------------------------------------------------------
+# Replicas
+# ---------------------------------------------------------------------------
+replicaCount: 2
+
+# ---------------------------------------------------------------------------
+# ConductorAI Application Configuration
+# ---------------------------------------------------------------------------
+# These values are injected into the application via a ConfigMap.
+# They map to the conductor.yaml settings used by pydantic-settings.
+# ---------------------------------------------------------------------------
+conductor:
+  environment: prod
+  logLevel: INFO
+  maxAgentRetries: 3
+  workflowTimeoutSeconds: 300
+  enablePersistence: true
+
+# ---------------------------------------------------------------------------
+# Redis Configuration
+# ---------------------------------------------------------------------------
+redis:
+  url: "redis://redis:6379/0"
+  password: ""
+  maxConnections: 10
+  keyPrefix: "conductor:"
+  socketTimeout: 5.0
+
+# ---------------------------------------------------------------------------
+# LLM (Large Language Model) Configuration
+# ---------------------------------------------------------------------------
+llm:
+  provider: "openai"
+  model: "gpt-4"
+  apiKey: ""
+  temperature: 0.7
+  maxTokens: 4096
+
+# ---------------------------------------------------------------------------
+# Kubernetes Resources
+# ---------------------------------------------------------------------------
+resources:
+  limits:
+    cpu: "1"
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+# ---------------------------------------------------------------------------
+# Autoscaling (HPA)
+# ---------------------------------------------------------------------------
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+# ---------------------------------------------------------------------------
+# Pod Disruption Budget
+# ---------------------------------------------------------------------------
+pdb:
+  enabled: true
+  minAvailable: 1
+
+# ---------------------------------------------------------------------------
+# Service Account
+# ---------------------------------------------------------------------------
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# ---------------------------------------------------------------------------
+# Service
+# ---------------------------------------------------------------------------
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+
+# ---------------------------------------------------------------------------
+# Pod-level Settings
+# ---------------------------------------------------------------------------
+podAnnotations: {}
+podLabels: {}
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

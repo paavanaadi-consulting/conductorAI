@@ -47,6 +47,12 @@ from conductor.core.exceptions import (
     StateError,
     WorkflowError,
 )
+from conductor.core.rbac import (
+    Permission,
+    PermissionDeniedError,
+    RBACManager,
+    Role,
+)
 from conductor.core.models import (
     AgentIdentity,
     TaskDefinition,
@@ -85,4 +91,9 @@ __all__ = [
     "MessageBusError",
     "StateError",
     "PolicyViolationError",
+    "PermissionDeniedError",
+    # RBAC
+    "Role",
+    "Permission",
+    "RBACManager",
 ]

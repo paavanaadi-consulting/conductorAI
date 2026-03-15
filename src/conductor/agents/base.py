@@ -74,6 +74,7 @@ from conductor.core.exceptions import AgentError
 from conductor.core.messages import AgentMessage
 from conductor.core.models import AgentIdentity, TaskDefinition, TaskResult
 from conductor.core.state import AgentState
+from conductor.infrastructure.metrics import MetricsCollector, NoOpMetricsCollector
 
 
 # =============================================================================
@@ -134,6 +135,7 @@ class BaseAgent(ABC):
         config: ConductorConfig,
         name: Optional[str] = None,
         description: Optional[str] = None,
+        metrics_collector: Optional[MetricsCollector] = None,
     ) -> None:
         """Initialize the base agent.
 
@@ -145,6 +147,7 @@ class BaseAgent(ABC):
             config: ConductorAI configuration (passed down from ConductorAI facade).
             name: Human-readable name for logging. Defaults to agent_id.
             description: Optional description of this agent's purpose.
+            metrics_collector: Optional MetricsCollector for recording task metrics.
         """
         # -----------------------------------------------------------------
         # Identity: WHO this agent is (static, doesn't change)
@@ -169,6 +172,11 @@ class BaseAgent(ABC):
         # Configuration
         # -----------------------------------------------------------------
         self._config = config
+
+        # -----------------------------------------------------------------
+        # Metrics: Optional collector for recording task execution metrics
+        # -----------------------------------------------------------------
+        self._metrics = metrics_collector or NoOpMetricsCollector()
 
         # -----------------------------------------------------------------
         # Logger: Structured logger with agent context bound
@@ -365,6 +373,11 @@ class BaseAgent(ABC):
             result.completed_at = completed_at
             result.duration_seconds = duration
 
+            # Record metrics
+            self._metrics.record_task_completed(
+                self.agent_type.value, "success", duration
+            )
+
             # Update agent state to reflect success
             completed_tasks = list(self._state.completed_tasks) + [task.task_id]
             self._update_state(
@@ -390,6 +403,12 @@ class BaseAgent(ABC):
             # --- Step 4b: Transition to FAILED ---
             completed_at = datetime.now(timezone.utc)
             duration = (completed_at - started_at).total_seconds()
+
+            # Record failure metrics
+            self._metrics.record_task_completed(
+                self.agent_type.value, "failure", duration
+            )
+            self._metrics.record_error("TASK_EXECUTION_FAILED")
 
             # Update agent state to reflect failure
             failed_tasks = list(self._state.failed_tasks) + [task.task_id]

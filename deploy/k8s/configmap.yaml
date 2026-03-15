@@ -1,0 +1,60 @@
+# =============================================================================
+# ConductorAI - ConfigMap
+# =============================================================================
+# Non-sensitive configuration for the ConductorAI application.
+#
+# Maps to conductor.yaml configuration structure. Values here are injected
+# as environment variables with the CONDUCTOR_ prefix. Nested keys use
+# double underscores (e.g., CONDUCTOR_REDIS__URL).
+#
+# Configuration Priority (highest wins):
+#   1. Environment variables (from this ConfigMap / Secret)
+#   2. conductor.yaml mounted into the container
+#   3. Default values in code
+# =============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: conductorai-config
+  namespace: conductorai
+  labels:
+    app: conductorai
+data:
+  # ---- General Settings ----
+  CONDUCTOR_ENVIRONMENT: "prod"
+  CONDUCTOR_LOG_LEVEL: "INFO"
+  CONDUCTOR_MAX_AGENT_RETRIES: "3"
+  CONDUCTOR_WORKFLOW_TIMEOUT_SECONDS: "300"
+  CONDUCTOR_ENABLE_PERSISTENCE: "true"
+
+  # ---- Redis ----
+  CONDUCTOR_REDIS__URL: "redis://conductorai-redis:6379/0"
+  CONDUCTOR_REDIS__MAX_CONNECTIONS: "10"
+  CONDUCTOR_REDIS__KEY_PREFIX: "conductor:"
+  CONDUCTOR_REDIS__SOCKET_TIMEOUT: "5.0"
+
+  # ---- LLM ----
+  CONDUCTOR_LLM__PROVIDER: "openai"
+  CONDUCTOR_LLM__MODEL: "gpt-4"
+  CONDUCTOR_LLM__TEMPERATURE: "0.7"
+  CONDUCTOR_LLM__MAX_TOKENS: "4096"
+
+  # ---- Embedded conductor.yaml (mounted as file) ----
+  conductor.yaml: |
+    environment: "prod"
+    log_level: "INFO"
+    max_agent_retries: 3
+    workflow_timeout_seconds: 300
+    enable_persistence: true
+
+    redis:
+      url: "redis://conductorai-redis:6379/0"
+      max_connections: 10
+      key_prefix: "conductor:"
+      socket_timeout: 5.0
+
+    llm:
+      provider: "openai"
+      model: "gpt-4"
+      temperature: 0.7
+      max_tokens: 4096

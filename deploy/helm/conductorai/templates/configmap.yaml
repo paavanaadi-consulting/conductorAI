@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "conductorai.fullname" . }}
+  labels:
+    {{- include "conductorai.labels" . | nindent 4 }}
+data:
+  CONDUCTOR_ENVIRONMENT: {{ .Values.conductor.environment | quote }}
+  CONDUCTOR_LOG_LEVEL: {{ .Values.conductor.logLevel | quote }}
+  CONDUCTOR_MAX_AGENT_RETRIES: {{ .Values.conductor.maxAgentRetries | quote }}
+  CONDUCTOR_WORKFLOW_TIMEOUT_SECONDS: {{ .Values.conductor.workflowTimeoutSeconds | quote }}
+  CONDUCTOR_ENABLE_PERSISTENCE: {{ .Values.conductor.enablePersistence | quote }}
+  CONDUCTOR_REDIS__URL: {{ .Values.redis.url | quote }}
+  CONDUCTOR_REDIS__MAX_CONNECTIONS: {{ .Values.redis.maxConnections | quote }}
+  CONDUCTOR_REDIS__KEY_PREFIX: {{ .Values.redis.keyPrefix | quote }}
+  CONDUCTOR_REDIS__SOCKET_TIMEOUT: {{ .Values.redis.socketTimeout | quote }}
+  CONDUCTOR_LLM__PROVIDER: {{ .Values.llm.provider | quote }}
+  CONDUCTOR_LLM__MODEL: {{ .Values.llm.model | quote }}
+  CONDUCTOR_LLM__TEMPERATURE: {{ .Values.llm.temperature | quote }}
+  CONDUCTOR_LLM__MAX_TOKENS: {{ .Values.llm.maxTokens | quote }}

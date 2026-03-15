@@ -40,9 +40,46 @@ from conductor.infrastructure.artifact_store import (
     ArtifactStore,
     InMemoryArtifactStore,
 )
+from conductor.infrastructure.health import (
+    ComponentHealth,
+    HealthCheckResult,
+    HealthChecker,
+    HealthStatus,
+)
+from conductor.infrastructure.metrics import (
+    MetricsCollector,
+    NoOpMetricsCollector,
+)
+from conductor.infrastructure.secrets import (
+    AWSSecretsProvider,
+    EnvSecretsProvider,
+    SecretsProvider,
+    VaultSecretsProvider,
+)
+from conductor.infrastructure.tracing import (
+    NoOpTracingProvider,
+    TracingProvider,
+)
 
 __all__ = [
+    # Artifacts
     "Artifact",
     "ArtifactStore",
     "InMemoryArtifactStore",
+    # Health
+    "ComponentHealth",
+    "HealthCheckResult",
+    "HealthChecker",
+    "HealthStatus",
+    # Metrics
+    "MetricsCollector",
+    "NoOpMetricsCollector",
+    # Secrets
+    "SecretsProvider",
+    "EnvSecretsProvider",
+    "VaultSecretsProvider",
+    "AWSSecretsProvider",
+    # Tracing
+    "TracingProvider",
+    "NoOpTracingProvider",
 ]

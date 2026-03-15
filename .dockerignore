@@ -1,0 +1,41 @@
+# Git
+.git/
+.gitignore
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Testing
+tests/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# Docs and examples
+docs/
+examples/
+templates/
+
+# IDE and tools
+.vscode/
+.idea/
+.claude/
+
+# Environment
+.env
+conductor.yaml
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Deploy
+deploy/

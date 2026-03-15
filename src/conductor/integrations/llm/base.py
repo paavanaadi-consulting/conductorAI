@@ -51,6 +51,7 @@ from typing import Any, Optional
 from pydantic import BaseModel, Field
 
 from conductor.core.config import LLMConfig
+from conductor.infrastructure.metrics import MetricsCollector, NoOpMetricsCollector
 
 
 # =============================================================================
@@ -162,14 +163,29 @@ class BaseLLMProvider(ABC):
         ...         return LLMResponse(content=response.choices[0].message.content, ...)
     """
 
-    def __init__(self, config: LLMConfig) -> None:
+    def __init__(
+        self,
+        config: LLMConfig,
+        metrics_collector: Optional[MetricsCollector] = None,
+    ) -> None:
         """Initialize the LLM provider with configuration.
 
         Args:
             config: LLM configuration containing provider name, model,
                 API key, temperature, max_tokens, and optional base URL.
+            metrics_collector: Optional MetricsCollector for recording LLM metrics.
         """
         self._config = config
+        self._metrics = metrics_collector or NoOpMetricsCollector()
+
+    def _record_llm_metrics(self, response: LLMResponse) -> None:
+        """Record metrics for an LLM response. Called by subclasses after API calls."""
+        self._metrics.record_llm_request(self.provider_name, response.model)
+        self._metrics.record_llm_tokens(
+            self.provider_name,
+            response.usage.prompt_tokens,
+            response.usage.completion_tokens,
+        )
 
     # =========================================================================
     # Properties

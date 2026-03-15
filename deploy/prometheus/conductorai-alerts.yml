@@ -1,0 +1,102 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: conductorai-alerts
+  labels:
+    app: conductorai
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: conductorai.workflows
+      rules:
+        - alert: ConductorAIHighWorkflowFailureRate
+          expr: |
+            (
+              sum(rate(conductorai_workflows_total{status="failure"}[5m]))
+              /
+              clamp_min(sum(rate(conductorai_workflows_total[5m])), 1)
+            ) > 0.10
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "ConductorAI workflow failure rate exceeds 10%"
+            description: >-
+              More than 10% of ConductorAI workflows have failed over the last
+              5 minutes. Current failure rate is {{ $value | humanizePercentage }}.
+            runbook_url: "https://runbooks.example.com/conductorai/high-workflow-failure-rate"
+
+    - name: conductorai.tasks
+      rules:
+        - alert: ConductorAITaskDurationHigh
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(conductorai_task_duration_seconds_bucket[5m])) by (le)
+            ) > 60
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "ConductorAI P95 task duration exceeds 60 seconds"
+            description: >-
+              The 95th-percentile task execution duration has exceeded 60 seconds
+              for 5 minutes. Current P95 is {{ $value | humanizeDuration }}.
+            runbook_url: "https://runbooks.example.com/conductorai/task-duration-high"
+
+    - name: conductorai.agents
+      rules:
+        - alert: ConductorAINoActiveAgents
+          expr: |
+            sum(conductorai_active_agents) == 0
+          for: 5m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "No active ConductorAI agents detected"
+            description: >-
+              The total number of active ConductorAI agents has been zero for
+              5 minutes. This likely indicates a complete system outage or
+              misconfiguration. Immediate investigation is required.
+            runbook_url: "https://runbooks.example.com/conductorai/no-active-agents"
+
+    - name: conductorai.llm
+      rules:
+        - alert: ConductorAILLMErrorRateHigh
+          expr: |
+            (
+              sum(rate(conductorai_llm_requests_total{status="error"}[5m]))
+              /
+              clamp_min(sum(rate(conductorai_llm_requests_total[5m])), 1)
+            ) > 0.05
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "ConductorAI LLM error rate exceeds 5%"
+            description: >-
+              More than 5% of LLM API requests have returned errors over the
+              last 5 minutes. Current error rate is {{ $value | humanizePercentage }}.
+              Check provider status pages and API key validity.
+            runbook_url: "https://runbooks.example.com/conductorai/llm-error-rate-high"
+
+    - name: conductorai.infrastructure
+      rules:
+        - alert: ConductorAIRedisConnectionFailed
+          expr: |
+            conductorai_redis_health_check_success == 0
+          for: 2m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "ConductorAI Redis health check is failing"
+            description: >-
+              The Redis health check has been failing for 2 minutes.
+              This will prevent workflow state persistence, caching, and
+              message brokering. Verify Redis connectivity and cluster health.
+            runbook_url: "https://runbooks.example.com/conductorai/redis-connection-failed"

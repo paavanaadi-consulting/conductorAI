@@ -1,0 +1,43 @@
+===============================================================================
+  ConductorAI has been deployed!
+===============================================================================
+
+Release:   {{ .Release.Name }}
+Namespace: {{ .Release.Namespace }}
+Version:   {{ .Chart.AppVersion }}
+
+1. Get the application URL:
+{{- if eq .Values.service.type "ClusterIP" }}
+  kubectl port-forward svc/{{ include "conductorai.fullname" . }} {{ .Values.service.port }}:{{ .Values.service.port }} -n {{ .Release.Namespace }}
+
+  Then visit: http://localhost:{{ .Values.service.port }}
+{{- else if eq .Values.service.type "NodePort" }}
+  export NODE_PORT=$(kubectl get svc {{ include "conductorai.fullname" . }} -n {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}")
+  export NODE_IP=$(kubectl get nodes -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo "http://${NODE_IP}:${NODE_PORT}"
+{{- else if eq .Values.service.type "LoadBalancer" }}
+  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+  kubectl get svc {{ include "conductorai.fullname" . }} -n {{ .Release.Namespace }} -w
+{{- end }}
+
+2. Check deployment status:
+  kubectl get pods -l "app.kubernetes.io/name={{ include "conductorai.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" -n {{ .Release.Namespace }}
+
+3. View logs:
+  kubectl logs -l "app.kubernetes.io/name={{ include "conductorai.name" . }}" -n {{ .Release.Namespace }} -f
+
+4. Configuration:
+  - Environment: {{ .Values.conductor.environment }}
+  - LLM Provider: {{ .Values.llm.provider }}
+  - LLM Model:    {{ .Values.llm.model }}
+  - Redis URL:    {{ .Values.redis.url }}
+{{- if .Values.autoscaling.enabled }}
+  - Autoscaling:  {{ .Values.autoscaling.minReplicas }}-{{ .Values.autoscaling.maxReplicas }} replicas (target CPU: {{ .Values.autoscaling.targetCPUUtilizationPercentage }}%)
+{{- else }}
+  - Replicas:     {{ .Values.replicaCount }}
+{{- end }}
+
+IMPORTANT: Ensure you have set the LLM API key before using the framework:
+  helm upgrade {{ .Release.Name }} conductorai --set llm.apiKey=YOUR_API_KEY
+
+===============================================================================

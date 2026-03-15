@@ -1,0 +1,108 @@
+# =============================================================================
+# ConductorAI - Deployment
+# =============================================================================
+# Runs ConductorAI pods with:
+#   - 2 replicas (managed by HPA for autoscaling)
+#   - Non-root security context (UID 1000, read-only root FS)
+#   - Resource requests/limits for predictable scheduling
+#   - Liveness & readiness probes using Python import checks
+#   - Configuration from ConfigMap + secrets from Secret
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: conductorai
+  namespace: conductorai
+  labels:
+    app: conductorai
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: conductorai
+  template:
+    metadata:
+      labels:
+        app: conductorai
+    spec:
+      # ---- Security Context (pod-level) ----
+      securityContext:
+        runAsUser: 1000
+        runAsNonRoot: true
+        fsGroup: 1000
+
+      containers:
+        - name: conductorai
+          image: conductorai:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+
+          # ---- Environment from ConfigMap and Secret ----
+          envFrom:
+            - configMapRef:
+                name: conductorai-config
+            - secretRef:
+                name: conductorai-secrets
+
+          # ---- Container Security Context ----
+          securityContext:
+            runAsUser: 1000
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+
+          # ---- Resource Requests & Limits ----
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+          # ---- Liveness Probe ----
+          # Verifies the ConductorAI package can still be imported.
+          # Failure triggers a pod restart.
+          livenessProbe:
+            exec:
+              command:
+                - python
+                - "-c"
+                - "from conductor.facade import ConductorAI; print('healthy')"
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          # ---- Readiness Probe ----
+          # Gates traffic until the pod is ready to serve requests.
+          readinessProbe:
+            exec:
+              command:
+                - python
+                - "-c"
+                - "from conductor.facade import ConductorAI; print('ready')"
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          # ---- Volume Mounts ----
+          volumeMounts:
+            - name: config-volume
+              mountPath: /app/conductor.yaml
+              subPath: conductor.yaml
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+
+      # ---- Volumes ----
+      volumes:
+        - name: config-volume
+          configMap:
+            name: conductorai-config
+        - name: tmp
+          emptyDir: {}

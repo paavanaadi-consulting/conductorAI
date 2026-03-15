@@ -73,14 +73,23 @@ class RedisConfig(BaseModel):
         - Message Bus: pub/sub channels for agent-to-agent communication
         - State Store: persistent storage for workflow and agent states
 
+    Supports three deployment modes:
+        - Standalone: Single Redis instance (default)
+        - Cluster: Redis Cluster for horizontal scaling
+        - Sentinel: Redis Sentinel for high availability
+
     Attributes:
         url: Redis connection URL. Format: redis://[password@]host:port/db
-        max_connections: Maximum connections in the connection pool. Higher
-            values support more concurrent operations but use more memory.
-        key_prefix: Namespace prefix for all Redis keys. Prevents collisions
-            when sharing a Redis instance with other applications.
+        max_connections: Maximum connections in the connection pool.
+        key_prefix: Namespace prefix for all Redis keys.
         socket_timeout: Timeout in seconds for Redis socket operations.
-            Prevents hanging connections on network issues.
+        password: Redis password (alternative to embedding in URL).
+        ssl: Enable TLS/SSL for Redis connections.
+        cluster_mode: Enable Redis Cluster mode.
+        cluster_nodes: List of cluster node addresses (host:port).
+        sentinel_mode: Enable Redis Sentinel mode.
+        sentinel_master: Name of the Sentinel master set.
+        sentinel_nodes: List of Sentinel node addresses (host:port).
     """
 
     url: str = Field(
@@ -101,6 +110,34 @@ class RedisConfig(BaseModel):
         default=5.0,
         gt=0,
         description="Socket timeout in seconds for Redis operations",
+    )
+    password: Optional[str] = Field(
+        default=None,
+        description="Redis password (alternative to embedding in URL)",
+    )
+    ssl: bool = Field(
+        default=False,
+        description="Enable TLS/SSL for Redis connections",
+    )
+    cluster_mode: bool = Field(
+        default=False,
+        description="Enable Redis Cluster mode for horizontal scaling",
+    )
+    cluster_nodes: list[str] = Field(
+        default_factory=list,
+        description="Cluster node addresses, e.g. ['redis-0:6379', 'redis-1:6379']",
+    )
+    sentinel_mode: bool = Field(
+        default=False,
+        description="Enable Redis Sentinel for high availability",
+    )
+    sentinel_master: str = Field(
+        default="mymaster",
+        description="Name of the Sentinel master set",
+    )
+    sentinel_nodes: list[str] = Field(
+        default_factory=list,
+        description="Sentinel node addresses, e.g. ['sentinel-0:26379']",
     )
 
 
@@ -242,6 +279,10 @@ class ConductorConfig(BaseSettings):
     enable_context_generation: bool = Field(
         default=True,
         description="Generate .context/ files alongside code output (extra LLM calls per agent)",
+    )
+    secrets_prefix: str = Field(
+        default="CONDUCTOR_SECRET_",
+        description="Environment variable prefix for secrets (used by EnvSecretsProvider)",
     )
 
     # -------------------------------------------------------------------------

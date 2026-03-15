@@ -76,6 +76,8 @@ from conductor.infrastructure.artifact_store import (
     InMemoryArtifactStore,
 )
 from conductor.infrastructure.context_bundler import ContextBundler
+from conductor.infrastructure.metrics import MetricsCollector, NoOpMetricsCollector
+from conductor.infrastructure.tracing import NoOpTracingProvider, TracingProvider
 from conductor.integrations.llm.base import BaseLLMProvider
 from conductor.integrations.llm.factory import create_llm_provider
 from conductor.orchestration.agent_coordinator import AgentCoordinator
@@ -145,6 +147,8 @@ class ConductorAI:
         artifact_store: Optional[ArtifactStore] = None,
         error_handler: Optional[ErrorHandler] = None,
         policy_engine: Optional[PolicyEngine] = None,
+        metrics_collector: Optional[MetricsCollector] = None,
+        tracing_provider: Optional[TracingProvider] = None,
         max_feedback_loops: int = 3,
     ) -> None:
         """Initialize the ConductorAI facade.
@@ -157,11 +161,19 @@ class ConductorAI:
             artifact_store: Optional custom artifact store. Defaults to InMemoryArtifactStore.
             error_handler: Optional custom error handler. Defaults to ErrorHandler.
             policy_engine: Optional custom policy engine. Defaults to PolicyEngine.
+            metrics_collector: Optional MetricsCollector for Prometheus metrics.
+                Defaults to MetricsCollector() (no-op if prometheus_client not installed).
+            tracing_provider: Optional TracingProvider for distributed tracing.
+                Defaults to TracingProvider() (no-op if opentelemetry not installed).
             max_feedback_loops: Maximum MONITORING → DEVELOPMENT cycles.
                 Default is 3. Set to 0 to disable feedback loops.
         """
         # --- Configuration ---
         self._config = config or ConductorConfig()
+
+        # --- Observability ---
+        self._metrics = metrics_collector or MetricsCollector()
+        self._tracing = tracing_provider or TracingProvider()
 
         # --- Infrastructure Layer ---
         self._artifact_store = artifact_store or InMemoryArtifactStore()
@@ -238,6 +250,16 @@ class ConductorAI:
     def policy_engine(self) -> PolicyEngine:
         """Access the Policy Engine."""
         return self._policy_engine
+
+    @property
+    def metrics(self) -> MetricsCollector:
+        """Access the Metrics Collector."""
+        return self._metrics
+
+    @property
+    def tracing(self) -> TracingProvider:
+        """Access the Tracing Provider."""
+        return self._tracing
 
     @property
     def is_initialized(self) -> bool:
@@ -405,12 +427,18 @@ class ConductorAI:
             phase_count=len(definition.phases),
         )
 
-        state = await self._workflow_engine.run_workflow(definition)
+        with self._tracing.start_workflow_span(
+            definition.workflow_id, definition.name
+        ):
+            state = await self._workflow_engine.run_workflow(definition)
+
+        status = state.status.value
+        self._metrics.record_workflow_completed(status)
 
         self._logger.info(
             "workflow_completed",
             workflow_name=definition.name,
-            status=state.status.value,
+            status=status,
             completed_tasks=state.completed_task_count,
             failed_tasks=state.failed_task_count,
         )

@@ -1,0 +1,13 @@
+# =============================================================================
+# ConductorAI - Namespace
+# =============================================================================
+# Isolates all ConductorAI resources in a dedicated namespace.
+# Apply first: kubectl apply -f namespace.yaml
+# =============================================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: conductorai
+  labels:
+    app: conductorai
+    purpose: ai-orchestration

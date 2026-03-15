@@ -40,6 +40,30 @@ Each build day adds new components with detailed documentation:
   generation engine that auto-detects pipeline type from requirements, loads schema
   skeletons, and produces complete pipeline specifications via LLM.
 
+### Corporate Deployment & Operations
+- **Security & Access Control**
+  - [Security Audit Checklist](./operations/security-audit-checklist.md) - Dependency scanning, secret management, container security, LLM prompt injection
+  - [Penetration Testing Guide](./operations/penetration-testing-guide.md) - Scope, test categories, tools, reporting template
+  - [SOC2 Compliance Checklist](./operations/soc2-compliance-checklist.md) - Trust Service Criteria mapping, RBAC, change management
+  - [Data Governance Policy](./operations/data-governance-policy.md) - Classification, retention, encryption, GDPR/CCPA for AI
+- **Infrastructure & Deployment**
+  - [Kubernetes Manifests](../deploy/k8s/README.md) - K8s deployment with namespace, configmap, secret, HPA, PDB
+  - [Helm Chart](../deploy/helm/conductorai/README.md) - Templated K8s deployment with values.yaml
+  - [Terraform Templates](../deploy/terraform/README.md) - AWS EKS + ElastiCache infrastructure-as-code
+- **Observability**
+  - [Grafana Dashboards](../deploy/grafana/README.md) - Overview and LLM metrics dashboards
+  - [Prometheus Alerts](../deploy/prometheus/README.md) - Alerting rules for workflows, tasks, agents, LLM, Redis
+- **Operations & Reliability**
+  - [Disaster Recovery](./operations/disaster-recovery.md) - RPO/RTO, Redis backup, state reconstruction, failover
+  - [Load Testing Guide](./operations/load-testing-guide.md) - Scenarios, tools, baseline metrics, sample scripts
+  - [Performance Tuning](./operations/performance-tuning.md) - Redis, asyncio, LLM, memory profiling
+- **Runbooks**
+  - [Redis Connection Failure](./operations/runbooks/redis-connection-failure.md)
+  - [LLM Provider Outage](./operations/runbooks/llm-provider-outage.md)
+  - [Workflow Stuck In Progress](./operations/runbooks/workflow-stuck-in-progress.md)
+  - [High Error Rate](./operations/runbooks/high-error-rate.md)
+  - [Agent Registration Failure](./operations/runbooks/agent-registration-failure.md)
+
 ### Reference Guides (Built in Day 10)
 - **[Getting Started](./getting-started.md)** - Installation, quick start, first workflow
 - **[API Reference](./api-reference.md)** - Complete API docs for all public classes

@@ -1,0 +1,17 @@
+apiVersion: v2
+name: conductorai
+description: Helm chart for ConductorAI multi-agent AI framework
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - ai
+  - multi-agent
+  - orchestration
+  - llm
+  - python
+home: https://github.com/conductorai/conductorai
+sources:
+  - https://github.com/conductorai/conductorai
+maintainers:
+  - name: ConductorAI Team

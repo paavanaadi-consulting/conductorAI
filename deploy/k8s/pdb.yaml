@@ -1,0 +1,18 @@
+# =============================================================================
+# ConductorAI - PodDisruptionBudget
+# =============================================================================
+# Ensures at least 1 ConductorAI pod remains available during voluntary
+# disruptions such as node drains, cluster upgrades, or rollouts.
+# =============================================================================
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: conductorai
+  namespace: conductorai
+  labels:
+    app: conductorai
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: conductorai
