@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ConductorAI — Component Reference</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #0f1117; color: #e0e0e0; }
+
+  /* Top nav */
+  .topnav { background: #161822; border-bottom: 1px solid #2a2d3e; padding: 12px 24px; display: flex; align-items: center; gap: 24px; position: sticky; top: 0; z-index: 100; }
+  .topnav .brand { font-weight: 700; font-size: 1.1rem; color: #fff; }
+  .topnav .brand span { color: #f59e0b; }
+  .topnav a { color: #888; text-decoration: none; font-size: 0.85rem; padding: 6px 14px; border-radius: 6px; transition: all 0.2s; }
+  .topnav a:hover { color: #e0e0e0; background: rgba(255,255,255,0.05); }
+  .topnav a.active { color: #f59e0b; background: rgba(245,158,11,0.1); }
+
+  .header { text-align: center; padding: 40px 20px 10px; }
+  .header h1 { font-size: 2rem; color: #fff; }
+  .header p { color: #888; margin-top: 8px; font-size: 0.95rem; }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+
+  /* Side nav + content layout */
+  .page-layout { display: flex; gap: 24px; margin-top: 24px; }
+  .side-nav { min-width: 200px; position: sticky; top: 64px; max-height: calc(100vh - 80px); overflow-y: auto; }
+  .side-nav a { display: block; padding: 8px 14px; color: #888; text-decoration: none; font-size: 0.8rem; border-left: 2px solid transparent; transition: all 0.2s; border-radius: 0 6px 6px 0; }
+  .side-nav a:hover { color: #e0e0e0; background: rgba(255,255,255,0.03); border-left-color: #444; }
+  .side-nav a.cat { color: #666; font-weight: 700; text-transform: uppercase; font-size: 0.68rem; letter-spacing: 1px; padding: 14px 14px 6px; cursor: default; }
+  .side-nav a.cat:hover { background: transparent; border-left-color: transparent; }
+  .main-content { flex: 1; min-width: 0; }
+
+  /* Component cards */
+  .comp-card { background: #161822; border: 1px solid #2a2d3e; border-radius: 16px; padding: 28px; margin-bottom: 24px; scroll-margin-top: 80px; }
+  .comp-card:hover { border-color: #3a3d4e; }
+
+  .comp-header { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 16px; }
+  .comp-icon { font-size: 2rem; line-height: 1; }
+  .comp-header .comp-title { font-size: 1.3rem; font-weight: 700; color: #fff; }
+  .comp-header .comp-file { font-size: 0.72rem; font-family: monospace; color: #666; margin-top: 4px; }
+  .comp-header .comp-badge { font-size: 0.68rem; font-weight: 600; padding: 3px 10px; border-radius: 4px; margin-top: 6px; display: inline-block; }
+
+  .badge-ui { background: #818cf822; color: #818cf8; }
+  .badge-facade { background: #86efac22; color: #86efac; }
+  .badge-orch { background: #fbbf2422; color: #fbbf24; }
+  .badge-agent { background: #67e8f922; color: #67e8f9; }
+  .badge-infra { background: #f0abfc22; color: #f0abfc; }
+  .badge-llm { background: #fde68a22; color: #fde68a; }
+
+  .comp-section { margin-top: 18px; }
+  .comp-section h3 { font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .comp-section h3.purpose { color: #86efac; }
+  .comp-section h3.responsibilities { color: #fbbf24; }
+  .comp-section h3.interactions { color: #818cf8; }
+  .comp-section h3.io { color: #f0abfc; }
+  .comp-section h3.methods { color: #67e8f9; }
+
+  .comp-section p { font-size: 0.88rem; line-height: 1.7; color: #bbb; }
+  .comp-section ul { list-style: none; padding: 0; }
+  .comp-section ul li { font-size: 0.84rem; line-height: 1.7; color: #bbb; padding-left: 18px; position: relative; }
+  .comp-section ul li::before { content: ''; position: absolute; left: 0; top: 10px; width: 6px; height: 6px; border-radius: 50%; background: #444; }
+
+  .interaction-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; margin-top: 8px; }
+  .interaction-item { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 10px 14px; font-size: 0.8rem; }
+  .interaction-item .target { font-weight: 600; color: #f59e0b; }
+  .interaction-item .direction { font-size: 0.75rem; color: #666; margin: 2px 0; }
+  .interaction-item .how { color: #999; font-size: 0.78rem; }
+
+  .method-list { font-family: monospace; font-size: 0.78rem; }
+  .method-list .method { padding: 4px 0; }
+  .method-list .mname { color: #67e8f9; }
+  .method-list .mparams { color: #888; }
+  .method-list .mreturn { color: #86efac; }
+  .method-list .mdesc { color: #666; font-family: 'Segoe UI', sans-serif; font-size: 0.75rem; margin-left: 16px; }
+
+  .io-box { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+  .io-card { flex: 1; min-width: 200px; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 12px; }
+  .io-card .io-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .io-card .io-label.input { color: #f59e0b; }
+  .io-card .io-label.output { color: #4ade80; }
+  .io-card pre { font-size: 0.72rem; color: #aaa; line-height: 1.5; white-space: pre-wrap; }
+
+  .divider { border: 0; border-top: 1px solid #1e2030; margin: 8px 0 24px; }
+
+  @media (max-width: 800px) {
+    .page-layout { flex-direction: column; }
+    .side-nav { position: static; max-height: none; display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
+    .side-nav a { border-left: 0; border-bottom: 2px solid transparent; }
+    .side-nav a.cat { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <div class="brand">Conductor<span>AI</span></div>
+  <a href="/architecture.html">Architecture Diagram</a>
+  <a href="/components.html" class="active">Component Reference</a>
+</div>
+
+<div class="header">
+  <h1>Component Reference</h1>
+  <p>High-level details, purpose, and interactions for every component in ConductorAI</p>
+</div>
+
+<div class="container">
+<div class="page-layout">
+
+<!-- Side Nav -->
+<nav class="side-nav">
+  <a class="cat">UI Layer</a>
+  <a href="#next-frontend">Next.js Frontend</a>
+  <a href="#fastapi-backend">FastAPI Backend</a>
+  <a href="#conductor-service">ConductorService</a>
+  <a href="#github-service">GitHubService</a>
+  <a href="#review-service">ReviewService</a>
+  <a href="#workflow-builder">WorkflowBuilder</a>
+  <a class="cat">Facade</a>
+  <a href="#conductorai">ConductorAI Facade</a>
+  <a class="cat">Orchestration</a>
+  <a href="#workflow-engine">WorkflowEngine</a>
+  <a href="#agent-coordinator">AgentCoordinator</a>
+  <a href="#message-bus">MessageBus</a>
+  <a href="#state-manager">StateManager</a>
+  <a href="#policy-engine">PolicyEngine</a>
+  <a href="#error-handler">ErrorHandler</a>
+  <a class="cat">Agents</a>
+  <a href="#coding-agent">CodingAgent</a>
+  <a href="#review-agent">ReviewAgent</a>
+  <a href="#test-agent">TestAgent</a>
+  <a href="#test-data-agent">TestDataAgent</a>
+  <a href="#devops-agent">DevOpsAgent</a>
+  <a href="#deploying-agent">DeployingAgent</a>
+  <a href="#monitor-agent">MonitorAgent</a>
+  <a href="#pipeline-agent">PipelineYamlGenerator</a>
+  <a class="cat">Infrastructure</a>
+  <a href="#artifact-store">ArtifactStore</a>
+  <a href="#context-bundler">ContextBundler</a>
+  <a href="#metrics">MetricsCollector</a>
+  <a href="#tracing">TracingProvider</a>
+  <a class="cat">LLM Providers</a>
+  <a href="#llm-provider">BaseLLMProvider</a>
+</nav>
+
+<!-- Main Content -->
+<div class="main-content">
+
+<!-- ===== UI LAYER ===== -->
+
+<!-- Next.js Frontend -->
+<div class="comp-card" id="next-frontend">
+  <div class="comp-header">
+    <div class="comp-icon">🖥️</div>
+    <div>
+      <div class="comp-title">Next.js Frontend</div>
+      <div class="comp-file">ui/frontend/src/</div>
+      <div class="comp-badge badge-ui">UI Layer</div>
+    </div>
+  </div>
+  <div class="comp-section"><h3 class="purpose">Purpose</h3>
+    <p>The user-facing web application. Provides a graphical interface for business/technical analysts to create projects, upload YAML specifications, select which agents to run, monitor workflow progress in real-time, and review AI-generated pull requests.</p>
+  </div>
+  <div class="comp-section"><h3 class="responsibilities">Key Responsibilities</h3>
+    <ul>
+      <li>Render project creation form with YAML drag-and-drop upload, template selection, and component checkboxes</li>
+      <li>Detect if a GitHub repository already has an existing project and switch to update mode</li>
+      <li>Display real-time workflow progress via WebSocket connection (phase indicator, task counts, status badges)</li>
+      <li>Browse GitHub repos and pull requests, trigger AI-powered code reviews</li>
+      <li>Present review scores (complexity 1-10, quality 1-10), findings, and recommendations</li>
+    </ul>
+  </div>
+  <div class="comp-section"><h3 class="interactions">Interactions</h3>
+    <div class="interaction-grid">
+      <div class="interaction-item"><div class="target">FastAPI Backend</div><div class="direction">Calls &rarr;</div><div class="how">All REST API calls via <code>fetch()</code> to <code>localhost:8000/api/*</code>. React Query (TanStack) manages caching, loading, and error states.</div></div>
+      <div class="interaction-item"><div class="target">WebSocket (/api/ws)</div><div class="direction">Subscribes &rarr;</div><div class="how">Opens WebSocket to <code>/api/ws/workflow/{id}</code> for real-time progress updates during workflow execution. Custom <code>useWorkflow</code> hook.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- FastAPI Backend -->
+<div class="comp-card" id="fastapi-backend">
+  <div class="comp-header">
+    <div class="comp-icon">⚡</div>
+    <div>
+      <div class="comp-title">FastAPI Backend</div>
+      <div class="comp-file">ui/api/main.py</div>
+      <div class="comp-badge badge-ui">UI Layer</div>
+    </div>
+  </div>
+  <div class="comp-section"><h3 class="purpose">Purpose</h3>
+    <p>The REST API server that bridges the web frontend to the ConductorAI core engine. Manages project persistence in SQLite, handles file uploads, serves YAML templates, and orchestrates the connection to GitHub via the GitHub App integration.</p>
+  </div>
+  <div class="comp-section"><h3 class="responsibilities">Key Responsibilities</h3>
+    <ul>
+      <li>Initialize ConductorAI engine on startup (lifespan context manager), register all 8 agents</li>
+      <li>Expose 6 router groups: projects, workflows, templates, github, upload, websocket</li>
+      <li>Persist project metadata, workflow runs, and PR reviews in async SQLite (aiosqlite)</li>
+      <li>Launch long-running workflows as background <code>asyncio.create_task()</code> to avoid blocking HTTP responses</li>
+      <li>CORS configured to allow Next.js frontend on port 3000</li>
+    </ul>
+  </div>
+  <div class="comp-section"><h3 class="interactions">Interactions</h3>
+    <div class="interaction-grid">
+      <div class="interaction-item"><div class="target">ConductorService</div><div class="direction">Owns &rarr;</div><div class="how">Creates singleton at startup via lifespan. Stored in <code>app.state.conductor</code>. All routers access it through the request object.</div></div>
+      <div class="interaction-item"><div class="target">GitHubService</div><div class="direction">Owns &rarr;</div><div class="how">Creates singleton for GitHub App JWT auth. Stored in <code>app.state.github</code>.</div></div>
+      <div class="interaction-item"><div class="target">SQLite Database</div><div class="direction">Reads/Writes &rarr;</div><div class="how">3 tables: <code>projects</code>, <code>workflow_runs</code>, <code>pr_reviews</code>. Initialized at startup.</div></div>
+      <div class="interaction-item"><div class="target">Next.js Frontend</div><div class="direction">&larr; Serves</div><div class="how">Receives REST requests and returns JSON. WebSocket for streaming workflow progress.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ConductorService -->
+<div class="comp-card" id="conductor-service">
+  <div class="comp-header">
+    <div class="comp-icon">🔌</div>
+    <div>
+      <div class="comp-title">ConductorService</div>
+      <div class="comp-file">ui/api/services/conductor_service.py</div>
+      <div class="comp-badge badge-ui">UI Layer — Service</div>
+    </div>
+  </div>
+  <div class="comp-section"><h3 class="purpose">Purpose</h3>
+    <p>Singleton wrapper that initializes and manages the ConductorAI facade for use by the FastAPI backend. Translates web-level API calls into ConductorAI operations. Handles LLM provider creation, agent registration, and lifecycle management.</p>
+  </div>
+  <div class="comp-section"><h3 class="responsibilities">Key Responsibilities</h3>
+    <ul>
+      <li>Create LLM provider from settings (OpenAI, Anthropic, or Mock)</li>
+      <li>Instantiate and initialize <code>ConductorAI</code> facade</li>
+      <li>Register all 8 agent types with unique IDs (coding-01, review-01, etc.)</li>
+      <li>Expose simplified methods: <code>generate_pipeline()</code>, <code>run_workflow()</code>, <code>review_code()</code></li>
+    </ul>
+  </div>
+  <div class="comp-section"><h3 class="interactions">Interactions</h3>
+    <div class="interaction-grid">
+      <div class="interaction-item"><div class="target">ConductorAI (Facade)</div><div class="direction">Wraps &rarr;</div><div class="how">Holds a reference to the <code>ConductorAI</code> instance. Delegates <code>run_workflow()</code>, <code>dispatch_task()</code>, and <code>generate_pipeline_yaml()</code>.</div></div>
+      <div class="interaction-item"><div class="target">LLM Provider Factory</div><div class="direction">Creates &rarr;</div><div class="how">Calls <code>create_llm_provider(config)</code> during initialization based on env settings.</div></div>
+      <div class="interaction-item"><div class="target">All 8 Agents</div><div class="direction">Registers &rarr;</div><div class="how">Creates each agent instance and calls <code>conductor.register_agent(agent)</code> for each.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- GitHubService -->
+<div class="comp-card" id="github-service">
+  <div class="comp-header">
+    <div class="comp-icon">🐙</div>
+    <div>
+      <div class="comp-title">GitHubService</div>
+      <div class="comp-file">ui/api/services/github_service.py</div>
+      <div class="comp-badge badge-ui">UI Layer — Service</div>
+    </div>
+  </div>
+  <div class="comp-section"><h3 class="purpose">Purpose</h3>
+    <p>Handles all GitHub API interactions using GitHub App JWT authentication. Generates JWTs, exchanges them for installation tokens, and makes authenticated API calls to list repos, fetch PRs, get diffs, submit reviews, and create branches/files/PRs.</p>
+  </div>
+  <div class="comp-section"><h3 class="interactions">Interactions</h3>
+    <div class="interaction-grid">
+      <div class="interaction-item"><div class="target">GitHub API</div><div class="direction">Calls &rarr;</div><div class="how">REST API calls via <code>httpx</code>: repos, pulls, reviews, branches, files. Uses JWT → installation token exchange.</div></div>
+      <div class="interaction-item"><div class="target">GitHub Router</div><div class="direction">&larr; Called by</div><div class="how">All <code>/api/github/*</code> endpoints call GitHubService methods.</div></div>
+      <div class="interaction-item"><div class="target">ReviewService</div><div class="direction">&larr; Called by</div><div class="how">ReviewService uses GitHubService to fetch PR diffs and optionally submit review comments back to GitHub.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ReviewService -->
+<div class="comp-card" id="review-service">
+  <div class="comp-header">
+    <div class="comp-icon">⭐</div>
+    <div>
+      <div class="comp-title">ReviewService</div>
+      <div class="comp-file">ui/api/services/review_service.py</div>
+      <div class="comp-badge badge-ui">UI Layer — Service</div>
+    </div>
+  </div>
+  <div class="comp-section"><h3 class="purpose">Purpose</h3>
+    <p>Combines GitHub diff fetching with AI-powered code review. Fetches PR diff from GitHub, sends it to the ReviewAgent via ConductorService, extracts complexity/quality scores, and saves review results to the database.</p>
+  </div>
+  <div class="comp-section"><h3 class="interactions">Interactions</h3>
+    <div class="interaction-grid">
+      <div class="interaction-item"><div class="target">GitHubService</div><div class="direction">Calls &rarr;</div><div class="how">Fetches PR diff via <code>get_pr_diff()</code>. Truncates to 30K chars to fit LLM context window.</div></div>
+      <div class="interaction-item"><div class="target">ConductorService</div><div class="direction">Calls &rarr;</div><div class="how">Sends code + diff to <code>conductor_svc.review_code()</code> which dispatches to ReviewAgent.</div></div>
+      <div class="interaction-item"><div class="target">SQLite Database</div><div class="direction">Writes &rarr;</div><div class="how">Saves review results (scores, findings, recommendations) to <code>pr_reviews</code> table.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- WorkflowBuilder -->
+<div class="comp-card" id="workflow-builder">
+  <div class="comp-header">
+    <div class="comp-icon">🏗️</div>
+    <div>
+      <div class="comp-title">WorkflowBuilder</div>
+      <div class="comp-file">ui/api/services/workflow_builder.py</div>
+      <div class="comp-badge badge-ui">UI Layer — Service</div>
+    </div>
+  </div>
+  <div class="comp-section"><h3 class="purpose">Purpose</h3>
+    <p>Translates UI checkbox selections into a fully-formed <code>WorkflowDefinition</code>. Maps component names (code, unit_test, deployment, etc.) to ConductorAI's AgentType and WorkflowPhase enums. Automatically adds code review when code generation is selected.</p>
+  </div>
+  <div class="comp-section"><h3 class="responsibilities">Key Responsibilities</h3>
+    <ul>
+      <li>Map "code" &rarr; (CODING, DEVELOPMENT), "unit_test" &rarr; (TEST, DEVELOPMENT), "deployment" &rarr; (DEVOPS + DEPLOYING, DEVOPS), "monitoring" &rarr; (MONITOR, MONITORING)</li>
+      <li>Auto-inject REVIEW task whenever CODING is selected</li>
+      <li>Build ordered phase list and TaskDefinition objects</li>
+    </ul>
+  </div>
+  <div class="comp-section"><h3 class="interactions">Interactions</h3>
+    <div class="interaction-grid">
+      <div class="interaction-item"><div class="target">Projects Router</div><div class="direction">&larr; Called by</div><div class="how"><code>POST /api/projects/{id}/run</code> calls <code>build_workflow()</code> with selected components list.</div></div>
+      <div class="interaction-item"><div class="target">WorkflowEngine</div><div class="direction">Produces for &rarr;</div><div class="how">Outputs a <code>WorkflowDefinition</code> that is passed to <code>conductor.run_workflow()</code>.</div></div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ===== FACADE ===== -->
+
+<div class="comp-card" id="conductorai">
+  <div class="comp-header">
+    <div class="comp-icon">🎭</div>
+    <div>
+      <div class="comp-title">ConductorAI (Facade)</div>
+      <div class="comp-file">src/conductor/facade.py</div>
+      <div class="comp-badge badge-facade">Facade Layer</div>
+    </div>
+  </div>
+  <div class="comp-section"><h3 class="purpose">Purpose</h3>
+    <p>The single entry point for the entire ConductorAI system. Implements the Facade pattern — hides all internal complexity (orchestration, agents, messaging, state) behind a clean, unified API. Manages the full lifecycle: initialization, agent registration, workflow execution, artifact management, and graceful shutdown.</p>
+  </div>
+  <div class="comp-section"><h3 class="responsibilities">Key Responsibilities</h3>
+    <ul>
+      <li>Initialize all subsystems in correct order: infrastructure &rarr; message bus &rarr; state manager &rarr; coordinator &rarr; workflow engine</li>
+      <li>Provide <code>register_agent()</code> / <code>unregister_agent()</code> for adding agents to the coordinator</li>
+      <li>Expose <code>run_workflow(definition)</code> as the primary execution method</li>
+      <li>Expose <code>dispatch_task(task)</code> for single-task execution</li>
+      <li>Expose <code>generate_pipeline_yaml()</code> for YAML generation</li>
+      <li>Manage artifact storage and context assembly</li>
+      <li>Support <code>async with ConductorAI() as conductor:</code> context manager pattern</li>
+    </ul>
+  </div>
+  <div class="comp-section"><h3 class="interactions">Interactions</h3>
+    <div class="interaction-grid">
+      <div class="interaction-item"><div class="target">WorkflowEngine</div><div class="direction">Owns &rarr;</div><div class="how">Creates WorkflowEngine in <code>initialize()</code>. Delegates <code>run_workflow()</code> calls to it.</div></div>
+      <div class="interaction-item"><div class="target">AgentCoordinator</div><div class="direction">Owns &rarr;</div><div class="how">Creates coordinator, routes <code>register_agent()</code> and <code>dispatch_task()</code> through it.</div></div>
+      <div class="interaction-item"><div class="target">MessageBus</div><div class="direction">Owns &rarr;</div><div class="how">Creates InMemoryMessageBus and passes to coordinator. Exposed as property.</div></div>
+      <div class="interaction-item"><div class="target">StateManager</div><div class="direction">Owns &rarr;</div><div class="how">Creates InMemoryStateManager for state persistence. Shared with coordinator and workflow engine.</div></div>
+      <div class="interaction-item"><div class="target">ArtifactStore</div><div class="direction">Owns &rarr;</div><div class="how">Creates InMemoryArtifactStore for saving agent work products.</div></div>
+      <div class="interaction-item"><div class="target">ConductorService</div><div class="direction">&larr; Wrapped by</div><div class="how">The UI layer's ConductorService holds a reference to this facade instance.</div></div>
+    </div>
+  </div>
+  <div class="comp-section"><h3 class="methods">Key Methods</h3>
+    <div class="method-list">
+      <div class="method"><span class="mname">initialize()</span> <span class="mreturn">&rarr; None</span><div class="mdesc">Start all subsystems (idempotent)</div></div>
+      <div class="method"><span class="mname">shutdown()</span> <span class="mreturn">&rarr; None</span><div class="mdesc">Graceful teardown of all components</div></div>
+      <div class="method"><span class="mname">register_agent</span><span class="mparams">(agent: BaseAgent)</span> <span class="mreturn">&rarr; None</span><div class="mdesc">Add agent to coordinator registry</div></div>
+      <div class="method"><span class="mname">run_workflow</span><span class="mparams">(definition: WorkflowDefinition)</span> <span class="mreturn">&rarr; WorkflowState</span><div class="mdesc">Execute multi-phase workflow end-to-end</div></div>
+      <div class="method"><span class="mname">dispatch_task</span><span class="mparams">(task: TaskDefinition)</span> <span class="mreturn">&rarr; TaskResult</span><div class="mdesc">Execute a single task on a matching agent</div></div>
+      <div class="method"><span class="mname">generate_pipeline_yaml</span><span class="mparams">(requirements, infra)</span> <span class="mreturn">&rarr; dict</span><div class="mdesc">Generate pipeline YAML via PipelineYamlGeneratorAgent</div></div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ===== ORCHESTRATION ===== -->
+
+<div class="comp-card" id="workflow-engine">
+  <div class="comp-header">
+    <div class="comp-icon">🔄</div>
+    <div>
+      <div class="comp-title">WorkflowEngine</div>
+      <div class="comp-file">src/conductor/orchestration/workflow_engine.py</div>
+      <div class="comp-badge badge-orch">Orchestration Layer</div>
+    </div>
+  </div>
+  <div class="comp-section"><h3 class="purpose">Purpose</h3>
+    <p>The phase orchestrator that executes multi-phase workflows. Takes a WorkflowDefinition and runs it through ordered phases: DEVELOPMENT &rarr; DEVOPS &rarr; MONITORING. Manages phase gates, sequential task execution within each phase, and the feedback loop mechanism when the MonitorAgent detects issues.</p>
+  </div>
+  <div class="comp-section"><h3 class="responsibilities">Key Responsibilities</h3>
+    <ul>
+      <li>Create WorkflowState and track lifecycle (PENDING &rarr; IN_PROGRESS &rarr; COMPLETED/FAILED)</li>
+      <li>Filter tasks by phase using PHASE_AGENT_TYPES mapping</li>
+      <li>Execute each phase's tasks sequentially via the AgentCoordinator</li>
+      <li>Check phase gates via PolicyEngine before advancing to the next phase</li>
+      <li>Handle feedback loops: when MonitorAgent reports <code>has_issues: true</code>, re-trigger DEVELOPMENT phase (up to <code>max_feedback_loops</code> = 3 times)</li>
+      <li>Save WorkflowState to StateManager after each task completion</li>
+    </ul>
+  </div>
+  <div class="comp-section"><h3 class="interactions">Interactions</h3>
+    <div class="interaction-grid">
+      <div class="interaction-item"><div class="target">AgentCoordinator</div><div class="direction">Calls &rarr;</div><div class="how">Calls <code>coordinator.dispatch_task(task)</code> for each task. The coordinator finds the right agent and executes the task.</div></div>
+      <div class="interaction-item"><div class="target">StateManager</div><div class="direction">Reads/Writes &rarr;</div><div class="how">Saves <code>WorkflowState</code> after each task result. Allows recovery and progress tracking.</div></div>
+      <div class="interaction-item"><div class="target">PolicyEngine</div><div class="direction">Checks &rarr;</div><div class="how">Calls <code>policy_engine.check()</code> at phase boundaries (phase gate pattern).</div></div>
+      <div class="interaction-item"><div class="target">ArtifactStore</div><div class="direction">Writes &rarr;</div><div class="how">Saves context artifacts from agent outputs (code, configs, reviews).</div></div>
+      <div class="interaction-item"><div class="target">ConductorAI Facade</div><div class="direction">&larr; Called by</div><div class="how">Facade delegates <code>run_workflow()</code> here.</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="comp-card" id="agent-coordinator">
+  <div class="comp-header">
+    <div class="comp-icon">🎯</div>
+    <div>
+      <div class="comp-title">AgentCoordinator</div>
+      <div class="comp-file">src/conductor/orchestration/agent_coordinator.py</div>
+      <div class="comp-badge badge-orch">Orchestration Layer</div>
+    </div>
+  </div>
+  <div class="comp-section"><h3 class="purpose">Purpose</h3>
+    <p>The central nerve center for agent lifecycle management and task dispatch. Maintains the registry of all agents, finds available (IDLE) agents by type, applies policy checks, dispatches tasks to the right agent, and syncs state after execution.</p>
+  </div>
+  <div class="comp-section"><h3 class="responsibilities">Key Responsibilities</h3>
+    <ul>
+      <li>Maintain agent registry (<code>_agents</code> dict: agent_id &rarr; BaseAgent)</li>
+      <li>Register agents: validate uniqueness, call <code>agent.start()</code>, sync state</li>
+      <li>Dispatch tasks: find IDLE agent of required type &rarr; policy check &rarr; <code>agent.execute_task()</code> &rarr; save result</li>
+      <li>Raise <code>AgentError</code> if no available agent or policy violation</li>
+    </ul>
+  </div>
+  <div class="comp-section"><h3 class="interactions">Interactions</h3>
+    <div class="interaction-grid">
+      <div class="interaction-item"><div class="target">All Agents (BaseAgent)</div><div class="direction">Manages &rarr;</div><div class="how">Calls <code>agent.start()</code>, <code>agent.execute_task()</code>, <code>agent.stop()</code>. Tracks agent status.</div></div>
+      <div class="interaction-item"><div class="target">StateManager</div><div class="direction">Writes &rarr;</div><div class="how">After every dispatch: <code>save_agent_state()</code> + <code>save_task_result()</code>.</div></div>
+      <div class="interaction-item"><div class="target">PolicyEngine</div><div class="direction">Checks &rarr;</div><div class="how">Before dispatch: checks max concurrent tasks, agent availability policies.</div></div>
+      <div class="interaction-item"><div class="target">MessageBus</div><div class="direction">Publishes &rarr;</div><div class="how">Broadcasts status updates when agents change state.</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="comp-card" id="message-bus">
+  <div class="comp-header">
+    <div class="comp-icon">📨</div>
+    <div>
+      <div class="comp-title">MessageBus</div>
+      <div class="comp-file">src/conductor/orchestration/message_bus.py</div>
+      <div class="comp-badge badge-orch">Orchestration Layer</div>
+    </div>
+  </div>
+  <div class="comp-section"><h3 class="purpose">Purpose</h3>
+    <p>The pub/sub communication backbone that decouples agents from each other. Supports both fire-and-forget broadcasts and synchronous request-response patterns with correlation IDs. Currently implemented as an in-memory dictionary; designed to be swapped for Redis in production.</p>
+  </div>
+  <div class="comp-section"><h3 class="interactions">Interactions</h3>
+    <div class="interaction-grid">
+      <div class="interaction-item"><div class="target">AgentCoordinator</div><div class="direction">&larr; Used by</div><div class="how">Coordinator publishes status updates and task assignments on named channels.</div></div>
+      <div class="interaction-item"><div class="target">Agents</div><div class="direction">&larr; Subscribe</div><div class="how">Agents can subscribe to their own channel <code>conductor:agent:{id}</code> for direct messages.</div></div>
+      <div class="interaction-item"><div class="target">ErrorHandler</div><div class="direction">&larr; Receives</div><div class="how">Error messages published on <code>conductor:error</code> channel.</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="comp-card" id="state-manager">
+  <div class="comp-header">
+    <div class="comp-icon">💾</div>
+    <div>
+      <div class="comp-title">StateManager</div>
+      <div class="comp-file">src/conductor/orchestration/state_manager.py</div>
+      <div class="comp-badge badge-orch">Orchestration Layer</div>
+    </div>
+  </div>
+  <div class="comp-section"><h3 class="purpose">Purpose</h3>
+    <p>Persistent key-value storage for all runtime state: agent states, workflow states, and task results. Provides the single source of truth for "what's happening right now" in the system. Abstract base class with an InMemoryStateManager implementation for dev/test.</p>
+  </div>
+  <div class="comp-section"><h3 class="interactions">Interactions</h3>
+    <div class="interaction-grid">
+      <div class="interaction-item"><div class="target">AgentCoordinator</div><div class="direction">&larr; Written by</div><div class="how">Coordinator saves agent state and task results after every dispatch.</div></div>
+      <div class="interaction-item"><div class="target">WorkflowEngine</div><div class="direction">&larr; Written by</div><div class="how">Engine saves WorkflowState after each phase and task completion.</div></div>
+      <div class="interaction-item"><div class="target">WebSocket (ws.py)</div><div class="direction">&larr; Polled by</div><div class="how">The WebSocket endpoint polls StateManager every 2 seconds to push progress updates to the frontend.</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="comp-card" id="policy-engine">
+  <div class="comp-header">
+    <div class="comp-icon">🛡️</div>
+    <div>
+      <div class="comp-title">PolicyEngine</div>
+      <div class="comp-file">src/conductor/orchestration/policy_engine.py</div>
+      <div class="comp-badge badge-orch">Orchestration Layer</div>
+    </div>
+  </div>
+  <div class="comp-section"><h3 class="purpose">Purpose</h3>
+    <p>Rule evaluation and enforcement layer (Strategy pattern). Contains a chain of pluggable Policy objects. Supports soft checks (return bool) and hard enforcement (raise on violation). Used for task dispatch validation and phase gate decisions.</p>
+  </div>
+  <div class="comp-section"><h3 class="responsibilities">Key Responsibilities</h3>
+    <ul>
+      <li><strong>MaxConcurrentTasksPolicy</strong> — limit simultaneous running agents</li>
+      <li><strong>TaskTimeoutPolicy</strong> — validate timeout values are within bounds (1-3600s)</li>
+      <li><strong>PhaseGatePolicy</strong> — control phase transitions based on success rate thresholds</li>
+      <li><strong>AgentAvailabilityPolicy</strong> — ensure target agent type exists and is available</li>
+    </ul>
+  </div>
+  <div class="comp-section"><h3 class="interactions">Interactions</h3>
+    <div class="interaction-grid">
+      <div class="interaction-item"><div class="target">AgentCoordinator</div><div class="direction">&larr; Called by</div><div class="how">Coordinator calls <code>check()</code> before dispatching tasks to verify policies pass.</div></div>
+      <div class="interaction-item"><div class="target">WorkflowEngine</div><div class="direction">&larr; Called by</div><div class="how">Engine calls <code>check()</code> at phase boundaries (phase gate) to decide if workflow can advance.</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="comp-card" id="error-handler">
+  <div class="comp-header">
+    <div class="comp-icon">🚨</div>
+    <div>
+      <div class="comp-title">ErrorHandler</div>
+      <div class="comp-file">src/conductor/orchestration/error_handler.py</div>
+      <div class="comp-badge badge-orch">Orchestration Layer</div>
+    </div>
+  </div>
+  <div class="comp-section"><h3 class="purpose">Purpose</h3>
+    <p>Handles task failures and decides the recovery strategy: RETRY (re-execute), ESCALATE (report to coordinator), or SKIP (continue with next task). Implements the Chain of Responsibility pattern for error handling policies.</p>
+  </div>
+  <div class="comp-section"><h3 class="interactions">Interactions</h3>
+    <div class="interaction-grid">
+      <div class="interaction-item"><div class="target">WorkflowEngine</div><div class="direction">&larr; Called by</div><div class="how">When a task fails, the engine consults the ErrorHandler for the action to take.</div></div>
+      <div class="interaction-item"><div class="target">MessageBus</div><div class="direction">Subscribes &rarr;</div><div class="how">Listens on <code>conductor:error</code> channel for error notifications.</div></div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ===== AGENTS ===== -->
+
+<div class="comp-card" id="coding-agent">
+  <div class="comp-header">
+    <div class="comp-icon">💻</div>
+    <div>
+      <div class="comp-title">CodingAgent</div>
+      <div class="comp-file">src/conductor/agents/development/coding_agent.py</div>
+      <div class="comp-badge badge-agent">Agent — Development Phase</div>
+    </div>
+  </div>
+  <div class="comp-section"><h3 class="purpose">Purpose</h3>
+    <p>Generates production-quality source code from specifications using an LLM. Follows clean architecture, SOLID principles, and includes type hints, docstrings, and error handling. Also generates context entries for traceability (decisions.md, traceability.md).</p>
+  </div>
+  <div class="comp-section"><h3 class="io">Input / Output</h3>
+    <div class="io-box">
+      <div class="io-card"><div class="io-label input">Input (input_data)</div><pre>specification: str  (REQUIRED)
+language: str       (default: python)
+framework: str      (optional)
+additional_context: str (optional)</pre></div>
+      <div class="io-card"><div class="io-label output">Output (output_data)</div><pre>code: str           (generated source)
+language: str
+description: str
+files: list[str]    (file names)</pre></div>
+    </div>
+  </div>
+  <div class="comp-section"><h3 class="interactions">Interactions</h3>
+    <div class="interaction-grid">
+      <div class="interaction-item"><div class="target">LLM Provider</div><div class="direction">Calls &rarr;</div><div class="how"><code>llm_provider.generate_with_system(system_prompt, user_prompt)</code> to generate code.</div></div>
+      <div class="interaction-item"><div class="target">AgentCoordinator</div><div class="direction">&larr; Dispatched by</div><div class="how">Coordinator calls <code>execute_task()</code> when CodingAgent is IDLE and a CODING task arrives.</div></div>
+      <div class="interaction-item"><div class="target">ReviewAgent</div><div class="direction">Feeds &rarr;</div><div class="how">Code output becomes ReviewAgent's input (chained in DEVELOPMENT phase).</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="comp-card" id="review-agent">
+  <div class="comp-header">
+    <div class="comp-icon">🔍</div>
+    <div>
+      <div class="comp-title">ReviewAgent</div>
+      <div class="comp-file">src/conductor/agents/development/review_agent.py</div>
+      <div class="comp-badge badge-agent">Agent — Development Phase</div>
+    </div>
+  </div>
+  <div class="comp-section"><h3 class="purpose">Purpose</h3>
+    <p>Reviews code quality using LLM analysis. Produces a structured review with a quality score (1-10), approved/rejected verdict, specific findings (issues found), and actionable recommendations. Used both in workflows (auto-review) and for PR reviews via the UI.</p>
+  </div>
+  <div class="comp-section"><h3 class="io">Input / Output</h3>
+    <div class="io-box">
+      <div class="io-card"><div class="io-label input">Input</div><pre>code: str           (REQUIRED)
+language: str       (default: python)
+review_criteria: list[str]  (optional)
+context: str        (optional)</pre></div>
+      <div class="io-card"><div class="io-label output">Output</div><pre>review: str         (full review text)
+approved: bool      (pass/fail)
+score: int          (1-10)
+findings: list[str]
+recommendations: list[str]</pre></div>
+    </div>
+  </div>
+  <div class="comp-section"><h3 class="interactions">Interactions</h3>
+    <div class="interaction-grid">
+      <div class="interaction-item"><div class="target">CodingAgent</div><div class="direction">&larr; Reviews output of</div><div class="how">Takes generated code as input and produces quality assessment.</div></div>
+      <div class="interaction-item"><div class="target">ReviewService (UI)</div><div class="direction">&larr; Called by</div><div class="how">PR review feature dispatches review tasks through ConductorService.</div></div>
+      <div class="interaction-item"><div class="target">LLM Provider</div><div class="direction">Calls &rarr;</div><div class="how">Sends code + review criteria to LLM for analysis.</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="comp-card" id="test-agent">
+  <div class="comp-header">
+    <div class="comp-icon">🧪</div>
+    <div>
+      <div class="comp-title">TestAgent</div>
+      <div class="comp-file">src/conductor/agents/development/test_agent.py</div>
+      <div class="comp-badge badge-agent">Agent — Development Phase</div>
+    </div>
+  </div>
+  <div class="comp-section"><h3 class="purpose">Purpose</h3>
+    <p>Generates comprehensive test suites (unit and integration tests) for the code produced by CodingAgent. Supports multiple test frameworks (pytest, unittest, jest) and incorporates test data from TestDataAgent when available.</p>
+  </div>
+  <div class="comp-section"><h3 class="interactions">Interactions</h3>
+    <div class="interaction-grid">
+      <div class="interaction-item"><div class="target">CodingAgent</div><div class="direction">&larr; Uses output of</div><div class="how">Takes generated code as input to create tests for it.</div></div>
+      <div class="interaction-item"><div class="target">TestDataAgent</div><div class="direction">&larr; May use output of</div><div class="how">Can use generated test fixtures/data as input for test cases.</div></div>
+      <div class="interaction-item"><div class="target">LLM Provider</div><div class="direction">Calls &rarr;</div><div class="how">Sends code + framework preference to LLM for test generation.</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="comp-card" id="test-data-agent">
+  <div class="comp-header">
+    <div class="comp-icon">📊</div>
+    <div>
+      <div class="comp-title">TestDataAgent</div>
+      <div class="comp-file">src/conductor/agents/development/test_data_agent.py</div>
+      <div class="comp-badge badge-agent">Agent — Development Phase</div>
+    </div>
+  </div>
+  <div class="comp-section"><h3 class="purpose">Purpose</h3>
+    <p>Generates test fixtures, mock data, and sample datasets that TestAgent can use. Creates realistic but synthetic data appropriate for the project's domain (e.g., sample API payloads, database records, edge cases).</p>
+  </div>
+  <div class="comp-section"><h3 class="interactions">Interactions</h3>
+    <div class="interaction-grid">
+      <div class="interaction-item"><div class="target">TestAgent</div><div class="direction">Feeds &rarr;</div><div class="how">Generated test data is available for TestAgent to import into test cases.</div></div>
+      <div class="interaction-item"><div class="target">LLM Provider</div><div class="direction">Calls &rarr;</div><div class="how">Sends specification + schema info to LLM for fixture generation.</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="comp-card" id="devops-agent">
+  <div class="comp-header">
+    <div class="comp-icon">⚙️</div>
+    <div>
+      <div class="comp-title">DevOpsAgent</div>
+      <div class="comp-file">src/conductor/agents/devops/devops_agent.py</div>
+      <div class="comp-badge badge-agent">Agent — DevOps Phase</div>
+    </div>
+  </div>
+  <div class="comp-section"><h3 class="purpose">Purpose</h3>
+    <p>Generates CI/CD configuration files (GitHub Actions, Dockerfiles, Kubernetes manifests) for the code generated by the Development phase. Tailors configs to the project's language, framework, and infrastructure requirements.</p>
+  </div>
+  <div class="comp-section"><h3 class="interactions">Interactions</h3>
+    <div class="interaction-grid">
+      <div class="interaction-item"><div class="target">CodingAgent (output)</div><div class="direction">&larr; Reads</div><div class="how">Uses generated code to determine language, dependencies, and deployment targets.</div></div>
+      <div class="interaction-item"><div class="target">DeployingAgent</div><div class="direction">Feeds &rarr;</div><div class="how">CI/CD configs are used by DeployingAgent for actual deployment.</div></div>
+      <div class="interaction-item"><div class="target">LLM Provider</div><div class="direction">Calls &rarr;</div><div class="how">Sends project description + platform info to LLM for config generation.</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="comp-card" id="deploying-agent">
+  <div class="comp-header">
+    <div class="comp-icon">🚀</div>
+    <div>
+      <div class="comp-title">DeployingAgent</div>
+      <div class="comp-file">src/conductor/agents/devops/deploying_agent.py</div>
+      <div class="comp-badge badge-agent">Agent — DevOps Phase</div>
+    </div>
+  </div>
+  <div class="comp-section"><h3 class="purpose">Purpose</h3>
+    <p>Handles application deployment to target environments. Uses CI/CD configurations from DevOpsAgent and generates deployment artifacts, environment configs, and deployment verification steps.</p>
+  </div>
+  <div class="comp-section"><h3 class="interactions">Interactions</h3>
+    <div class="interaction-grid">
+      <div class="interaction-item"><div class="target">DevOpsAgent (output)</div><div class="direction">&larr; Uses configs from</div><div class="how">Consumes CI/CD YAML, Dockerfile, and K8s manifests for deployment.</div></div>
+      <div class="interaction-item"><div class="target">MonitorAgent</div><div class="direction">Feeds &rarr;</div><div class="how">Deployment result becomes MonitorAgent's input for post-deployment analysis.</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="comp-card" id="monitor-agent">
+  <div class="comp-header">
+    <div class="comp-icon">📡</div>
+    <div>
+      <div class="comp-title">MonitorAgent</div>
+      <div class="comp-file">src/conductor/agents/monitoring/monitor_agent.py</div>
+      <div class="comp-badge badge-agent">Agent — Monitoring Phase</div>
+    </div>
+  </div>
+  <div class="comp-section"><h3 class="purpose">Purpose</h3>
+    <p>Analyzes deployment results, metrics, and logs to detect issues. Produces a structured analysis with severity level, issue list, and feedback for development. When issues are found, can trigger a feedback loop that re-runs the Development phase — enabling iterative self-improvement up to 3 cycles.</p>
+  </div>
+  <div class="comp-section"><h3 class="io">Input / Output</h3>
+    <div class="io-box">
+      <div class="io-card"><div class="io-label input">Input</div><pre>deployment_result: str (REQUIRED)
+metrics: dict       (optional)
+logs: str           (optional)</pre></div>
+      <div class="io-card"><div class="io-label output">Output</div><pre>analysis: str
+has_issues: bool    (triggers feedback)
+severity: str       (low|med|high|critical)
+issues: list[str]
+recommendations: list[str]
+feedback_for_development: str</pre></div>
+    </div>
+  </div>
+  <div class="comp-section"><h3 class="interactions">Interactions</h3>
+    <div class="interaction-grid">
+      <div class="interaction-item"><div class="target">DeployingAgent (output)</div><div class="direction">&larr; Analyzes</div><div class="how">Takes deployment results, metrics, and logs as input.</div></div>
+      <div class="interaction-item"><div class="target">WorkflowEngine</div><div class="direction">Triggers &rarr;</div><div class="how">When <code>has_issues: true</code>, WorkflowEngine calls <code>trigger_feedback_loop()</code> to re-run DEVELOPMENT phase.</div></div>
+      <div class="interaction-item"><div class="target">LLM Provider</div><div class="direction">Calls &rarr;</div><div class="how">Sends deployment data to LLM for analysis and issue detection.</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="comp-card" id="pipeline-agent">
+  <div class="comp-header">
+    <div class="comp-icon">📋</div>
+    <div>
+      <div class="comp-title">PipelineYamlGeneratorAgent</div>
+      <div class="comp-file">src/conductor/agents/pipeline/pipeline_yaml_generator.py</div>
+      <div class="comp-badge badge-agent">Agent — Pipeline Generation</div>
+    </div>
+  </div>
+  <div class="comp-section"><h3 class="purpose">Purpose</h3>
+    <p>Generates complete pipeline YAML definitions from requirements and infrastructure specifications. Auto-detects the pipeline type (data_pipeline, ml_pipeline, rag_llm, agentic_ops, integration) by scoring indicator keywords. Loads type-specific template schemas and validates the generated output.</p>
+  </div>
+  <div class="comp-section"><h3 class="io">Input / Output</h3>
+    <div class="io-box">
+      <div class="io-card"><div class="io-label input">Input</div><pre>requirements_yaml: str  (REQUIRED)
+infra_yaml: str         (REQUIRED)
+pipeline_type: str      (optional override)</pre></div>
+      <div class="io-card"><div class="io-label output">Output</div><pre>pipeline_yaml: str
+pipeline_type: str
+pipeline_type_confidence: float
+sections_generated: list[str]
+validation_result: dict
+decisions_summary: str</pre></div>
+    </div>
+  </div>
+  <div class="comp-section"><h3 class="interactions">Interactions</h3>
+    <div class="interaction-grid">
+      <div class="interaction-item"><div class="target">Template Files</div><div class="direction">Reads &rarr;</div><div class="how">Loads YAML templates from <code>src/templates/</code> directory (6 requirement + 6 infra templates).</div></div>
+      <div class="interaction-item"><div class="target">LLM Provider</div><div class="direction">Calls &rarr;</div><div class="how">Sends requirements + infra + type hint to LLM with pipeline architect system prompt.</div></div>
+      <div class="interaction-item"><div class="target">ConductorAI Facade</div><div class="direction">&larr; Called by</div><div class="how">Facade's <code>generate_pipeline_yaml()</code> dispatches a task to this agent.</div></div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ===== INFRASTRUCTURE ===== -->
+
+<div class="comp-card" id="artifact-store">
+  <div class="comp-header">
+    <div class="comp-icon">📦</div>
+    <div>
+      <div class="comp-title">ArtifactStore</div>
+      <div class="comp-file">src/conductor/infrastructure/artifact_store.py</div>
+      <div class="comp-badge badge-infra">Infrastructure Layer</div>
+    </div>
+  </div>
+  <div class="comp-section"><h3 class="purpose">Purpose</h3>
+    <p>Persistent storage for all work products (artifacts) produced by agents. Each artifact has a type (code, test, config, review), content, and metadata linking it to a specific workflow, task, and agent. Enables retrieval of all outputs for a given workflow run.</p>
+  </div>
+  <div class="comp-section"><h3 class="interactions">Interactions</h3>
+    <div class="interaction-grid">
+      <div class="interaction-item"><div class="target">WorkflowEngine</div><div class="direction">&larr; Written by</div><div class="how">Engine saves artifacts after agent task completion (code, tests, configs, reviews).</div></div>
+      <div class="interaction-item"><div class="target">ContextBundler</div><div class="direction">&larr; Read by</div><div class="how">Bundler reads artifacts to assemble .context/ directory files.</div></div>
+      <div class="interaction-item"><div class="target">ConductorAI Facade</div><div class="direction">&larr; Queried by</div><div class="how"><code>get_workflow_artifacts(workflow_id)</code> returns all outputs for a workflow.</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="comp-card" id="context-bundler">
+  <div class="comp-header">
+    <div class="comp-icon">📂</div>
+    <div>
+      <div class="comp-title">ContextBundler</div>
+      <div class="comp-file">src/conductor/infrastructure/context_bundler.py</div>
+      <div class="comp-badge badge-infra">Infrastructure Layer</div>
+    </div>
+  </div>
+  <div class="comp-section"><h3 class="purpose">Purpose</h3>
+    <p>Assembles the <code>.context/</code> directory by collecting all context entries from agent artifacts. Groups content by file (decisions.md, traceability.md, confidence-report.md, runbook.md, etc.) and merges entries by section heading. Provides a complete audit trail of what was generated and why.</p>
+  </div>
+  <div class="comp-section"><h3 class="interactions">Interactions</h3>
+    <div class="interaction-grid">
+      <div class="interaction-item"><div class="target">ArtifactStore</div><div class="direction">Reads &rarr;</div><div class="how">Queries all artifacts for a workflow and extracts context entries.</div></div>
+      <div class="interaction-item"><div class="target">ConductorAI Facade</div><div class="direction">&larr; Called by</div><div class="how"><code>assemble_context(workflow_id)</code> returns dict of filename &rarr; markdown content.</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="comp-card" id="metrics">
+  <div class="comp-header">
+    <div class="comp-icon">📈</div>
+    <div>
+      <div class="comp-title">MetricsCollector</div>
+      <div class="comp-file">src/conductor/infrastructure/metrics.py</div>
+      <div class="comp-badge badge-infra">Infrastructure Layer</div>
+    </div>
+  </div>
+  <div class="comp-section"><h3 class="purpose">Purpose</h3>
+    <p>Collects Prometheus-compatible metrics across the system: task execution times, agent utilization, workflow success rates, LLM token usage, and error counts. Enables operational monitoring and performance dashboards.</p>
+  </div>
+</div>
+
+<div class="comp-card" id="tracing">
+  <div class="comp-header">
+    <div class="comp-icon">🔬</div>
+    <div>
+      <div class="comp-title">TracingProvider</div>
+      <div class="comp-file">src/conductor/infrastructure/tracing.py</div>
+      <div class="comp-badge badge-infra">Infrastructure Layer</div>
+    </div>
+  </div>
+  <div class="comp-section"><h3 class="purpose">Purpose</h3>
+    <p>OpenTelemetry distributed tracing. Creates spans for workflow execution, task dispatch, and LLM calls. Enables end-to-end visibility into request flow through all layers — from UI click to LLM response and back.</p>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ===== LLM PROVIDERS ===== -->
+
+<div class="comp-card" id="llm-provider">
+  <div class="comp-header">
+    <div class="comp-icon">🧠</div>
+    <div>
+      <div class="comp-title">LLM Provider System</div>
+      <div class="comp-file">src/conductor/integrations/llm/</div>
+      <div class="comp-badge badge-llm">LLM Provider Layer</div>
+    </div>
+  </div>
+  <div class="comp-section"><h3 class="purpose">Purpose</h3>
+    <p>Abstract interface for LLM API calls (Strategy pattern). All agents use the same <code>BaseLLMProvider</code> interface, making it trivial to swap between OpenAI, Anthropic, or Mock providers via configuration. The factory function <code>create_llm_provider(config)</code> creates the right implementation based on the <code>provider</code> setting.</p>
+  </div>
+  <div class="comp-section"><h3 class="responsibilities">Key Responsibilities</h3>
+    <ul>
+      <li><strong>BaseLLMProvider</strong> (abstract) — defines <code>generate(prompt)</code> and <code>generate_with_system(system, user)</code></li>
+      <li><strong>OpenAIProvider</strong> — wraps OpenAI's Python SDK for GPT-4, GPT-4o, GPT-3.5-turbo</li>
+      <li><strong>AnthropicProvider</strong> — wraps Anthropic's SDK for Claude 3 Opus, Sonnet, Haiku</li>
+      <li><strong>MockLLMProvider</strong> — returns pre-defined responses for testing (no API calls)</li>
+      <li><strong>create_llm_provider(config)</strong> — factory function that instantiates the right provider</li>
+    </ul>
+  </div>
+  <div class="comp-section"><h3 class="interactions">Interactions</h3>
+    <div class="interaction-grid">
+      <div class="interaction-item"><div class="target">All 8 Agents</div><div class="direction">&larr; Used by</div><div class="how">Every agent calls <code>self._llm_provider.generate_with_system()</code> in its <code>_execute()</code> method.</div></div>
+      <div class="interaction-item"><div class="target">ConductorService</div><div class="direction">&larr; Created by</div><div class="how">Service calls <code>create_llm_provider(config)</code> during initialization and passes it to each agent constructor.</div></div>
+      <div class="interaction-item"><div class="target">OpenAI / Anthropic APIs</div><div class="direction">Calls &rarr;</div><div class="how">Makes HTTP requests to external LLM APIs (or returns mock data in test mode).</div></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end main-content -->
+</div><!-- end page-layout -->
+</div><!-- end container -->
+
+</body>
+</html>

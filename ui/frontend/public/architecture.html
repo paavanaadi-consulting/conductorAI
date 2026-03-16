@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ConductorAI — Complete Architecture Diagram</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #0f1117; color: #e0e0e0; overflow-x: hidden; }
+
+  .topnav { background: #161822; border-bottom: 1px solid #2a2d3e; padding: 12px 24px; display: flex; align-items: center; gap: 24px; position: sticky; top: 0; z-index: 100; }
+  .topnav .brand { font-weight: 700; font-size: 1.1rem; color: #fff; }
+  .topnav .brand span { color: #f59e0b; }
+  .topnav a { color: #888; text-decoration: none; font-size: 0.85rem; padding: 6px 14px; border-radius: 6px; transition: all 0.2s; }
+  .topnav a:hover { color: #e0e0e0; background: rgba(255,255,255,0.05); }
+  .topnav a.active { color: #f59e0b; background: rgba(245,158,11,0.1); }
+
+  .header { text-align: center; padding: 40px 20px 20px; }
+  .header h1 { font-size: 2.2rem; color: #fff; letter-spacing: -0.5px; }
+  .header h1 span { color: #f59e0b; }
+  .header p { color: #888; margin-top: 8px; font-size: 1rem; }
+
+  .diagram-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+  /* Step navigation */
+  .step-nav { display: flex; justify-content: center; gap: 8px; margin: 20px 0 30px; flex-wrap: wrap; }
+  .step-btn { background: #1e2130; border: 1px solid #333; color: #aaa; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; transition: all 0.3s; }
+  .step-btn:hover { border-color: #f59e0b; color: #f59e0b; }
+  .step-btn.active { background: #f59e0b; color: #000; border-color: #f59e0b; font-weight: 600; }
+
+  /* Layer containers */
+  .layer { margin: 16px 0; border-radius: 16px; padding: 20px; position: relative; transition: all 0.5s; opacity: 0.3; transform: scale(0.98); }
+  .layer.active { opacity: 1; transform: scale(1); }
+  .layer.highlight { box-shadow: 0 0 30px rgba(245, 158, 11, 0.15); }
+
+  .layer-label { position: absolute; top: -12px; left: 24px; background: #0f1117; padding: 0 12px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; }
+
+  /* Layer colors */
+  .layer-ui { background: linear-gradient(135deg, #1a1f3a 0%, #1e2340 100%); border: 1px solid #2d3460; }
+  .layer-ui .layer-label { color: #818cf8; }
+
+  .layer-facade { background: linear-gradient(135deg, #1f2a1a 0%, #222f1e 100%); border: 1px solid #3a5430; }
+  .layer-facade .layer-label { color: #86efac; }
+
+  .layer-orchestration { background: linear-gradient(135deg, #2a1f1a 0%, #2f261e 100%); border: 1px solid #54433a; }
+  .layer-orchestration .layer-label { color: #fbbf24; }
+
+  .layer-agents { background: linear-gradient(135deg, #1a2a2a 0%, #1e2f2f 100%); border: 1px solid #3a5454; }
+  .layer-agents .layer-label { color: #67e8f9; }
+
+  .layer-infra { background: linear-gradient(135deg, #2a1a2a 0%, #2f1e2f 100%); border: 1px solid #543a54; }
+  .layer-infra .layer-label { color: #f0abfc; }
+
+  .layer-llm { background: linear-gradient(135deg, #2a2a1a 0%, #2f2f1e 100%); border: 1px solid #54543a; }
+  .layer-llm .layer-label { color: #fde68a; }
+
+  /* Component boxes */
+  .components { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 8px; }
+  .component { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px 16px; min-width: 140px; text-align: center; transition: all 0.3s; cursor: default; }
+  .component:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); transform: translateY(-2px); }
+  .component .name { font-weight: 600; font-size: 0.9rem; color: #fff; }
+  .component .desc { font-size: 0.7rem; color: #888; margin-top: 4px; }
+  .component .file { font-size: 0.65rem; color: #666; margin-top: 4px; font-family: monospace; }
+
+  .component.primary { border-color: #f59e0b55; background: rgba(245, 158, 11, 0.08); }
+  .component.primary .name { color: #f59e0b; }
+
+  /* Phase groups */
+  .phase-group { background: rgba(0,0,0,0.2); border-radius: 12px; padding: 14px; margin: 4px; flex: 1; min-width: 220px; }
+  .phase-group .phase-title { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; padding: 3px 10px; border-radius: 4px; display: inline-block; }
+  .phase-dev .phase-title { background: #22c55e22; color: #4ade80; }
+  .phase-devops .phase-title { background: #3b82f622; color: #60a5fa; }
+  .phase-monitor .phase-title { background: #a855f722; color: #c084fc; }
+  .phase-pipeline .phase-title { background: #f59e0b22; color: #fbbf24; }
+
+  .agent-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px 12px; margin: 6px 0; display: flex; align-items: center; gap: 10px; }
+  .agent-card .icon { font-size: 1.3rem; }
+  .agent-card .info .name { font-size: 0.82rem; font-weight: 600; color: #e0e0e0; }
+  .agent-card .info .role { font-size: 0.68rem; color: #888; }
+
+  /* Arrows */
+  .arrow-container { display: flex; justify-content: center; margin: -4px 0; position: relative; z-index: 1; }
+  .arrow { color: #444; font-size: 1.5rem; animation: pulse 2s infinite; }
+  .arrow.active { color: #f59e0b; }
+  @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+
+  /* Data flow panel */
+  .flow-panel { background: #161822; border: 1px solid #2a2d3e; border-radius: 16px; padding: 24px; margin: 30px 0; }
+  .flow-panel h3 { color: #f59e0b; font-size: 1.1rem; margin-bottom: 16px; }
+  .flow-steps { display: flex; flex-direction: column; gap: 0; }
+  .flow-step { display: flex; align-items: flex-start; gap: 16px; padding: 12px 0; }
+  .flow-step .step-num { background: #f59e0b; color: #000; font-weight: 700; font-size: 0.8rem; min-width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .flow-step .step-content { flex: 1; }
+  .flow-step .step-title { font-weight: 600; font-size: 0.9rem; color: #e0e0e0; }
+  .flow-step .step-detail { font-size: 0.78rem; color: #888; margin-top: 3px; line-height: 1.5; }
+  .flow-step .step-detail code { background: rgba(245,158,11,0.15); color: #fbbf24; padding: 1px 6px; border-radius: 4px; font-size: 0.75rem; }
+  .flow-connector { width: 2px; height: 16px; background: #333; margin-left: 13px; }
+
+  /* Sequence diagram */
+  .sequence-diagram { background: #161822; border: 1px solid #2a2d3e; border-radius: 16px; padding: 24px; margin: 30px 0; overflow-x: auto; }
+  .sequence-diagram h3 { color: #67e8f9; font-size: 1.1rem; margin-bottom: 16px; }
+  .seq-row { display: flex; align-items: center; min-height: 36px; font-size: 0.78rem; font-family: monospace; }
+  .seq-actor { min-width: 100px; text-align: right; padding-right: 8px; color: #888; font-weight: 600; flex-shrink: 0; }
+  .seq-arrow { flex: 1; display: flex; align-items: center; gap: 4px; padding: 0 4px; white-space: nowrap; }
+  .seq-arrow .line { flex: 1; height: 1px; min-width: 20px; }
+  .seq-arrow .line.solid { background: #f59e0b; }
+  .seq-arrow .line.dashed { background: repeating-linear-gradient(90deg, #4ade80 0, #4ade80 4px, transparent 4px, transparent 8px); }
+  .seq-arrow .label { color: #ccc; font-size: 0.72rem; padding: 2px 6px; background: rgba(255,255,255,0.05); border-radius: 4px; }
+  .seq-arrow .arrowhead { color: #f59e0b; }
+  .seq-target { min-width: 100px; padding-left: 8px; color: #888; font-weight: 600; flex-shrink: 0; }
+  .seq-divider { border-top: 1px dashed #333; margin: 8px 0; position: relative; }
+  .seq-divider span { position: absolute; top: -9px; left: 50%; transform: translateX(-50%); background: #161822; padding: 0 12px; color: #666; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; }
+
+  /* Model diagram */
+  .model-diagram { background: #161822; border: 1px solid #2a2d3e; border-radius: 16px; padding: 24px; margin: 30px 0; }
+  .model-diagram h3 { color: #86efac; font-size: 1.1rem; margin-bottom: 16px; }
+  .model-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+  .model-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px; }
+  .model-card .model-name { font-weight: 700; font-size: 0.9rem; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .model-card .field { font-size: 0.72rem; font-family: monospace; padding: 2px 0; display: flex; gap: 8px; }
+  .model-card .field .fname { color: #fbbf24; }
+  .model-card .field .ftype { color: #818cf8; }
+
+  /* Legend */
+  .legend { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin: 20px 0; padding: 16px; background: #161822; border-radius: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: #888; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+
+  @media (max-width: 768px) {
+    .phase-group { min-width: 100%; }
+    .components { flex-direction: column; align-items: center; }
+    .component { min-width: 90%; }
+    .seq-actor, .seq-target { min-width: 70px; font-size: 0.65rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <div class="brand">Conductor<span>AI</span></div>
+  <a href="/architecture.html" class="active">Architecture Diagram</a>
+  <a href="/components.html">Component Reference</a>
+</div>
+
+<div class="header">
+  <h1>Conductor<span>AI</span> Architecture</h1>
+  <p>Multi-Agent Orchestration Framework — Complete System Diagram</p>
+</div>
+
+<div class="diagram-container">
+
+<!-- Step Navigation -->
+<div class="step-nav">
+  <button class="step-btn active" onclick="showStep('overview')">Overview</button>
+  <button class="step-btn" onclick="showStep('ui')">Step 1: UI Layer</button>
+  <button class="step-btn" onclick="showStep('facade')">Step 2: Facade</button>
+  <button class="step-btn" onclick="showStep('orchestration')">Step 3: Orchestration</button>
+  <button class="step-btn" onclick="showStep('agents')">Step 4: Agents</button>
+  <button class="step-btn" onclick="showStep('infra')">Step 5: Infrastructure</button>
+  <button class="step-btn" onclick="showStep('llm')">Step 6: LLM Providers</button>
+  <button class="step-btn" onclick="showStep('flow')">End-to-End Flow</button>
+  <button class="step-btn" onclick="showStep('models')">Data Models</button>
+</div>
+
+<!-- ========== LAYER 1: UI ========== -->
+<div class="layer layer-ui" id="layer-ui">
+  <div class="layer-label">Layer 1 — User Interface</div>
+  <div class="components">
+    <div style="flex: 1; min-width: 300px;">
+      <div style="text-align:center; margin-bottom:10px; font-size:0.8rem; color:#818cf8; font-weight:600;">Next.js Frontend (port 3000)</div>
+      <div class="components" style="margin-top:0;">
+        <div class="component"><div class="name">/projects/new</div><div class="desc">Upload YAML + select components</div><div class="file">app/projects/new/page.tsx</div></div>
+        <div class="component"><div class="name">/projects</div><div class="desc">List projects & GitHub repos</div><div class="file">app/projects/page.tsx</div></div>
+        <div class="component"><div class="name">/projects/[id]</div><div class="desc">Run workflows & view results</div><div class="file">app/projects/[id]/page.tsx</div></div>
+        <div class="component"><div class="name">/projects/[id]/prs</div><div class="desc">AI-powered PR review</div><div class="file">app/projects/[id]/prs/page.tsx</div></div>
+      </div>
+    </div>
+    <div style="flex: 1; min-width: 300px;">
+      <div style="text-align:center; margin-bottom:10px; font-size:0.8rem; color:#818cf8; font-weight:600;">FastAPI Backend (port 8000)</div>
+      <div class="components" style="margin-top:0;">
+        <div class="component"><div class="name">/api/projects</div><div class="desc">CRUD + run workflows</div><div class="file">routers/projects.py</div></div>
+        <div class="component"><div class="name">/api/github</div><div class="desc">Repos, PRs, reviews</div><div class="file">routers/github.py</div></div>
+        <div class="component"><div class="name">/api/templates</div><div class="desc">YAML templates</div><div class="file">routers/templates.py</div></div>
+        <div class="component"><div class="name">/api/ws</div><div class="desc">WebSocket progress</div><div class="file">routers/ws.py</div></div>
+        <div class="component"><div class="name">/api/upload</div><div class="desc">YAML file upload</div><div class="file">routers/upload.py</div></div>
+        <div class="component"><div class="name">/api/workflows</div><div class="desc">Run history</div><div class="file">routers/workflows.py</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="arrow-container"><div class="arrow" id="arrow-1">▼</div></div>
+
+<!-- ========== LAYER 2: FACADE ========== -->
+<div class="layer layer-facade" id="layer-facade">
+  <div class="layer-label">Layer 2 — Facade (Entry Point)</div>
+  <div class="components">
+    <div class="component primary" style="min-width: 280px;">
+      <div class="name">ConductorAI</div>
+      <div class="desc">Single entry point — manages entire system lifecycle</div>
+      <div class="file">src/conductor/facade.py</div>
+    </div>
+    <div class="component">
+      <div class="name">ConductorService</div>
+      <div class="desc">FastAPI singleton wrapping facade</div>
+      <div class="file">ui/api/services/conductor_service.py</div>
+    </div>
+    <div class="component">
+      <div class="name">ConductorConfig</div>
+      <div class="desc">Environment, Redis, LLM, workflow settings</div>
+      <div class="file">src/conductor/core/config.py</div>
+    </div>
+  </div>
+</div>
+
+<div class="arrow-container"><div class="arrow" id="arrow-2">▼</div></div>
+
+<!-- ========== LAYER 3: ORCHESTRATION ========== -->
+<div class="layer layer-orchestration" id="layer-orchestration">
+  <div class="layer-label">Layer 3 — Orchestration (The Nervous System)</div>
+  <div class="components">
+    <div class="component primary">
+      <div class="name">WorkflowEngine</div>
+      <div class="desc">Phase orchestrator<br>DEV → DEVOPS → MONITOR</div>
+      <div class="file">orchestration/workflow_engine.py</div>
+    </div>
+    <div class="component primary">
+      <div class="name">AgentCoordinator</div>
+      <div class="desc">Agent registry + task dispatch</div>
+      <div class="file">orchestration/agent_coordinator.py</div>
+    </div>
+    <div class="component">
+      <div class="name">MessageBus</div>
+      <div class="desc">Pub/Sub communication backbone</div>
+      <div class="file">orchestration/message_bus.py</div>
+    </div>
+    <div class="component">
+      <div class="name">StateManager</div>
+      <div class="desc">Agent + workflow state persistence</div>
+      <div class="file">orchestration/state_manager.py</div>
+    </div>
+    <div class="component">
+      <div class="name">PolicyEngine</div>
+      <div class="desc">Rule enforcement & phase gates</div>
+      <div class="file">orchestration/policy_engine.py</div>
+    </div>
+    <div class="component">
+      <div class="name">ErrorHandler</div>
+      <div class="desc">Retry, escalate, or skip</div>
+      <div class="file">orchestration/error_handler.py</div>
+    </div>
+  </div>
+</div>
+
+<div class="arrow-container"><div class="arrow" id="arrow-3">▼</div></div>
+
+<!-- ========== LAYER 4: AGENTS ========== -->
+<div class="layer layer-agents" id="layer-agents">
+  <div class="layer-label">Layer 4 — Agent Layer (8 Specialized Agents)</div>
+  <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px;">
+
+    <div class="phase-group phase-dev">
+      <div class="phase-title">Development Phase</div>
+      <div class="agent-card"><div class="icon">💻</div><div class="info"><div class="name">CodingAgent</div><div class="role">Generates source code via LLM</div></div></div>
+      <div class="agent-card"><div class="icon">🔍</div><div class="info"><div class="name">ReviewAgent</div><div class="role">Reviews code quality (score 1-10)</div></div></div>
+      <div class="agent-card"><div class="icon">📊</div><div class="info"><div class="name">TestDataAgent</div><div class="role">Generates test fixtures & data</div></div></div>
+      <div class="agent-card"><div class="icon">🧪</div><div class="info"><div class="name">TestAgent</div><div class="role">Generates unit/integration tests</div></div></div>
+    </div>
+
+    <div class="phase-group phase-devops">
+      <div class="phase-title">DevOps Phase</div>
+      <div class="agent-card"><div class="icon">⚙️</div><div class="info"><div class="name">DevOpsAgent</div><div class="role">Creates CI/CD configs (GitHub Actions)</div></div></div>
+      <div class="agent-card"><div class="icon">🚀</div><div class="info"><div class="name">DeployingAgent</div><div class="role">Handles deployment to target env</div></div></div>
+    </div>
+
+    <div class="phase-group phase-monitor">
+      <div class="phase-title">Monitoring Phase</div>
+      <div class="agent-card"><div class="icon">📡</div><div class="info"><div class="name">MonitorAgent</div><div class="role">Analyzes deployment & generates feedback</div></div></div>
+      <div style="font-size:0.7rem; color:#a78bfa; margin-top:8px; padding:8px; background:rgba(168,85,247,0.08); border-radius:6px; text-align:center;">
+        ↩️ Feedback loop → re-triggers Development<br>(up to 3 iterations)
+      </div>
+    </div>
+
+    <div class="phase-group phase-pipeline">
+      <div class="phase-title">Pipeline Generation</div>
+      <div class="agent-card"><div class="icon">📋</div><div class="info"><div class="name">PipelineYamlGenerator</div><div class="role">Requirements + Infra → Pipeline YAML</div></div></div>
+      <div style="font-size:0.68rem; color:#fbbf24; margin-top:8px; padding:6px; background:rgba(245,158,11,0.08); border-radius:6px;">
+        Detects: data_pipeline, ml_pipeline, rag_llm, agentic_ops, integration
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="arrow-container"><div class="arrow" id="arrow-4">▼</div></div>
+
+<!-- ========== LAYER 5: INFRASTRUCTURE ========== -->
+<div class="layer layer-infra" id="layer-infra">
+  <div class="layer-label">Layer 5 — Infrastructure</div>
+  <div class="components">
+    <div class="component"><div class="name">ArtifactStore</div><div class="desc">Code, tests, configs persistence</div><div class="file">infrastructure/artifact_store.py</div></div>
+    <div class="component"><div class="name">ContextBundler</div><div class="desc">Assembles .context/ directory</div><div class="file">infrastructure/context_bundler.py</div></div>
+    <div class="component"><div class="name">MetricsCollector</div><div class="desc">Prometheus metrics</div><div class="file">infrastructure/metrics.py</div></div>
+    <div class="component"><div class="name">TracingProvider</div><div class="desc">OpenTelemetry traces</div><div class="file">infrastructure/tracing.py</div></div>
+    <div class="component"><div class="name">SecretsManager</div><div class="desc">API keys & credentials</div><div class="file">infrastructure/secrets.py</div></div>
+    <div class="component"><div class="name">HealthChecker</div><div class="desc">System health monitoring</div><div class="file">infrastructure/health.py</div></div>
+  </div>
+</div>
+
+<div class="arrow-container"><div class="arrow" id="arrow-5">▼</div></div>
+
+<!-- ========== LAYER 6: LLM ========== -->
+<div class="layer layer-llm" id="layer-llm">
+  <div class="layer-label">Layer 6 — LLM Provider Integration</div>
+  <div class="components">
+    <div class="component" style="border-color: #10b98155;">
+      <div class="name" style="color: #10b981;">OpenAI Provider</div>
+      <div class="desc">GPT-4, GPT-4o, GPT-3.5</div>
+      <div class="file">integrations/llm/openai_provider.py</div>
+    </div>
+    <div class="component" style="border-color: #d97706aa;">
+      <div class="name" style="color: #d97706;">Anthropic Provider</div>
+      <div class="desc">Claude 3 Opus, Sonnet</div>
+      <div class="file">integrations/llm/anthropic_provider.py</div>
+    </div>
+    <div class="component" style="border-color: #6b728055;">
+      <div class="name" style="color: #9ca3af;">Mock Provider</div>
+      <div class="desc">Testing (no API calls)</div>
+      <div class="file">integrations/llm/mock.py</div>
+    </div>
+    <div class="component primary">
+      <div class="name">BaseLLMProvider</div>
+      <div class="desc">Abstract: generate(), generate_with_system()</div>
+      <div class="file">integrations/llm/base.py</div>
+    </div>
+  </div>
+</div>
+
+<!-- Legend -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#818cf8;"></div> UI Layer</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#86efac;"></div> Facade</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#fbbf24;"></div> Orchestration</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#67e8f9;"></div> Agents</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#f0abfc;"></div> Infrastructure</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#fde68a;"></div> LLM Providers</div>
+</div>
+
+<!-- ========== END-TO-END FLOW ========== -->
+<div class="flow-panel" id="flow-panel" style="display:none;">
+  <h3>End-to-End Workflow Execution — Step by Step</h3>
+
+  <div class="flow-steps">
+    <div class="flow-step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <div class="step-title">User Submits Project (Next.js Frontend)</div>
+        <div class="step-detail">User fills in project name, uploads <code>requirements.yaml</code> + <code>infrastructure.yaml</code>, selects components (Code, Tests, Deployment...), and clicks <strong>Create & Run</strong>.</div>
+      </div>
+    </div>
+    <div class="flow-connector"></div>
+
+    <div class="flow-step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <div class="step-title">FastAPI Backend Receives Request</div>
+        <div class="step-detail"><code>POST /api/projects/{id}/run</code> → Projects router saves to SQLite, calls <code>ConductorService</code>. WebSocket connection opened for real-time progress.</div>
+      </div>
+    </div>
+    <div class="flow-connector"></div>
+
+    <div class="flow-step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <div class="step-title">Pipeline YAML Generation</div>
+        <div class="step-detail"><code>PipelineYamlGeneratorAgent</code> analyzes requirements + infra, detects pipeline type (data_pipeline, ml_pipeline, rag_llm, etc.), generates complete pipeline YAML via LLM.</div>
+      </div>
+    </div>
+    <div class="flow-connector"></div>
+
+    <div class="flow-step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <div class="step-title">WorkflowBuilder Maps Components to Agents</div>
+        <div class="step-detail"><code>WorkflowBuilder</code> maps UI checkboxes to agent types: code→CODING, unit_test→TEST, deployment→DEVOPS+DEPLOYING, etc. Builds ordered <code>WorkflowDefinition</code> with phases.</div>
+      </div>
+    </div>
+    <div class="flow-connector"></div>
+
+    <div class="flow-step">
+      <div class="step-num">5</div>
+      <div class="step-content">
+        <div class="step-title">ConductorAI Facade → WorkflowEngine</div>
+        <div class="step-detail"><code>conductor.run_workflow(definition)</code> → Creates <code>WorkflowState</code> (PENDING → IN_PROGRESS), starts phase-by-phase execution.</div>
+      </div>
+    </div>
+    <div class="flow-connector"></div>
+
+    <div class="flow-step">
+      <div class="step-num">6</div>
+      <div class="step-content">
+        <div class="step-title">DEVELOPMENT Phase</div>
+        <div class="step-detail">
+          <strong>CodingAgent</strong> → generates source code via LLM<br>
+          <strong>ReviewAgent</strong> → reviews code quality (score 1-10, approved/rejected)<br>
+          <strong>TestDataAgent</strong> → generates test fixtures<br>
+          <strong>TestAgent</strong> → generates unit tests<br>
+          Each task: <code>coordinator.dispatch_task()</code> → find IDLE agent → <code>agent.execute_task()</code> → save <code>TaskResult</code>
+        </div>
+      </div>
+    </div>
+    <div class="flow-connector"></div>
+
+    <div class="flow-step">
+      <div class="step-num">7</div>
+      <div class="step-content">
+        <div class="step-title">Phase Gate Check</div>
+        <div class="step-detail"><code>PolicyEngine.check()</code> evaluates phase gate policies (success rate, agent availability). If passes → advance to next phase. If fails → workflow fails.</div>
+      </div>
+    </div>
+    <div class="flow-connector"></div>
+
+    <div class="flow-step">
+      <div class="step-num">8</div>
+      <div class="step-content">
+        <div class="step-title">DEVOPS Phase</div>
+        <div class="step-detail">
+          <strong>DevOpsAgent</strong> → generates CI/CD config (GitHub Actions YAML)<br>
+          <strong>DeployingAgent</strong> → handles deployment to target environment
+        </div>
+      </div>
+    </div>
+    <div class="flow-connector"></div>
+
+    <div class="flow-step">
+      <div class="step-num">9</div>
+      <div class="step-content">
+        <div class="step-title">MONITORING Phase</div>
+        <div class="step-detail">
+          <strong>MonitorAgent</strong> analyzes deployment result. If <code>has_issues: true</code> → triggers <strong>feedback loop</strong> back to DEVELOPMENT phase (up to 3x). Otherwise → workflow completes.
+        </div>
+      </div>
+    </div>
+    <div class="flow-connector"></div>
+
+    <div class="flow-step">
+      <div class="step-num">10</div>
+      <div class="step-content">
+        <div class="step-title">Results Returned to UI</div>
+        <div class="step-detail">
+          <code>WorkflowState</code> (COMPLETED) returned through all layers. Frontend displays generated code, test results, CI/CD configs, deployment status, and review scores. User can download artifacts, view .context/ docs, or trigger PR creation.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SEQUENCE DIAGRAM ========== -->
+<div class="sequence-diagram" id="sequence-panel" style="display:none;">
+  <h3>Sequence Diagram — Task Dispatch Flow</h3>
+
+  <div class="seq-row">
+    <div class="seq-actor" style="color:#818cf8;">Frontend</div>
+    <div class="seq-arrow"><div class="line solid"></div><div class="label">POST /api/projects/{id}/run</div><div class="arrowhead">→</div></div>
+    <div class="seq-target" style="color:#818cf8;">FastAPI</div>
+  </div>
+
+  <div class="seq-row">
+    <div class="seq-actor" style="color:#818cf8;">FastAPI</div>
+    <div class="seq-arrow"><div class="line solid"></div><div class="label">conductor_svc.run_workflow(def)</div><div class="arrowhead">→</div></div>
+    <div class="seq-target" style="color:#86efac;">ConductorService</div>
+  </div>
+
+  <div class="seq-row">
+    <div class="seq-actor" style="color:#86efac;">ConductorSvc</div>
+    <div class="seq-arrow"><div class="line solid"></div><div class="label">conductor.run_workflow(def)</div><div class="arrowhead">→</div></div>
+    <div class="seq-target" style="color:#86efac;">ConductorAI</div>
+  </div>
+
+  <div class="seq-row">
+    <div class="seq-actor" style="color:#86efac;">ConductorAI</div>
+    <div class="seq-arrow"><div class="line solid"></div><div class="label">workflow_engine.run_workflow(def)</div><div class="arrowhead">→</div></div>
+    <div class="seq-target" style="color:#fbbf24;">WorkflowEngine</div>
+  </div>
+
+  <div class="seq-divider"><span>Development Phase</span></div>
+
+  <div class="seq-row">
+    <div class="seq-actor" style="color:#fbbf24;">WorkflowEng</div>
+    <div class="seq-arrow"><div class="line solid"></div><div class="label">coordinator.dispatch_task(coding_task)</div><div class="arrowhead">→</div></div>
+    <div class="seq-target" style="color:#fbbf24;">Coordinator</div>
+  </div>
+
+  <div class="seq-row">
+    <div class="seq-actor" style="color:#fbbf24;">Coordinator</div>
+    <div class="seq-arrow"><div class="line solid"></div><div class="label">find IDLE agent → execute_task()</div><div class="arrowhead">→</div></div>
+    <div class="seq-target" style="color:#67e8f9;">CodingAgent</div>
+  </div>
+
+  <div class="seq-row">
+    <div class="seq-actor" style="color:#67e8f9;">CodingAgent</div>
+    <div class="seq-arrow"><div class="line solid"></div><div class="label">generate_with_system(prompt)</div><div class="arrowhead">→</div></div>
+    <div class="seq-target" style="color:#fde68a;">LLM Provider</div>
+  </div>
+
+  <div class="seq-row">
+    <div class="seq-actor" style="color:#fde68a;">LLM Provider</div>
+    <div class="seq-arrow"><div class="line dashed"></div><div class="label">generated code</div><div class="arrowhead" style="color:#4ade80;">→</div></div>
+    <div class="seq-target" style="color:#67e8f9;">CodingAgent</div>
+  </div>
+
+  <div class="seq-row">
+    <div class="seq-actor" style="color:#67e8f9;">CodingAgent</div>
+    <div class="seq-arrow"><div class="line dashed"></div><div class="label">TaskResult {code, files}</div><div class="arrowhead" style="color:#4ade80;">→</div></div>
+    <div class="seq-target" style="color:#fbbf24;">Coordinator</div>
+  </div>
+
+  <div class="seq-row">
+    <div class="seq-actor" style="color:#fbbf24;">Coordinator</div>
+    <div class="seq-arrow"><div class="line solid"></div><div class="label">save_task_result() + save_agent_state()</div><div class="arrowhead">→</div></div>
+    <div class="seq-target" style="color:#f0abfc;">StateManager</div>
+  </div>
+
+  <div class="seq-divider"><span>Repeat for ReviewAgent, TestAgent, etc.</span></div>
+
+  <div class="seq-row">
+    <div class="seq-actor" style="color:#fbbf24;">WorkflowEng</div>
+    <div class="seq-arrow"><div class="line solid"></div><div class="label">policy_engine.check() — phase gate</div><div class="arrowhead">→</div></div>
+    <div class="seq-target" style="color:#fbbf24;">PolicyEngine</div>
+  </div>
+
+  <div class="seq-divider"><span>DevOps & Monitoring Phases (same pattern)</span></div>
+
+  <div class="seq-row">
+    <div class="seq-actor" style="color:#fbbf24;">WorkflowEng</div>
+    <div class="seq-arrow"><div class="line dashed"></div><div class="label">WorkflowState {COMPLETED}</div><div class="arrowhead" style="color:#4ade80;">→</div></div>
+    <div class="seq-target" style="color:#818cf8;">FastAPI → UI</div>
+  </div>
+</div>
+
+<!-- ========== DATA MODELS ========== -->
+<div class="model-diagram" id="models-panel" style="display:none;">
+  <h3>Core Data Models — src/conductor/core/models.py</h3>
+  <div class="model-grid">
+
+    <div class="model-card">
+      <div class="model-name" style="color:#fbbf24;">TaskDefinition</div>
+      <div class="field"><span class="fname">task_id</span><span class="ftype">str (UUID4)</span></div>
+      <div class="field"><span class="fname">name</span><span class="ftype">str</span></div>
+      <div class="field"><span class="fname">description</span><span class="ftype">str</span></div>
+      <div class="field"><span class="fname">assigned_to</span><span class="ftype">AgentType</span></div>
+      <div class="field"><span class="fname">priority</span><span class="ftype">Priority enum</span></div>
+      <div class="field"><span class="fname">input_data</span><span class="ftype">dict[str, Any]</span></div>
+      <div class="field"><span class="fname">timeout_seconds</span><span class="ftype">int (1-3600)</span></div>
+    </div>
+
+    <div class="model-card">
+      <div class="model-name" style="color:#4ade80;">TaskResult</div>
+      <div class="field"><span class="fname">task_id</span><span class="ftype">str</span></div>
+      <div class="field"><span class="fname">agent_id</span><span class="ftype">str</span></div>
+      <div class="field"><span class="fname">status</span><span class="ftype">COMPLETED | FAILED</span></div>
+      <div class="field"><span class="fname">output_data</span><span class="ftype">dict[str, Any]</span></div>
+      <div class="field"><span class="fname">error_message</span><span class="ftype">str | None</span></div>
+      <div class="field"><span class="fname">duration_seconds</span><span class="ftype">float</span></div>
+    </div>
+
+    <div class="model-card">
+      <div class="model-name" style="color:#818cf8;">WorkflowDefinition</div>
+      <div class="field"><span class="fname">workflow_id</span><span class="ftype">str (UUID4)</span></div>
+      <div class="field"><span class="fname">name</span><span class="ftype">str</span></div>
+      <div class="field"><span class="fname">phases</span><span class="ftype">list[WorkflowPhase]</span></div>
+      <div class="field"><span class="fname">tasks</span><span class="ftype">list[TaskDefinition]</span></div>
+      <div class="field"><span class="fname">metadata</span><span class="ftype">dict[str, Any]</span></div>
+    </div>
+
+    <div class="model-card">
+      <div class="model-name" style="color:#f0abfc;">WorkflowState</div>
+      <div class="field"><span class="fname">workflow_id</span><span class="ftype">str</span></div>
+      <div class="field"><span class="fname">current_phase</span><span class="ftype">WorkflowPhase</span></div>
+      <div class="field"><span class="fname">status</span><span class="ftype">TaskStatus</span></div>
+      <div class="field"><span class="fname">task_results</span><span class="ftype">dict[id→Result]</span></div>
+      <div class="field"><span class="fname">phase_history</span><span class="ftype">list[dict]</span></div>
+      <div class="field"><span class="fname">feedback_count</span><span class="ftype">int</span></div>
+    </div>
+
+    <div class="model-card">
+      <div class="model-name" style="color:#67e8f9;">AgentState</div>
+      <div class="field"><span class="fname">agent_id</span><span class="ftype">str</span></div>
+      <div class="field"><span class="fname">agent_type</span><span class="ftype">AgentType</span></div>
+      <div class="field"><span class="fname">status</span><span class="ftype">AgentStatus</span></div>
+      <div class="field"><span class="fname">current_task_id</span><span class="ftype">str | None</span></div>
+      <div class="field"><span class="fname">completed_tasks</span><span class="ftype">list[str]</span></div>
+      <div class="field"><span class="fname">error_count</span><span class="ftype">int</span></div>
+    </div>
+
+    <div class="model-card">
+      <div class="model-name" style="color:#fb923c;">AgentMessage</div>
+      <div class="field"><span class="fname">message_id</span><span class="ftype">str (UUID4)</span></div>
+      <div class="field"><span class="fname">message_type</span><span class="ftype">MessageType</span></div>
+      <div class="field"><span class="fname">sender_id</span><span class="ftype">str</span></div>
+      <div class="field"><span class="fname">payload</span><span class="ftype">dict[str, Any]</span></div>
+      <div class="field"><span class="fname">correlation_id</span><span class="ftype">str | None</span></div>
+    </div>
+
+  </div>
+
+  <div style="margin-top: 24px;">
+    <h3 style="color: #86efac; font-size: 1rem; margin-bottom: 12px;">Enumerations</h3>
+    <div class="model-grid">
+      <div class="model-card">
+        <div class="model-name" style="color:#67e8f9; font-size:0.8rem;">AgentType (8 types)</div>
+        <div class="field"><span class="fname">CODING</span><span class="ftype">→ CodingAgent</span></div>
+        <div class="field"><span class="fname">REVIEW</span><span class="ftype">→ ReviewAgent</span></div>
+        <div class="field"><span class="fname">TEST</span><span class="ftype">→ TestAgent</span></div>
+        <div class="field"><span class="fname">TEST_DATA</span><span class="ftype">→ TestDataAgent</span></div>
+        <div class="field"><span class="fname">DEVOPS</span><span class="ftype">→ DevOpsAgent</span></div>
+        <div class="field"><span class="fname">DEPLOYING</span><span class="ftype">→ DeployingAgent</span></div>
+        <div class="field"><span class="fname">MONITOR</span><span class="ftype">→ MonitorAgent</span></div>
+        <div class="field"><span class="fname">PIPELINE_GEN</span><span class="ftype">→ PipelineYamlGen</span></div>
+      </div>
+      <div class="model-card">
+        <div class="model-name" style="color:#fbbf24; font-size:0.8rem;">WorkflowPhase</div>
+        <div class="field"><span class="fname">DEVELOPMENT</span><span class="ftype">{CODING, REVIEW, TEST, TEST_DATA}</span></div>
+        <div class="field"><span class="fname">DEVOPS</span><span class="ftype">{DEVOPS, DEPLOYING}</span></div>
+        <div class="field"><span class="fname">MONITORING</span><span class="ftype">{MONITOR}</span></div>
+      </div>
+      <div class="model-card">
+        <div class="model-name" style="color:#4ade80; font-size:0.8rem;">AgentStatus</div>
+        <div class="field"><span class="fname">IDLE</span><span class="ftype">Ready for work</span></div>
+        <div class="field"><span class="fname">RUNNING</span><span class="ftype">Executing task</span></div>
+        <div class="field"><span class="fname">WAITING</span><span class="ftype">Blocked</span></div>
+        <div class="field"><span class="fname">COMPLETED</span><span class="ftype">Task done</span></div>
+        <div class="field"><span class="fname">FAILED</span><span class="ftype">Error occurred</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end diagram-container -->
+
+<script>
+function showStep(step) {
+  // Reset all buttons
+  document.querySelectorAll('.step-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+
+  const layers = ['ui', 'facade', 'orchestration', 'agents', 'infra', 'llm'];
+  const arrows = ['arrow-1', 'arrow-2', 'arrow-3', 'arrow-4', 'arrow-5'];
+  const panels = ['flow-panel', 'sequence-panel', 'models-panel'];
+
+  // Hide special panels first
+  panels.forEach(id => document.getElementById(id).style.display = 'none');
+
+  // Show all layers
+  layers.forEach(id => {
+    const el = document.getElementById('layer-' + id);
+    el.style.display = '';
+  });
+
+  if (step === 'overview') {
+    layers.forEach(id => {
+      document.getElementById('layer-' + id).classList.add('active');
+      document.getElementById('layer-' + id).classList.remove('highlight');
+    });
+    arrows.forEach(id => {
+      document.getElementById(id).classList.remove('active');
+    });
+  } else if (step === 'flow') {
+    layers.forEach(id => {
+      document.getElementById('layer-' + id).classList.add('active');
+      document.getElementById('layer-' + id).classList.remove('highlight');
+    });
+    arrows.forEach(id => document.getElementById(id).classList.add('active'));
+    document.getElementById('flow-panel').style.display = '';
+    document.getElementById('sequence-panel').style.display = '';
+  } else if (step === 'models') {
+    layers.forEach(id => {
+      document.getElementById('layer-' + id).style.display = 'none';
+    });
+    document.getElementById('models-panel').style.display = '';
+  } else {
+    layers.forEach(id => {
+      const el = document.getElementById('layer-' + id);
+      if (id === step) {
+        el.classList.add('active');
+        el.classList.add('highlight');
+      } else {
+        el.classList.remove('active');
+        el.classList.remove('highlight');
+      }
+    });
+    // Highlight relevant arrow
+    const stepIdx = layers.indexOf(step);
+    arrows.forEach((id, i) => {
+      if (i === stepIdx - 1 || i === stepIdx) {
+        document.getElementById(id).classList.add('active');
+      } else {
+        document.getElementById(id).classList.remove('active');
+      }
+    });
+  }
+}
+
+// Initialize overview
+document.addEventListener('DOMContentLoaded', () => showStep('overview'));
+</script>
+
+</body>
+</html>
