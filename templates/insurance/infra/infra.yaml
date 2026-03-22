@@ -1,0 +1,433 @@
+# ================================================================
+# Insurance Web Portal — Architecture Specification
+# Generated from: Functional_Requirements.docx
+# Architecture: Microservices + API Gateway + Kubernetes + Docker
+# ================================================================
+
+application:
+  name: Insurance Web Portal
+  type: microservices
+  description: >
+    An insurance web portal built on microservice architecture
+    with an API gateway, health monitoring, containerized via Docker,
+    and orchestrated on Kubernetes.
+  version: "1.0.0"
+  environment: production
+
+# ----------------------------------------------------------------
+# Functional Requirements
+# ----------------------------------------------------------------
+functional_requirements:
+
+  user_management:
+    description: Manage users and roles across the portal
+    features:
+      - Create, update, and delete users
+      - Support three user roles: Admin, Employee, and Customer
+      - Users can view and manage their own profile information
+    roles:
+      - name: admin
+        permissions:
+          - manage_users
+          - manage_policies
+          - manage_claims
+          - view_reports
+          - system_configuration
+      - name: employee
+        permissions:
+          - view_users
+          - process_claims
+          - manage_policies
+          - view_reports
+      - name: customer
+        permissions:
+          - view_own_profile
+          - submit_claims
+          - view_own_policies
+          - view_own_documents
+
+# ----------------------------------------------------------------
+# Technology Stack
+# ----------------------------------------------------------------
+technology_stack:
+
+  frontend:
+    language: TypeScript
+    framework: ReactJS
+    description: Interactive and responsive user interface for the portal
+    port: 3000
+
+  backend:
+    language: Java
+    framework: Spring Boot
+    description: Core application services built as independent microservices
+    build_tool: Maven
+
+  databases:
+    transactional:
+      type: MySQL
+      version: "8.0"
+      purpose: >
+        Day-to-day application data — users, policies, claims, and transactions
+      port: 3306
+    analytical:
+      type: PostgreSQL
+      version: "15"
+      purpose: >
+        Analytical workloads — reports, insights, and aggregated data processing
+      port: 5432
+
+  containerization:
+    tool: Docker
+    description: >
+      Packages each microservice into containers for consistent
+      deployment across all environments
+    base_image: eclipse-temurin:17-jre-alpine
+
+  orchestration:
+    tool: Kubernetes
+    description: Manages, scales, and monitors containerized microservices
+    distribution: K8s
+    namespace: insurance-portal
+
+  ci_cd:
+    tool: Jenkins
+    description: >
+      Automates building, testing, and deploying the application
+      across environments
+    pipeline_stages:
+      - checkout
+      - build
+      - unit_test
+      - integration_test
+      - docker_build
+      - docker_push
+      - deploy_staging
+      - smoke_test
+      - deploy_production
+
+# ----------------------------------------------------------------
+# Microservices Architecture
+# ----------------------------------------------------------------
+microservices:
+
+  api_gateway:
+    name: api-gateway-service
+    description: Single entry point for all client requests; handles routing, auth, and rate limiting
+    port: 8080
+    responsibilities:
+      - Request routing to downstream services
+      - JWT authentication and authorization
+      - Rate limiting and throttling
+      - SSL termination
+      - Request/response logging
+
+  user_service:
+    name: user-service
+    description: Manages user accounts, roles, and profile information
+    port: 8081
+    language: Java
+    framework: Spring Boot
+    database: MySQL
+    endpoints:
+      - POST   /api/users
+      - GET    /api/users/{id}
+      - PUT    /api/users/{id}
+      - DELETE /api/users/{id}
+      - GET    /api/users/{id}/profile
+
+  policy_service:
+    name: policy-service
+    description: Manages insurance policies — creation, renewal, and cancellation
+    port: 8082
+    language: Java
+    framework: Spring Boot
+    database: MySQL
+    endpoints:
+      - POST   /api/policies
+      - GET    /api/policies/{id}
+      - PUT    /api/policies/{id}
+      - DELETE /api/policies/{id}
+      - GET    /api/policies/customer/{customerId}
+
+  claims_service:
+    name: claims-service
+    description: Handles insurance claim submissions, processing, and status tracking
+    port: 8083
+    language: Java
+    framework: Spring Boot
+    database: MySQL
+    endpoints:
+      - POST   /api/claims
+      - GET    /api/claims/{id}
+      - PUT    /api/claims/{id}/status
+      - GET    /api/claims/customer/{customerId}
+
+  reporting_service:
+    name: reporting-service
+    description: Generates analytical reports and business insights
+    port: 8084
+    language: Java
+    framework: Spring Boot
+    database: PostgreSQL
+    endpoints:
+      - GET    /api/reports/claims
+      - GET    /api/reports/policies
+      - GET    /api/reports/users
+      - GET    /api/reports/revenue
+
+  notification_service:
+    name: notification-service
+    description: Sends email, SMS, and in-app notifications to users
+    port: 8085
+    language: Java
+    framework: Spring Boot
+    channels:
+      - email
+      - sms
+      - in_app
+
+  health_monitor:
+    name: health-monitor-service
+    description: Monitors the health and availability of all microservices
+    port: 8086
+    tool: Spring Boot Actuator
+    endpoints:
+      - GET /actuator/health
+      - GET /actuator/metrics
+      - GET /actuator/info
+    alert_channels:
+      - email
+      - slack
+
+# ----------------------------------------------------------------
+# Docker Configuration
+# ----------------------------------------------------------------
+docker:
+  registry: registry.insurance-portal.com
+  network: insurance-net
+  services:
+    - api-gateway-service
+    - user-service
+    - policy-service
+    - claims-service
+    - reporting-service
+    - notification-service
+    - health-monitor-service
+  compose_version: "3.9"
+  volumes:
+    - mysql_data
+    - postgres_data
+
+# ----------------------------------------------------------------
+# Kubernetes Deployment
+# ----------------------------------------------------------------
+kubernetes:
+  namespace: insurance-portal
+  cluster: insurance-k8s-cluster
+
+  deployments:
+
+    api_gateway:
+      name: api-gateway-deployment
+      replicas: 2
+      image: registry.insurance-portal.com/api-gateway-service:latest
+      container_port: 8080
+      resources:
+        requests:
+          memory: "256Mi"
+          cpu: "250m"
+        limits:
+          memory: "512Mi"
+          cpu: "500m"
+      liveness_probe:
+        path: /actuator/health
+        initial_delay_seconds: 30
+        period_seconds: 10
+      readiness_probe:
+        path: /actuator/health/readiness
+        initial_delay_seconds: 20
+        period_seconds: 5
+
+    user_service:
+      name: user-service-deployment
+      replicas: 2
+      image: registry.insurance-portal.com/user-service:latest
+      container_port: 8081
+      resources:
+        requests:
+          memory: "256Mi"
+          cpu: "250m"
+        limits:
+          memory: "512Mi"
+          cpu: "500m"
+      hpa:
+        min_replicas: 2
+        max_replicas: 6
+        target_cpu_utilization: 70
+
+    policy_service:
+      name: policy-service-deployment
+      replicas: 2
+      image: registry.insurance-portal.com/policy-service:latest
+      container_port: 8082
+      resources:
+        requests:
+          memory: "256Mi"
+          cpu: "250m"
+        limits:
+          memory: "512Mi"
+          cpu: "500m"
+      hpa:
+        min_replicas: 2
+        max_replicas: 6
+        target_cpu_utilization: 70
+
+    claims_service:
+      name: claims-service-deployment
+      replicas: 3
+      image: registry.insurance-portal.com/claims-service:latest
+      container_port: 8083
+      resources:
+        requests:
+          memory: "512Mi"
+          cpu: "500m"
+        limits:
+          memory: "1Gi"
+          cpu: "1000m"
+      hpa:
+        min_replicas: 3
+        max_replicas: 10
+        target_cpu_utilization: 65
+
+    reporting_service:
+      name: reporting-service-deployment
+      replicas: 1
+      image: registry.insurance-portal.com/reporting-service:latest
+      container_port: 8084
+      resources:
+        requests:
+          memory: "512Mi"
+          cpu: "500m"
+        limits:
+          memory: "1Gi"
+          cpu: "1000m"
+
+    notification_service:
+      name: notification-service-deployment
+      replicas: 2
+      image: registry.insurance-portal.com/notification-service:latest
+      container_port: 8085
+      resources:
+        requests:
+          memory: "128Mi"
+          cpu: "100m"
+        limits:
+          memory: "256Mi"
+          cpu: "250m"
+
+  services:
+    api_gateway_svc:
+      name: api-gateway-svc
+      type: LoadBalancer
+      port: 80
+      target_port: 8080
+    user_service_svc:
+      name: user-service-svc
+      type: ClusterIP
+      port: 8081
+    policy_service_svc:
+      name: policy-service-svc
+      type: ClusterIP
+      port: 8082
+    claims_service_svc:
+      name: claims-service-svc
+      type: ClusterIP
+      port: 8083
+    reporting_service_svc:
+      name: reporting-service-svc
+      type: ClusterIP
+      port: 8084
+    notification_service_svc:
+      name: notification-service-svc
+      type: ClusterIP
+      port: 8085
+
+  config_maps:
+    - name: app-config
+      data:
+        SPRING_PROFILES_ACTIVE: production
+        LOG_LEVEL: INFO
+        API_GATEWAY_URL: http://api-gateway-svc:8080
+
+  secrets:
+    - name: db-credentials
+      keys:
+        - MYSQL_USERNAME
+        - MYSQL_PASSWORD
+        - POSTGRES_USERNAME
+        - POSTGRES_PASSWORD
+    - name: jwt-secret
+      keys:
+        - JWT_SECRET_KEY
+        - JWT_EXPIRY_SECONDS
+
+# ----------------------------------------------------------------
+# CI/CD Pipeline — Jenkins
+# ----------------------------------------------------------------
+ci_cd:
+  tool: Jenkins
+  trigger:
+    - push to main branch
+    - pull request to main
+  stages:
+    - name: Checkout
+      step: git checkout source code
+    - name: Build
+      step: mvn clean package -DskipTests
+    - name: Unit Test
+      step: mvn test
+    - name: Integration Test
+      step: mvn verify -P integration-tests
+    - name: Docker Build
+      step: docker build -t registry.insurance-portal.com/{service}:{tag} .
+    - name: Docker Push
+      step: docker push registry.insurance-portal.com/{service}:{tag}
+    - name: Deploy Staging
+      step: kubectl apply -f k8s/staging/
+    - name: Smoke Test
+      step: run smoke test suite against staging
+    - name: Deploy Production
+      step: kubectl apply -f k8s/production/
+  notifications:
+    on_failure:
+      - email
+      - slack
+    on_success:
+      - slack
+
+# ----------------------------------------------------------------
+# Health Monitoring
+# ----------------------------------------------------------------
+health_monitoring:
+  tool: Spring Boot Actuator
+  dashboard: Kubernetes Dashboard
+  metrics_collection: Prometheus
+  visualization: Grafana
+  alerts:
+    - name: ServiceDown
+      condition: health check fails 3 consecutive times
+      severity: critical
+      notify:
+        - email
+        - slack
+    - name: HighCpuUsage
+      condition: CPU > 85% for 5 minutes
+      severity: warning
+      notify:
+        - slack
+    - name: HighMemoryUsage
+      condition: Memory > 80% for 5 minutes
+      severity: warning
+      notify:
+        - slack

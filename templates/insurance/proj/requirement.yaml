@@ -1,0 +1,40 @@
+# ============================================================
+# Executive Summary - Web Portal Application
+# Generated from: Executive_Summary-Minimal.docx
+# ============================================================
+
+application:
+  name: Web Portal
+  type: web_portal
+  description: >
+    A web portal application with three types of users:
+    Admin, Employee, and Customer.
+
+  user_roles:
+    - admin
+    - employee
+    - customer
+
+# ------------------------------------------------------------
+# Use Cases
+# ------------------------------------------------------------
+use_cases:
+
+  manage_users:
+    title: Manage Users
+    role: admin
+    description: Admin can create, update, or remove users.
+
+    flow:
+      steps:
+        - step: 1
+          action: Admin enters user details
+        - step: 2
+          action: System validates and saves
+
+    negative_scenarios:
+      - scenario: Non-admin tries to manage users
+        outcome: Access denied
+
+      - scenario: Invalid user data submitted
+        outcome: Operation fails
