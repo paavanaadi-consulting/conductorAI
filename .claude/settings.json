@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pytest:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(ruff check:*)",
+      "Bash(ruff format:*)",
+      "Bash(mypy:*)",
+      "Bash(pip install:*)",
+      "Bash(make:*)",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git branch:*)",
+      "Bash(git show:*)",
+      "Bash(ls:*)",
+      "Bash(python -c:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(cat .env)",
+      "Bash(cat *credentials*)",
+      "Bash(git push --force:*)"
+    ]
+  }
+}
