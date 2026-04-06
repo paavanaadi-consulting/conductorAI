@@ -34,8 +34,11 @@ coverage.xml
 # Environment
 .env
 
-# Claude Code workspace
-.claude/
+# Claude Code workspace (local files only — shared configs are committed)
+.claude/settings.local.json
+.claude/launch.json
+.claude/worktrees/
+CLAUDE.local.md
 
 # OS files
 .DS_Store
