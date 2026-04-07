@@ -1,8 +1,98 @@
-# Testing Claude Agents & Skills — Usage Guide
+# ConductorAI Scripts — Usage Guide
 
 ## Overview
 
-This project includes custom `.claude/agents/` and `.claude/skills/` that extend Claude Code with ConductorAI-specific capabilities. The `test_claude_agents.py` script lets you test each agent individually against the real Anthropic API using the existing `AnthropicProvider` infrastructure.
+This directory contains scripts for testing and demonstrating ConductorAI:
+
+| Script | Purpose | API Key Required? |
+|--------|---------|-------------------|
+| `test_conductor_agents.py` | Test all 7 framework agents (CodingAgent, ReviewAgent, etc.) | No (uses MockLLMProvider) |
+| `demo_conductor_usage.py` | Runnable demos of single tasks, workflows, and pipelines | No (uses MockLLMProvider) |
+| `test_claude_agents.py` | Test `.claude/agents/` against the real Anthropic API | Yes |
+
+---
+
+## Quick Start
+
+```bash
+# Install dependencies
+pip install -e ".[dev]"
+
+# Test framework agents (no API key needed)
+python scripts/test_conductor_agents.py
+
+# Run usage demos (no API key needed)
+python scripts/demo_conductor_usage.py
+
+# Test Claude Code agents (needs ANTHROPIC_API_KEY)
+python scripts/test_claude_agents.py
+```
+
+---
+
+## Framework Agent Tests (`test_conductor_agents.py`)
+
+Tests all 7 specialized ConductorAI agents using MockLLMProvider. For each agent, it validates:
+1. **Lifecycle** — start/stop state transitions work correctly
+2. **Validation** — agents reject tasks with missing/invalid input_data
+3. **Execution** — agents produce correct output_data for valid tasks
+
+### Agents Tested
+
+| Key | Agent Class | Required input_data |
+|-----|-------------|---------------------|
+| `coding` | CodingAgent | `specification`, `language` |
+| `review` | ReviewAgent | `code`, `review_criteria` |
+| `test_data` | TestDataAgent | `code` |
+| `test` | TestAgent | `code` |
+| `devops` | DevOpsAgent | `code` or `project_description` |
+| `deploying` | DeployingAgent | `target_environment` |
+| `monitor` | MonitorAgent | `deployment_result` |
+
+### Usage
+
+```bash
+# Test all agents
+python scripts/test_conductor_agents.py
+
+# Test a specific agent
+python scripts/test_conductor_agents.py --agent coding
+python scripts/test_conductor_agents.py --agent monitor
+
+# Verbose output (show output_data details)
+python scripts/test_conductor_agents.py --verbose
+```
+
+---
+
+## Usage Demos (`demo_conductor_usage.py`)
+
+Five runnable demos showing how to use the ConductorAI facade and agents:
+
+| Demo | Description |
+|------|-------------|
+| `single-task` | Dispatch one task to a CodingAgent (no workflow) |
+| `dev-workflow` | Run a DEVELOPMENT phase with 4 agents |
+| `full-pipeline` | Run DEVELOPMENT → DEVOPS → MONITORING with all 7 agents |
+| `artifacts` | Save/retrieve workflow artifacts through the facade |
+| `multi-agent` | Register multiple agents of the same type |
+
+### Usage
+
+```bash
+# Run all demos
+python scripts/demo_conductor_usage.py
+
+# Run a specific demo
+python scripts/demo_conductor_usage.py --demo single-task
+python scripts/demo_conductor_usage.py --demo full-pipeline
+```
+
+---
+
+## Claude Code Agent Tests (`test_claude_agents.py`)
+
+This project also includes custom `.claude/agents/` and `.claude/skills/` that extend Claude Code with ConductorAI-specific capabilities. The `test_claude_agents.py` script lets you test each agent individually against the real Anthropic API using the existing `AnthropicProvider` infrastructure.
 
 ---
 
