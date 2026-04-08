@@ -19,12 +19,12 @@ from __future__ import annotations
 
 import asyncio
 
-from conductor.agents.development.coding_agent import CodingAgent
-from conductor.core.config import ConductorConfig
-from conductor.core.enums import AgentType
-from conductor.core.models import TaskDefinition
-from conductor.facade import ConductorAI
-from conductor.integrations.llm.mock import MockLLMProvider
+from src.conductor.agents.development.coding_agent import CodingAgent
+from src.conductor.core.config import ConductorConfig
+from src.conductor.core.enums import AgentType
+from src.conductor.core.models import TaskDefinition
+from src.conductor.facade import ConductorAI
+from src.conductor.integrations.llm.mock import MockLLMProvider
 
 
 async def main() -> None:

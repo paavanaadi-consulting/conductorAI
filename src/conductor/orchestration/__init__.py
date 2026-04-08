@@ -15,16 +15,16 @@ Components (built across Days 3-5):
     - WorkflowEngine:  Multi-phase workflow execution with feedback loops
 """
 
-from conductor.orchestration.agent_coordinator import AgentCoordinator
-from conductor.orchestration.error_handler import (
+from src.conductor.orchestration.agent_coordinator import AgentCoordinator
+from src.conductor.orchestration.error_handler import (
     CircuitBreaker,
     CircuitBreakerState,
     ErrorAction,
     ErrorHandler,
     RetryPolicy,
 )
-from conductor.orchestration.message_bus import InMemoryMessageBus, MessageBus
-from conductor.orchestration.policy_engine import (
+from src.conductor.orchestration.message_bus import InMemoryMessageBus, MessageBus
+from src.conductor.orchestration.policy_engine import (
     AgentAvailabilityPolicy,
     MaxConcurrentTasksPolicy,
     PhaseGatePolicy,
@@ -33,8 +33,8 @@ from conductor.orchestration.policy_engine import (
     PolicyResult,
     TaskTimeoutPolicy,
 )
-from conductor.orchestration.state_manager import InMemoryStateManager, StateManager
-from conductor.orchestration.workflow_engine import WorkflowEngine
+from src.conductor.orchestration.state_manager import InMemoryStateManager, StateManager
+from src.conductor.orchestration.workflow_engine import WorkflowEngine
 
 __all__ = [
     # Day 3: Message Bus

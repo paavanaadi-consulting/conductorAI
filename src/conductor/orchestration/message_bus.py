@@ -84,8 +84,8 @@ from typing import Any, Optional
 
 import structlog
 
-from conductor.core.exceptions import MessageBusError
-from conductor.core.messages import AgentMessage
+from src.conductor.core.exceptions import MessageBusError
+from src.conductor.core.messages import AgentMessage
 
 
 # =============================================================================
@@ -947,7 +947,7 @@ class RedisMessageBus(MessageBus):
         - [ ] Implement connect() with redis.asyncio connection pool
         - [ ] Implement publish() with JSON serialization via model_dump_json()
         - [ ] Implement subscribe() with Redis Pub/Sub listener loop
-        - [ ] Implement unsubscribe() with Redis UNSUBSCRIBE command
+        - [ ] Implement unsubscribe() with Redis UNSUBSCRIBE commands
         - [ ] Implement request() with Redis lists for response queues
         - [ ] Implement disconnect() with connection pool cleanup
         - [ ] Add connection health checks and automatic reconnection

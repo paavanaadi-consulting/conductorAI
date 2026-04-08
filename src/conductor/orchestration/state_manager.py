@@ -38,8 +38,8 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from conductor.core.models import TaskResult
-from conductor.core.state import AgentState, WorkflowState
+from src.conductor.core.models import TaskResult
+from src.conductor.core.state import AgentState, WorkflowState
 
 logger = logging.getLogger(__name__)
 

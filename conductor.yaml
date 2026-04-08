@@ -67,9 +67,9 @@ redis:
 #   - "anthropic": Anthropic API (requires api_key)
 # -----------------------------------------------------------------------------
 llm:
-  provider: "mock"          # Start with mock for development
-  model: "gpt-4"            # Model name (ignored by mock provider)
-  # api_key: "sk-..."       # Uncomment and set for real providers
+  provider: "anthropic"          # Start with mock for development
+  model: "claude-sonnet-4-20250514"            # Model name (ignored by mock provider)
+  api_key: "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"       # Uncomment and set for real providers
   temperature: 0.7          # 0.0 = deterministic, 1.0 = creative
   max_tokens: 4096          # Max tokens per LLM response
   # api_base_url: null      # Custom endpoint (for proxies/self-hosted)

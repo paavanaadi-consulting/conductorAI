@@ -41,7 +41,7 @@ from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
-from conductor.core.enums import AgentType, Priority, TaskStatus, WorkflowPhase
+from src.conductor.core.enums import AgentType, Priority, TaskStatus, WorkflowPhase
 
 
 # =============================================================================

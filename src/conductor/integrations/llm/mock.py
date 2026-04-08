@@ -48,8 +48,8 @@ from typing import Any, Optional
 
 import structlog
 
-from conductor.core.config import LLMConfig
-from conductor.integrations.llm.base import BaseLLMProvider, LLMResponse, LLMUsage
+from src.conductor.core.config import LLMConfig
+from src.conductor.integrations.llm.base import BaseLLMProvider, LLMResponse, LLMUsage
 
 
 # =============================================================================

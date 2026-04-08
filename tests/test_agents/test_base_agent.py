@@ -349,7 +349,7 @@ class TestMessageHandling:
         msg = AgentMessage(
             message_type=MessageType.CONTROL,
             sender_id="coordinator",
-            payload={"command": "stop"},
+            payload={"commands": "stop"},
         )
 
         await agent.handle_message(msg)

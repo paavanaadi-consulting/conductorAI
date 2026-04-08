@@ -67,14 +67,14 @@ from typing import Any, Optional
 
 import structlog
 
-from conductor.core.config import ConductorConfig
-from conductor.core.context_models import ContextContribution
-from conductor.core.enums import AgentStatus, AgentType, MessageType, TaskStatus
-from conductor.core.exceptions import AgentError
-from conductor.core.messages import AgentMessage
-from conductor.core.models import AgentIdentity, TaskDefinition, TaskResult
-from conductor.core.state import AgentState
-from conductor.infrastructure.metrics import MetricsCollector, NoOpMetricsCollector
+from src.conductor.core.config import ConductorConfig
+from src.conductor.core.context_models import ContextContribution
+from src.conductor.core.enums import AgentStatus, AgentType, MessageType, TaskStatus
+from src.conductor.core.exceptions import AgentError
+from src.conductor.core.messages import AgentMessage
+from src.conductor.core.models import AgentIdentity, TaskDefinition, TaskResult
+from src.conductor.core.state import AgentState
+from src.conductor.infrastructure.metrics import MetricsCollector, NoOpMetricsCollector
 
 
 # =============================================================================
@@ -566,13 +566,13 @@ class BaseAgent(ABC):
 
         if message.message_type == MessageType.TASK_ASSIGNMENT:
             # Extract the task from the payload and execute it
-            from conductor.core.messages import TaskAssignmentPayload
+            from src.conductor.core.messages import TaskAssignmentPayload
 
             assignment = TaskAssignmentPayload(**message.payload)
             result = await self.execute_task(assignment.task)
 
             # Create response message with the task result
-            from conductor.core.messages import TaskResultPayload
+            from src.conductor.core.messages import TaskResultPayload
 
             return message.create_response(
                 sender_id=self.agent_id,
@@ -582,7 +582,7 @@ class BaseAgent(ABC):
 
         elif message.message_type == MessageType.CONTROL:
             # Handle control commands (stop, pause, etc.)
-            command = message.payload.get("command")
+            command = message.payload.get("commands")
             if command == "stop":
                 await self.stop()
 

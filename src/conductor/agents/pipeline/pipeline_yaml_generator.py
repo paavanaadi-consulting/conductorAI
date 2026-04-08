@@ -41,7 +41,7 @@ Architecture Context:
         }
 
 Usage:
-    >>> from conductor.agents.pipeline import PipelineYamlGeneratorAgent
+    >>> from src.conductor.agents.pipeline import PipelineYamlGeneratorAgent
     >>> agent = PipelineYamlGeneratorAgent("pipeline-gen-01", config, llm_provider=provider)
     >>> await agent.start()
     >>> task = TaskDefinition(
@@ -61,20 +61,20 @@ from typing import Any, Optional
 import structlog
 import yaml
 
-from conductor.agents.base import BaseAgent
-from conductor.agents.pipeline.schema_extractor import (
+from src.conductor.agents.base import BaseAgent
+from src.conductor.agents.pipeline.schema_extractor import (
     REQUIRED_SECTIONS,
     load_template_schema,
 )
-from conductor.agents.pipeline.validators import (
+from src.conductor.agents.pipeline.validators import (
     strip_markdown_fences,
     validate_pipeline_yaml,
 )
-from conductor.core.config import ConductorConfig
-from conductor.core.context_models import ContextContribution, ContextEntry
-from conductor.core.enums import AgentType, TaskStatus
-from conductor.core.models import TaskDefinition, TaskResult
-from conductor.integrations.llm.base import BaseLLMProvider
+from src.conductor.core.config import ConductorConfig
+from src.conductor.core.context_models import ContextContribution, ContextEntry
+from src.conductor.core.enums import AgentType, TaskStatus
+from src.conductor.core.models import TaskDefinition, TaskResult
+from src.conductor.integrations.llm.base import BaseLLMProvider
 
 
 # =============================================================================
@@ -270,7 +270,7 @@ class PipelineYamlGeneratorAgent(BaseAgent):
         )
 
         self._llm_provider = llm_provider
-        self._templates_dir = templates_dir or Path(__file__).resolve().parents[3] / "templates"
+        self._templates_dir = templates_dir or Path(__file__).resolve().parents[4] / "templates"
 
         self._logger = logger.bind(
             agent_id=agent_id,

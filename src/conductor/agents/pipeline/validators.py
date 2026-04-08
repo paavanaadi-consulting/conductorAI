@@ -18,7 +18,7 @@ from typing import Any
 
 import yaml
 
-from conductor.agents.pipeline.schema_extractor import REQUIRED_SECTIONS
+from src.conductor.agents.pipeline.schema_extractor import REQUIRED_SECTIONS
 
 
 def strip_markdown_fences(text: str) -> str:

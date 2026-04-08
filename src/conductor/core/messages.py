@@ -60,8 +60,8 @@ from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
-from conductor.core.enums import MessageType, Priority
-from conductor.core.models import TaskDefinition, TaskResult
+from src.conductor.core.enums import MessageType, Priority
+from src.conductor.core.models import TaskDefinition, TaskResult
 
 
 # =============================================================================

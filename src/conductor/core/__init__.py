@@ -29,8 +29,8 @@ Dependency Rule:
 # Instead of:  from conductor.core.config import ConductorConfig
 # Users can:   from conductor.core import ConductorConfig
 # =============================================================================
-from conductor.core.config import ConductorConfig, LLMConfig, RedisConfig
-from conductor.core.enums import (
+from src.conductor.core.config import ConductorConfig, LLMConfig, RedisConfig
+from src.conductor.core.enums import (
     AgentStatus,
     AgentType,
     MessageType,
@@ -38,7 +38,7 @@ from conductor.core.enums import (
     TaskStatus,
     WorkflowPhase,
 )
-from conductor.core.exceptions import (
+from src.conductor.core.exceptions import (
     AgentError,
     ConductorError,
     ConfigurationError,
@@ -47,13 +47,13 @@ from conductor.core.exceptions import (
     StateError,
     WorkflowError,
 )
-from conductor.core.rbac import (
+from src.conductor.core.rbac import (
     Permission,
     PermissionDeniedError,
     RBACManager,
     Role,
 )
-from conductor.core.models import (
+from src.conductor.core.models import (
     AgentIdentity,
     TaskDefinition,
     TaskResult,

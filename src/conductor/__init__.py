@@ -41,6 +41,6 @@ __version__ = "0.1.0"
 #   from conductor.core.enums import AgentType
 #   from conductor.core.models import TaskDefinition
 # =============================================================================
-from conductor.facade import ConductorAI
+from src.conductor.facade import ConductorAI
 
 __all__ = ["ConductorAI", "__version__"]

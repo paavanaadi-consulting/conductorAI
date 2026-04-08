@@ -133,6 +133,7 @@ class WorkflowPhase(str, Enum):
         1. DEVELOPMENT:  Code generation → Review → Testing
         2. DEVOPS:       CI/CD configuration → Deployment
         3. MONITORING:   System monitoring → Feedback generation
+        4. YAML GENERATOR: YAML file -> Pipeline generation (pre-workflow, not in main execution flow)
 
     Feedback Loop:
         MONITORING can trigger a return to DEVELOPMENT when issues
@@ -143,10 +144,10 @@ class WorkflowPhase(str, Enum):
         >>> phase = WorkflowPhase.DEVELOPMENT
         >>> phases = [WorkflowPhase.DEVELOPMENT, WorkflowPhase.DEVOPS]
     """
-
-    DEVELOPMENT = "development"   # Phase 1: Code, Review, Test
-    DEVOPS = "devops"             # Phase 2: Build, Configure, Deploy
-    MONITORING = "monitoring"     # Phase 3: Monitor, Analyze, Feedback
+    BASE = "pre-development"      # Phase 1: Project Structure
+    DEVELOPMENT = "development"   # Phase 2: Code, Review, Test
+    DEVOPS = "devops"             # Phase 3: Build, Configure, Deploy
+    MONITORING = "monitoring"     # Phase 4: Monitor, Analyze, Feedback
 
 
 # =============================================================================

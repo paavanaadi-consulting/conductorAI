@@ -18,9 +18,9 @@ Usage:
     >>> response = await provider.generate("Write a Python function...")
 """
 
-from conductor.integrations.llm.base import BaseLLMProvider, LLMResponse, LLMUsage
-from conductor.integrations.llm.mock import MockLLMProvider
-from conductor.integrations.llm.factory import create_llm_provider
+from src.conductor.integrations.llm.base import BaseLLMProvider, LLMResponse, LLMUsage
+from src.conductor.integrations.llm.mock import MockLLMProvider
+from src.conductor.integrations.llm.factory import create_llm_provider
 
 
 # Lazy imports for optional providers (PEP 562).

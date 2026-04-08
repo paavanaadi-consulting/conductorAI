@@ -19,8 +19,8 @@ Usage:
     from conductor.agents.devops import DevOpsAgent, DeployingAgent
 """
 
-from conductor.agents.devops.deploying_agent import DeployingAgent
-from conductor.agents.devops.devops_agent import DevOpsAgent
+from src.conductor.agents.devops.deploying_agent import DeployingAgent
+from src.conductor.agents.devops.devops_agent import DevOpsAgent
 
 __all__ = [
     "DeployingAgent",

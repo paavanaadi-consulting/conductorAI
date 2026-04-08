@@ -50,8 +50,8 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
-from conductor.core.config import LLMConfig
-from conductor.infrastructure.metrics import MetricsCollector, NoOpMetricsCollector
+from src.conductor.core.config import LLMConfig
+from src.conductor.infrastructure.metrics import MetricsCollector, NoOpMetricsCollector
 
 
 # =============================================================================

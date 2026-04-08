@@ -68,15 +68,15 @@ from typing import Any, Optional
 
 import structlog
 
-from conductor.core.context_models import ContextEntry
-from conductor.core.enums import AgentType, TaskStatus, WorkflowPhase
-from conductor.core.exceptions import AgentError, WorkflowError
-from conductor.core.models import TaskDefinition, TaskResult, WorkflowDefinition
-from conductor.core.state import WorkflowState
-from conductor.infrastructure.artifact_store import Artifact, ArtifactStore
-from conductor.orchestration.agent_coordinator import AgentCoordinator
-from conductor.orchestration.policy_engine import PolicyEngine
-from conductor.orchestration.state_manager import StateManager
+from src.conductor.core.context_models import ContextEntry
+from src.conductor.core.enums import AgentType, TaskStatus, WorkflowPhase
+from src.conductor.core.exceptions import AgentError, WorkflowError
+from src.conductor.core.models import TaskDefinition, TaskResult, WorkflowDefinition
+from src.conductor.core.state import WorkflowState
+from src.conductor.infrastructure.artifact_store import Artifact, ArtifactStore
+from src.conductor.orchestration.agent_coordinator import AgentCoordinator
+from src.conductor.orchestration.policy_engine import PolicyEngine
+from src.conductor.orchestration.state_manager import StateManager
 
 
 # =============================================================================
@@ -96,6 +96,9 @@ logger = structlog.get_logger()
 # So any task with assigned_to=AgentType.CODING runs in DEVELOPMENT.
 # =============================================================================
 PHASE_AGENT_TYPES: dict[WorkflowPhase, set[AgentType]] = {
+    WorkflowPhase.BASE: {
+        AgentType.PIPELINE_GENERATOR
+    },
     WorkflowPhase.DEVELOPMENT: {
         AgentType.CODING,
         AgentType.REVIEW,
