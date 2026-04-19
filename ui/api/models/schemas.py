@@ -17,34 +17,46 @@ from pydantic import BaseModel, Field
 class ProjectCreateRequest(BaseModel):
     name: str
     github_repo: str  # org/repo
-    github_app_installation_id: Optional[int] = None
+    github_app_installation_id: Optional[str] = None
     requirements_yaml: Optional[str] = None
     infra_yaml: Optional[str] = None
     selected_components: list[str] = Field(
         default=["code", "unit_test"],
         description="Subset of: code, unit_test, test_data, deployment, monitoring",
     )
-
+    architect_email: Optional[str] = None
+    project_manager_email: Optional[str] = None
+    github_owner: Optional[str] = None
+    pipeline_type: str = "auto"
+    is_approved: bool = False
 
 class ProjectUpdateRequest(BaseModel):
     name: Optional[str] = None
-    github_app_installation_id: Optional[int] = None
+    github_app_installation_id: Optional[str] = None
     requirements_yaml: Optional[str] = None
     infra_yaml: Optional[str] = None
     selected_components: Optional[list[str]] = None
+    architect_email: Optional[str] = None
+    project_manager_email: Optional[str] = None
+    github_owner: Optional[str] = None
+    is_approved: bool = False
 
 
 class ProjectResponse(BaseModel):
     id: str
     name: str
     github_repo: str
-    github_app_installation_id: Optional[int] = None
+    github_app_installation_id: Optional[str] = None
+    github_owner: Optional[str] = None
     requirements_yaml: Optional[str] = None
     infra_yaml: Optional[str] = None
     last_pipeline_yaml: Optional[str] = None
     selected_components: list[str] = []
+    architect_email: Optional[str] = None
+    project_manager_email: Optional[str] = None
     created_at: str
     updated_at: str
+    is_approved: bool = False
 
 
 class ProjectSummary(BaseModel):
@@ -52,8 +64,12 @@ class ProjectSummary(BaseModel):
     name: str
     github_repo: str
     selected_components: list[str] = []
+    architect_email: Optional[str] = None
+    project_manager_email: Optional[str] = None
+    github_owner: Optional[str] = None
     created_at: str
     updated_at: str
+    is_approved: bool = False
 
 
 # ---------------------------------------------------------------------------
@@ -65,7 +81,7 @@ class RunProjectRequest(BaseModel):
         default=["code", "unit_test"],
         description="Components to generate: code, unit_test, test_data, deployment, monitoring",
     )
-    pipeline_type: str = "auto"
+
 
 
 class WorkflowRunResponse(BaseModel):

@@ -38,15 +38,18 @@ Usage:
     from conductor.agents.development.coding_agent import CodingAgent
 """
 
-from src.conductor.agents.base import BaseAgent
-from src.conductor.agents.development.coding_agent import CodingAgent
-from src.conductor.agents.development.review_agent import ReviewAgent
-from src.conductor.agents.development.test_agent import TestAgent
-from src.conductor.agents.development.test_data_agent import TestDataAgent
-from src.conductor.agents.devops.deploying_agent import DeployingAgent
-from src.conductor.agents.devops.devops_agent import DevOpsAgent
-from src.conductor.agents.monitoring.monitor_agent import MonitorAgent
-from src.conductor.agents.pipeline.pipeline_yaml_generator import PipelineYamlGeneratorAgent
+from conductor.agents.base import BaseAgent
+from conductor.agents.development.coding_agent import CodingAgent
+from conductor.agents.development.review_agent import ReviewAgent
+from conductor.agents.development.test_agent import TestAgent
+from conductor.agents.development.test_data_agent import TestDataAgent
+from conductor.agents.devops.deploying_agent import DeployingAgent
+from conductor.agents.devops.devops_agent import DevOpsAgent
+from conductor.agents.monitoring.monitor_agent import MonitorAgent
+from conductor.agents.pipeline.pipeline_yaml_generator import PipelineYamlGeneratorAgent
+from conductor.agents.development.readme_generator_agent import (
+    ReadmeGeneratorAgent,
+)
 
 __all__ = [
     "BaseAgent",
@@ -58,4 +61,5 @@ __all__ = [
     "ReviewAgent",
     "TestAgent",
     "TestDataAgent",
+    "ReadmeGeneratorAgent"
 ]

@@ -56,12 +56,12 @@ from typing import Any, Optional
 
 import structlog
 
-from src.conductor.agents.base import BaseAgent
-from src.conductor.core.config import ConductorConfig
-from src.conductor.core.context_models import ContextContribution, ContextEntry
-from src.conductor.core.enums import AgentType, TaskStatus
-from src.conductor.core.models import TaskDefinition, TaskResult
-from src.conductor.integrations.llm.base import BaseLLMProvider
+from conductor.agents.base import BaseAgent
+from conductor.core.config import ConductorConfig
+from conductor.core.context_models import ContextContribution, ContextEntry
+from conductor.core.enums import AgentType, TaskStatus
+from conductor.core.models import TaskDefinition, TaskResult
+from conductor.integrations.llm.base import BaseLLMProvider
 
 
 # =============================================================================

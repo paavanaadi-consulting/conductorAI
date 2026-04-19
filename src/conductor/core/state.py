@@ -53,8 +53,8 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
-from src.conductor.core.enums import AgentStatus, AgentType, TaskStatus, WorkflowPhase
-from src.conductor.core.models import TaskResult
+from conductor.core.enums import AgentStatus, AgentType, TaskStatus, WorkflowPhase
+from conductor.core.models import TaskResult
 
 
 # =============================================================================

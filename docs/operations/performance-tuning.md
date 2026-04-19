@@ -78,7 +78,7 @@ async def batch_save_task_results(
 ) -> None:
     """Save multiple task results in a single pipeline.
 
-    Without pipelining: N round-trips (one per SET command)
+    Without pipelining: N round-trips (one per SET commands)
     With pipelining: 1 round-trip for N commands
 
     For a workflow with 4 tasks, this reduces latency from ~20ms to ~5ms.

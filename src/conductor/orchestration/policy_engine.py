@@ -115,8 +115,8 @@ from typing import Any
 import structlog
 from pydantic import BaseModel, Field
 
-from src.conductor.core.enums import AgentStatus
-from src.conductor.core.exceptions import PolicyViolationError
+from conductor.core.enums import AgentStatus
+from conductor.core.exceptions import PolicyViolationError
 
 
 # =============================================================================

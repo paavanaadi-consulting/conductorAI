@@ -41,7 +41,7 @@ Architecture Context:
         }
 
 Usage:
-    >>> from src.conductor.agents.pipeline import PipelineYamlGeneratorAgent
+    >>> from conductor.agents.pipeline import PipelineYamlGeneratorAgent
     >>> agent = PipelineYamlGeneratorAgent("pipeline-gen-01", config, llm_provider=provider)
     >>> await agent.start()
     >>> task = TaskDefinition(
@@ -61,20 +61,20 @@ from typing import Any, Optional
 import structlog
 import yaml
 
-from src.conductor.agents.base import BaseAgent
-from src.conductor.agents.pipeline.schema_extractor import (
+from conductor.agents.base import BaseAgent
+from conductor.agents.pipeline.schema_extractor import (
     REQUIRED_SECTIONS,
     load_template_schema,
 )
-from src.conductor.agents.pipeline.validators import (
+from conductor.agents.pipeline.validators import (
     strip_markdown_fences,
     validate_pipeline_yaml,
 )
-from src.conductor.core.config import ConductorConfig
-from src.conductor.core.context_models import ContextContribution, ContextEntry
-from src.conductor.core.enums import AgentType, TaskStatus
-from src.conductor.core.models import TaskDefinition, TaskResult
-from src.conductor.integrations.llm.base import BaseLLMProvider
+from conductor.core.config import ConductorConfig
+from conductor.core.context_models import ContextContribution, ContextEntry
+from conductor.core.enums import AgentType, TaskStatus
+from conductor.core.models import TaskDefinition, TaskResult
+from conductor.integrations.llm.base import BaseLLMProvider
 
 
 # =============================================================================
@@ -325,6 +325,8 @@ class PipelineYamlGeneratorAgent(BaseAgent):
         infra_yaml = task.input_data["infra_yaml"]
         explicit_type = task.input_data.get("pipeline_type", "auto")
 
+        self._logger.info(f"Parsing requirements and infrastructure yml files")
+
         # --- Stage 0: Parse inputs ---
         try:
             requirements = yaml.safe_load(requirements_yaml)
@@ -337,7 +339,13 @@ class PipelineYamlGeneratorAgent(BaseAgent):
                 output={"error": f"Invalid requirements YAML: {e}"},
                 error=f"Invalid requirements YAML: {e}",
             )
-
+        except (Exception) as err:
+            return self._create_result(
+                task_id=task.task_id,
+                status=TaskStatus.FAILED,
+                output={"error": f"Internal error: {err}"},
+            )
+        self._logger.info("requirements yaml file is parsed successfully")
         try:
             infrastructure = yaml.safe_load(infra_yaml)
             if not isinstance(infrastructure, dict):
@@ -349,6 +357,7 @@ class PipelineYamlGeneratorAgent(BaseAgent):
                 output={"error": f"Invalid infrastructure YAML: {e}"},
                 error=f"Invalid infrastructure YAML: {e}",
             )
+        self._logger.info("infrastructure yaml file is parsed successfully")
 
         # --- Stage 1: Detect pipeline type ---
         if explicit_type and explicit_type != "auto":

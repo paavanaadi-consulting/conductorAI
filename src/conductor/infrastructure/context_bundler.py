@@ -42,8 +42,8 @@ from typing import Any
 
 import structlog
 
-from src.conductor.core.context_models import ContextEntry
-from src.conductor.infrastructure.artifact_store import ArtifactStore
+from conductor.core.context_models import ContextEntry
+from conductor.infrastructure.artifact_store import ArtifactStore
 
 
 # =============================================================================

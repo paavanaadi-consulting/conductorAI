@@ -1,0 +1,16 @@
+[    3489ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ https://res.public.onecdn.static.microsoft/owamail/hashed-v1/scripts/owa.94868.m.66d0b4eb.js:6
+[    4214ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ https://outlook.live.com/mail/oauthRedirect.html#error=login_required&error_description=Silent+authentication+was+denied.+The+user+must+first+sign+in+and+if+needed+grant+the+client+application+access+to+the+scope+'service::outlook.office.com::MBI_SSL+openid+profile+offline_access'.&state=eyJpZCI6IjAxOWNmN2IzLWM1OTctNzMzNS05MGFmLWI0ZDEyZThlNjVjZiIsIm1ldGEiOnsiaW50ZXJhY3Rpb25UeXBlIjoic2lsZW50In19%7caHR0cHM6Ly9vdXRsb29rLmxpdmUuY29tL21haWwv:0
+[    6478ms] Identifier 'LocalStorageUtil' has already been declared
+[    7120ms] Identifier 'LocalStorageUtil' has already been declared
+[    7190ms] Identifier 'LocalStorageUtil' has already been declared
+[    7241ms] Identifier 'LocalStorageUtil' has already been declared
+[    7308ms] Identifier 'LocalStorageUtil' has already been declared
+[    7315ms] Identifier 'LocalStorageUtil' has already been declared
+[    7357ms] Identifier 'LocalStorageUtil' has already been declared
+[    7382ms] Identifier 'LocalStorageUtil' has already been declared
+[    7405ms] Identifier 'LocalStorageUtil' has already been declared
+[    7431ms] Identifier 'LocalStorageUtil' has already been declared
+[    7457ms] Identifier 'LocalStorageUtil' has already been declared
+[    7479ms] Identifier 'LocalStorageUtil' has already been declared
+[    7500ms] Identifier 'LocalStorageUtil' has already been declared
+[   10408ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://login.microsoftonline.com/favicon.ico:0

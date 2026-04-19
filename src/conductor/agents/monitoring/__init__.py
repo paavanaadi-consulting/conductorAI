@@ -19,7 +19,7 @@ Usage:
     from conductor.agents.monitoring import MonitorAgent
 """
 
-from src.conductor.agents.monitoring.monitor_agent import MonitorAgent
+from conductor.agents.monitoring.monitor_agent import MonitorAgent
 
 __all__ = [
     "MonitorAgent",

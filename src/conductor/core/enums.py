@@ -75,6 +75,9 @@ class AgentType(str, Enum):
     # --- Pipeline Generation (Pre-Workflow) ---
     PIPELINE_GENERATOR = "pipeline_generator"  # Generates pipeline YAML from requirements + infra
 
+    # ----ReadME md file Generator-------
+    README_FILE_GENERATOR = "README Generator Agent"
+
 
 # =============================================================================
 # Agent Status Enumeration

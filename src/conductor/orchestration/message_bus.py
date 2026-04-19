@@ -84,8 +84,8 @@ from typing import Any, Optional
 
 import structlog
 
-from src.conductor.core.exceptions import MessageBusError
-from src.conductor.core.messages import AgentMessage
+from conductor.core.exceptions import MessageBusError
+from conductor.core.messages import AgentMessage
 
 
 # =============================================================================

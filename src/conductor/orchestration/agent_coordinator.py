@@ -67,16 +67,16 @@ from typing import Any, Optional
 
 import structlog
 
-from src.conductor.agents.base import BaseAgent
-from src.conductor.core.enums import AgentStatus, AgentType, MessageType, TaskStatus
-from src.conductor.core.exceptions import AgentError
-from src.conductor.core.messages import AgentMessage
-from src.conductor.core.models import TaskDefinition, TaskResult
-from src.conductor.core.state import AgentState
-from src.conductor.orchestration.error_handler import ErrorAction, ErrorHandler
-from src.conductor.orchestration.message_bus import MessageBus
-from src.conductor.orchestration.policy_engine import PolicyEngine
-from src.conductor.orchestration.state_manager import StateManager
+from conductor.agents.base import BaseAgent
+from conductor.core.enums import AgentStatus, AgentType, MessageType, TaskStatus
+from conductor.core.exceptions import AgentError
+from conductor.core.messages import AgentMessage
+from conductor.core.models import TaskDefinition, TaskResult
+from conductor.core.state import AgentState
+from conductor.orchestration.error_handler import ErrorAction, ErrorHandler
+from conductor.orchestration.message_bus import MessageBus
+from conductor.orchestration.policy_engine import PolicyEngine
+from conductor.orchestration.state_manager import StateManager
 
 
 # =============================================================================

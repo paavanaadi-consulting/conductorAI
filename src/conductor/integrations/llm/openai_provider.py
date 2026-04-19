@@ -41,9 +41,9 @@ from typing import Any, Optional
 
 import structlog
 
-from src.conductor.core.config import LLMConfig
-from src.conductor.core.exceptions import LLMProviderError
-from src.conductor.integrations.llm.base import BaseLLMProvider, LLMResponse, LLMUsage
+from conductor.core.config import LLMConfig
+from conductor.core.exceptions import LLMProviderError
+from conductor.integrations.llm.base import BaseLLMProvider, LLMResponse, LLMUsage
 
 logger = structlog.get_logger()
 

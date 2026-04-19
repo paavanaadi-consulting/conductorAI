@@ -31,7 +31,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Optional
 
-from src.conductor.core.exceptions import ConductorError
+from conductor.core.exceptions import ConductorError
 
 
 class PermissionDeniedError(ConductorError):

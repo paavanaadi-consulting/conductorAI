@@ -1,14 +1,14 @@
 import yaml
 
-from src.conductor import ConductorAI
-from src.conductor.agents import PipelineYamlGeneratorAgent
-from src.conductor.core.config import ConductorConfig
-from src.conductor.core.config import load_config
-from src.conductor.core.enums import AgentType, WorkflowPhase
-from src.conductor.core.models import TaskDefinition, WorkflowDefinition
-from src.conductor.integrations.llm.anthropic_provider import AnthropicProvider
-from src.conductor.integrations.llm.mock import MockLLMProvider
-from src.conductor.orchestration.workflow_engine import WorkflowEngine
+from conductor import ConductorAI
+from conductor.agents import PipelineYamlGeneratorAgent
+from conductor.core.config import ConductorConfig
+from conductor.core.config import load_config
+from conductor.core.enums import AgentType, WorkflowPhase
+from conductor.core.models import TaskDefinition, WorkflowDefinition
+from conductor.integrations.llm.anthropic_provider import AnthropicProvider
+from conductor.integrations.llm.mock import MockLLMProvider
+from conductor.orchestration.workflow_engine import WorkflowEngine
 import asyncio
 
 async def main():

@@ -52,6 +52,9 @@ class ConductorService:
         from conductor.agents.pipeline.pipeline_yaml_generator import (
             PipelineYamlGeneratorAgent,
         )
+        from conductor.agents.development.readme_generator_agent import (
+            ReadmeGeneratorAgent
+        )
 
         agents = [
             CodingAgent("coding-01", self._conductor.config, llm_provider=self._llm_provider),
@@ -64,6 +67,10 @@ class ConductorService:
             PipelineYamlGeneratorAgent(
                 "pipeline-gen-01", self._conductor.config, llm_provider=self._llm_provider
             ),
+            ReadmeGeneratorAgent(
+                "readme-gen-01", self._conductor.config, llm_provider=self._llm_provider
+            )
+
         ]
         for agent in agents:
             await self._conductor.register_agent(agent)
@@ -82,6 +89,14 @@ class ConductorService:
         return await self._conductor.generate_pipeline_yaml(
             requirements_yaml, infra_yaml, pipeline_type=pipeline_type
         )
+
+    async def generate_readme(
+        self,
+        requirements_yaml: str,
+        infra_yaml: str,
+    ) -> dict[str, Any]:
+        return await self._conductor.generate_readme_txt(
+            requirements_yaml, infra_yaml)
 
     async def run_workflow(self, definition) -> Any:
         return await self._conductor.run_workflow(definition)

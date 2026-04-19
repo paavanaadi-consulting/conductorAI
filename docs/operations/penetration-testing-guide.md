@@ -163,10 +163,10 @@ redis-cli -h redis.target -p 6380 PING
 
 # Test 3: Verify dangerous commands are disabled
 redis-cli -h redis.target -p 6379 -a "${REDIS_PASSWORD}" CONFIG GET requirepass
-# Expected: (error) ERR unknown command 'CONFIG'
+# Expected: (error) ERR unknown commands 'CONFIG'
 
 redis-cli -h redis.target -p 6379 -a "${REDIS_PASSWORD}" FLUSHALL
-# Expected: (error) ERR unknown command 'FLUSHALL'
+# Expected: (error) ERR unknown commands 'FLUSHALL'
 ```
 
 #### 2.2.2 Key Namespace Isolation

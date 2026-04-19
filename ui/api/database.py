@@ -15,12 +15,16 @@ CREATE TABLE IF NOT EXISTS projects (
     name                        TEXT NOT NULL,
     github_repo                 TEXT NOT NULL,
     github_app_installation_id  INTEGER,
+    github_owner                TEXT,
+    architect_email             TEXT,
+    project_manager_email       TEXT,
     requirements_yaml           TEXT,
     infra_yaml                  TEXT,
     last_pipeline_yaml          TEXT,
     selected_components         TEXT DEFAULT '[]',
     created_at                  TEXT DEFAULT (datetime('now')),
-    updated_at                  TEXT DEFAULT (datetime('now'))
+    updated_at                  TEXT DEFAULT (datetime('now')),
+    is_approved                 BOOLEAN DEFAULT (false)
 );
 
 CREATE TABLE IF NOT EXISTS workflow_runs (

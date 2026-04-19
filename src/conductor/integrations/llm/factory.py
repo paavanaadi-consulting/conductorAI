@@ -16,8 +16,8 @@ Usage:
 
 from __future__ import annotations
 
-from src.conductor.core.config import LLMConfig
-from src.conductor.integrations.llm.base import BaseLLMProvider
+from conductor.core.config import LLMConfig
+from conductor.integrations.llm.base import BaseLLMProvider
 
 
 def create_llm_provider(config: LLMConfig) -> BaseLLMProvider:

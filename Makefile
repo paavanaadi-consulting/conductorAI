@@ -39,7 +39,7 @@ ui-install: ## Install UI dependencies (backend + frontend)
 	cd ui/frontend && npm install
 
 ui-api: ## Start FastAPI backend (port 8000)
-	PYTHONPATH=src cd ui && python -m uvicorn api.main:app --reload --port 8000
+	PYTHONPATH=.:src cd ui && python -m uvicorn api.main:app --reload --port 8000
 
 ui-frontend: ## Start Next.js frontend (port 3000)
 	cd ui/frontend && npm run dev

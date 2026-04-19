@@ -115,7 +115,7 @@ where = ["src"]
 # - asyncio_mode:   "auto" means all async test functions are automatically
 #                   treated as async tests (no need for @pytest.mark.asyncio)
 # - markers:        Custom markers for selective test running
-# - addopts:        Default command-line options (verbose + short traceback)
+# - addopts:        Default commands-line options (verbose + short traceback)
 # -----------------------------------------------------------------------------
 [tool.pytest.ini_options]
 testpaths = ["tests"]

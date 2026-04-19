@@ -261,6 +261,18 @@ class ArtifactStore(ABC):
         """
         ...
 
+# =============================================================================
+# github Store
+# =============================================================================
+
+class GithubStorage(ArtifactStore):
+    """Local artifact store implementation."""
+
+    def __init__(self, api_key) -> None:
+        self._store: dict[str, Artifact] = {}
+        self._logger = logger.bind(component="local_artifact_store")
+
+
 
 # =============================================================================
 # In-Memory Implementation
