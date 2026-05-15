@@ -110,6 +110,9 @@ PIPELINE_TYPE_INDICATORS: dict[str, list[str]] = {
         "integration_type", "existing_systems", "target", "strategy",
         "constraints",
     ],
+    "general": [
+        "domain", "features", "use_cases"
+    ],
 }
 
 # Values that strongly indicate a specific type
@@ -144,6 +147,15 @@ PIPELINE_TYPE_VALUES: dict[str, dict[str, list[str]]] = {
             "legacy_modernization", "multi_pipeline_integration",
             "platform_consolidation", "single_pipeline_migration",
         ],
+    },
+    "general": {
+        "testing": [
+            "unit", "integration", "regression", "UAT"
+        ],
+        "architecture": [
+            "monolith", "microservices", "serverless",
+        ]
+
     },
 }
 

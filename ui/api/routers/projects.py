@@ -24,12 +24,24 @@ from ui.api.models.schemas import (
     WorkflowRunResponse,
 )
 from ui.api.services.github_service import GitHubService
+from ui.api.services.email_service import EmailService, EmailConfig
 from ui.api.services.workflow_builder import build_workflow_definition
 
 logger = structlog.get_logger()
 router = APIRouter()
 api_settings = APISettings()
 github_service = GitHubService(api_settings)
+
+# Initialize email service with settings
+email_config = EmailConfig(
+    smtp_server=api_settings.email_smtp_server,
+    smtp_port=api_settings.email_smtp_port,
+    sender_email=api_settings.email_sender_email,
+    sender_password=api_settings.email_sender_password,
+    sender_name=api_settings.email_sender_name,
+    use_tls=api_settings.email_use_tls,
+)
+email_service = EmailService(email_config)
 
 
 def _row_to_project(row) -> dict:
@@ -49,6 +61,73 @@ def _row_to_project(row) -> dict:
         "github_owner": row["github_owner"],
         "is_approved": row["is_approved"]
     }
+
+
+async def _send_review_emails(
+    project_manager_email: str,
+    architect_email: str,
+    project_name: str,
+    project_id: str,
+    github_repo: str,
+    frontend_url: str,
+) -> None:
+    """Send review request emails to project manager and architect.
+
+    Args:
+        project_manager_email: Email of project manager
+        architect_email: Email of architect
+        project_name: Name of the project
+        project_id: ID of the project
+        github_repo: GitHub repository
+        frontend_url: Frontend URL for review links
+    """
+    try:
+        tasks = []
+
+        # Send email to project manager
+        if project_manager_email:
+            logger.info("sending_email_to_project_manager", email=project_manager_email)
+            task = email_service.send_project_review_email(
+                recipient_email=project_manager_email,
+                recipient_name="Project Manager",
+                project_name=project_name,
+                project_id=project_id,
+                github_repo=github_repo,
+                review_type="both",
+                frontend_url=frontend_url,
+            )
+            tasks.append(task)
+
+        # Send email to architect
+        if architect_email:
+            logger.info("sending_email_to_architect", email=architect_email)
+            task = email_service.send_project_review_email(
+                recipient_email=architect_email,
+                recipient_name="Architect",
+                project_name=project_name,
+                project_id=project_id,
+                github_repo=github_repo,
+                review_type="both",
+                frontend_url=frontend_url,
+            )
+            tasks.append(task)
+
+        # Send all emails concurrently
+        if tasks:
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            for i, result in enumerate(results):
+                if isinstance(result, Exception):
+                    logger.error(
+                        "email_send_exception",
+                        index=i,
+                        error=str(result),
+                    )
+                elif result:
+                    logger.info("email_sent_successfully", index=i)
+                else:
+                    logger.warning("email_send_failed", index=i)
+    except Exception as e:
+        logger.error("send_review_emails_failed", error=str(e))
 
 
 @router.post("/", response_model=ProjectResponse, status_code=201)
@@ -98,8 +177,9 @@ async def create_project(req: ProjectCreateRequest, request: Request):
     row = await cursor.fetchone()
     project = ProjectResponse(**_row_to_project(row))
     pipeline_content = await __generate_pipeline(project, req, request,db)
-    logger.info("pipeline_generation_successful", project_id=project_id)
+    logger.info("pipeline_generation_successful", project_id=project_id, pipeline_length=len(pipeline_content))
     read_me_content = await __generate_readme_file(project, request, db)
+    logger.info("readme_generation_successful", project_id=project_id, readme_length=len(read_me_content))
     logger.info("Create Repository")
     # write code to create a repository
     await github_service.create_repository(req.name, False)
@@ -117,6 +197,16 @@ async def create_project(req: ProjectCreateRequest, request: Request):
                                                message="Added README.md file",
                                                branch="main")
 
+    # Send review request emails to project manager and architect
+    logger.info("sending_review_request_emails", project_id=project_id)
+    await _send_review_emails(
+        project_manager_email=req.project_manager_email,
+        architect_email=req.architect_email,
+        project_name=req.name,
+        project_id=project_id,
+        github_repo=req.github_repo,
+        frontend_url=api_settings.frontend_url,
+    )
 
     return ProjectResponse(**_row_to_project(row))
 
@@ -198,6 +288,27 @@ async def get_project(project_id: str, request: Request):
         raise HTTPException(status_code=404, detail="Project not found")
     return ProjectResponse(**_row_to_project(row))
 
+@router.put("/{project_id}/approve", response_model=ProjectResponse)
+async def approve_project_review(project_id: str):
+    db = await get_db()
+    cursor = await db.execute("SELECT * FROM projects WHERE id = ?", (project_id,))
+    row = await cursor.fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Project not found")
+    if not row["is_approved"]:
+        logger.info("approve_project_review", project_id=project_id)
+        await db.execute(
+            "UPDATE projects SET is_approved = ?, updated_at = ? WHERE id = ?",
+            (True, datetime.now(timezone.utc).isoformat(), project_id),
+        )
+        await db.commit()
+        logger.info("Project review approved successfully", project_id=project_id)
+    else:
+        logger.info("Project already reviewed and approved", project_id=project_id)
+    cursor = await db.execute("SELECT * FROM projects WHERE id = ?", (project_id,))
+    row = await cursor.fetchone()
+    return ProjectResponse(**_row_to_project(row))
+
 
 @router.put("/{project_id}", response_model=ProjectResponse)
 async def update_project(project_id: str, req: ProjectUpdateRequest, request: Request):
@@ -224,7 +335,9 @@ async def update_project(project_id: str, req: ProjectUpdateRequest, request: Re
     if req.selected_components is not None:
         updates.append("selected_components = ?")
         params.append(json.dumps(req.selected_components))
-
+    if req.is_approved is not None:
+        updates.append("is_approved = ?")
+        params.append(req.is_approved)
     if updates:
         updates.append("updated_at = ?")
         params.append(datetime.now(timezone.utc).isoformat())
@@ -257,28 +370,13 @@ async def run_project(project_id: str, req: RunProjectRequest, request: Request)
         raise HTTPException(status_code=404, detail="Project not found")
 
     project = _row_to_project(row)
+    if not project.is_approved:
+        raise HTTPException(status_code=404, detail="Project not approved")
     conductor_svc = request.app.state.conductor
 
     pipeline_yaml = project.get("last_pipeline_yaml")
     if not pipeline_yaml:
         raise HTTPException(status_code=404, detail="Pipeline YAML file not found or is empty")
-    """# Generate pipeline YAML if not cached
-    pipeline_yaml = project.get("last_pipeline_yaml") or ""
-    if not pipeline_yaml and project.get("requirements_yaml") and project.get("infra_yaml"):
-        try:
-            result = await conductor_svc.generate_pipeline(
-                project["requirements_yaml"],
-                project["infra_yaml"],
-                pipeline_type=req.pipeline_type,
-            )
-            pipeline_yaml = result.get("pipeline_yaml", "")
-            await db.execute(
-                "UPDATE projects SET last_pipeline_yaml = ?, updated_at = ? WHERE id = ?",
-                (pipeline_yaml, datetime.now(timezone.utc).isoformat(), project_id),
-            )
-            await db.commit()
-        except Exception as exc:
-            logger.error("pipeline_generation_failed", error=str(exc))"""
 
     # Create workflow run record
     run_id = uuid.uuid4().hex
@@ -401,3 +499,4 @@ async def run_project(project_id: str, req: RunProjectRequest, request: Request)
         pipeline_yaml=pipeline_yaml,
         created_at=now,
     )
+

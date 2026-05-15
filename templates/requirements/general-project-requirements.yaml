@@ -21,6 +21,7 @@ description: |
   Include the business problem this solves.
 
 domain: ""                              # e.g. fintech, healthcare, e-commerce, logistics
+architecture: ""                        # microservice | 3-tier | monolithic
 
 features:
   - name: ""

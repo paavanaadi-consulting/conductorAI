@@ -3,12 +3,13 @@ conductor.agents.development.readme_generator_agent - README Generation Agent
 ==============================================================================
 
 This module implements the ReadmeGeneratorAgent — a specialized agent that
-generates comprehensive README.md files from infrastructure and requirements
-YAML specifications.
+generates comprehensive README.md files with a focus on PROJECT REQUIREMENTS,
+ARCHITECTURE, and WORKFLOWS (not tutorials or setup instructions).
 
 Architecture Context:
     The ReadmeGeneratorAgent is part of the DEVELOPMENT phase. It generates
-    project documentation based on infrastructure and requirements definitions.
+    requirements-focused project documentation based on infrastructure and
+    requirements YAML specifications.
 
     ┌───────────────────┐    TaskDefinition     ┌─────────────────────────┐
     │ AgentCoordinator  │ ──────────────────→   │ ReadmeGeneratorAgent    │
@@ -25,8 +26,10 @@ Architecture Context:
             "requirements_yaml": "...",         # Requirements YAML content
             "project_name": "my-project",       # Optional project name
             "include_sections": [               # Optional, defaults to all
-                "overview", "architecture", "setup", "usage", "testing", 
-                "deployment", "monitoring", "troubleshooting"
+                "project_overview", "business_requirements",
+                "technical_requirements", "use_cases", "system_workflow",
+                "data_architecture", "integration_points", "api_endpoints",
+                "security_systems", "success_criteria"
             ],
             "style": "professional"             # Optional: minimal | standard | professional
         }
@@ -42,13 +45,24 @@ Architecture Context:
             "requirements_summary": "...",      # Requirements summary
         }
 
-How README Generation Works:
-    1. ReadmeGeneratorAgent receives task with infra_yaml and requirements_yaml.
-    2. It parses both YAML files to extract metadata.
-    3. It constructs a structured prompt with the parsed data.
-    4. It calls the LLM to generate README sections.
-    5. It assembles sections into a complete README.md.
-    6. It validates and formats the output.
+Documentation Content Generated:
+    The README focuses on:
+    1. Project Overview - Business context and stakeholders
+    2. Business Requirements - Goals, KPIs, constraints
+    3. Technical Requirements - Performance, scalability, technology stack
+    4. Use Cases - User personas, workflows, business value
+    5. System Workflow - Architecture, data flows, integrations
+    6. Data Architecture - Data sources, models, quality
+    7. Integration Points - External systems, dependencies
+    8. API Endpoints - REST/GraphQL endpoints, schemas, authentication
+    9. Security Systems - Authentication, encryption, compliance, audit logging
+    10. Success Criteria - Metrics, targets, acceptance criteria
+
+    NOT INCLUDED (unlike typical README files):
+    - Setup and installation instructions
+    - Code examples or tutorials
+    - Troubleshooting guides
+    - Developer guides or API documentation
 
 Usage:
     >>> from conductor.agents.development import ReadmeGeneratorAgent
@@ -61,7 +75,7 @@ Usage:
     >>> await agent.start()
     >>>
     >>> task = TaskDefinition(
-    ...     name="Generate README",
+    ...     name="Generate Requirements README",
     ...     assigned_to=AgentType.CODING,
     ...     input_data={
     ...         "infra_yaml": infra_content,
@@ -95,51 +109,55 @@ logger = structlog.get_logger()
 
 
 # =============================================================================
-# System Prompt Template
+# System Prompt Template - Requirements & Workflow Focused
 # =============================================================================
-README_SYSTEM_PROMPT = """You are an expert technical writer specializing in software 
-project documentation. Your role is to generate clear, comprehensive README.md files 
-that guide developers and users through project setup, usage, and deployment.
+README_SYSTEM_PROMPT = """You are a technical requirements and architecture specialist.
+Your role is to generate comprehensive project documentation that focuses on
+business and technical requirements, use cases, and system workflows.
 
 Guidelines:
-- Create well-structured, easy-to-navigate documentation
-- Include practical examples and clear instructions
-- Follow markdown best practices with proper formatting
-- Organize content with clear table of contents
-- Use code blocks with proper language syntax highlighting
-- Include architecture diagrams described in text format
-- Provide troubleshooting and FAQ sections where relevant
-- Make content accessible to both beginners and experienced developers
+- Focus on WHAT the project does and WHY, not HOW to use it
+- Document business requirements and technical constraints
+- Describe real-world use cases and user scenarios
+- Explain system workflows, data flows, and integration points
+- Include requirement matrices and success criteria
+- Document stakeholders, priorities, and deadlines
+- Use clear requirements language and structured formats
+- Avoid tutorial content, setup instructions, or code examples
 
 Output Format:
-Generate ONLY the README.md content in valid markdown format. 
+Generate ONLY the markdown content in valid format.
 Do NOT include any explanations, metadata, or comments outside the markdown."""
 
 
 # =============================================================================
-# Default Sections
+# Default Sections - Requirements & Workflow Focused
 # =============================================================================
 DEFAULT_SECTIONS = [
-    "overview",
-    "architecture",
-    "setup",
-    "usage",
-    "testing",
-    "deployment",
-    "monitoring",
-    "troubleshooting",
+    "project_overview",
+    "business_requirements",
+    "technical_requirements",
+    "use_cases",
+    "system_workflow",
+    "data_architecture",
+    "integration_points",
+    "api_endpoints",
+    "security_systems",
+    "success_criteria",
 ]
 
 SECTION_TEMPLATES = {
-    "overview": "## Overview\n\n{content}\n",
-    "architecture": "## Architecture\n\n{content}\n",
-    "setup": "## Setup and Installation\n\n{content}\n",
-    "usage": "## Usage\n\n{content}\n",
-    "testing": "## Testing\n\n{content}\n",
-    "deployment": "## Deployment\n\n{content}\n",
-    "monitoring": "## Monitoring and Observability\n\n{content}\n",
-    "troubleshooting": "## Troubleshooting\n\n{content}\n",
-    "contributing": "## Contributing\n\n{content}\n",
+    "project_overview": "## Project Overview\n\n{content}\n",
+    "business_requirements": "## Business Requirements\n\n{content}\n",
+    "technical_requirements": "## Technical Requirements\n\n{content}\n",
+    "use_cases": "## Use Cases & User Scenarios\n\n{content}\n",
+    "system_workflow": "## System Workflow & Architecture\n\n{content}\n",
+    "data_architecture": "## Data Architecture\n\n{content}\n",
+    "integration_points": "## Integration Points & Dependencies\n\n{content}\n",
+    "api_endpoints": "## API Endpoints & Contracts\n\n{content}\n",
+    "security_systems": "## Security Systems & Methodologies\n\n{content}\n",
+    "success_criteria": "## Success Criteria & Metrics\n\n{content}\n",
+    "compliance_requirements": "## Compliance & Governance\n\n{content}\n",
 }
 
 
@@ -239,7 +257,6 @@ class ReadmeGeneratorAgent(BaseAgent):
             # Generate section content via LLM
             sections_content = await self._generate_sections(
                 infra_data,
-                requirements_data,
                 project_metadata,
                 include_sections,
                 style,
@@ -310,6 +327,89 @@ class ReadmeGeneratorAgent(BaseAgent):
             return {}
 
     # =========================================================================
+    # Pipeline Type Detection
+    # =========================================================================
+
+    def _detect_pipeline_type(self, requirements_data: dict[str, Any]) -> str:
+        """Detect which requirements template was used based on discriminating keys."""
+        keys = set(requirements_data.keys())
+        if {"sources", "destination", "pipeline_type", "quality_requirements"}.issubset(keys):
+            return "data-pipeline"
+        if {"problem_type", "ml_type", "training_data", "model_requirements"}.issubset(keys):
+            return "ml-pipeline"
+        if {"project_type", "knowledge_sources"}.issubset(keys):
+            return "rag-llm"
+        if {"agent_architecture", "agents", "autonomy_rules"}.issubset(keys):
+            return "agentic-ops"
+        if {"integration_type", "existing_systems"}.issubset(keys):
+            return "integration"
+        return "general"
+
+    def _extract_pipeline_specific(
+        self, pipeline_type: str, requirements_data: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Extract type-specific fields from requirements based on detected pipeline type."""
+        if pipeline_type == "data-pipeline":
+            return {
+                "pipeline_type": requirements_data.get("pipeline_type", ""),
+                "architecture": requirements_data.get("architecture", ""),
+                "sources": requirements_data.get("sources", []),
+                "destination": requirements_data.get("destination", {}),
+                "quality_requirements": requirements_data.get("quality_requirements", {}),
+                "schedule": requirements_data.get("schedule", {}),
+                "consumers": requirements_data.get("consumers", []),
+            }
+        if pipeline_type == "ml-pipeline":
+            return {
+                "problem_type": requirements_data.get("problem_type", ""),
+                "ml_type": requirements_data.get("ml_type", ""),
+                "deployment": requirements_data.get("deployment", ""),
+                "business_impact": requirements_data.get("business_impact", {}),
+                "training_data": requirements_data.get("training_data", {}),
+                "features": requirements_data.get("features", {}),
+                "model_requirements": requirements_data.get("model_requirements", {}),
+                "inference": requirements_data.get("inference", {}),
+                "retraining": requirements_data.get("retraining", {}),
+            }
+        if pipeline_type == "rag-llm":
+            return {
+                "project_type": requirements_data.get("project_type", ""),
+                "use_case": requirements_data.get("use_case", ""),
+                "knowledge_sources": requirements_data.get("knowledge_sources", []),
+                "users": requirements_data.get("users", {}),
+                "quality": requirements_data.get("quality", {}),
+                "budget": requirements_data.get("budget", {}),
+            }
+        if pipeline_type == "agentic-ops":
+            return {
+                "agent_architecture": requirements_data.get("agent_architecture", ""),
+                "orchestration": requirements_data.get("orchestration", ""),
+                "domain": requirements_data.get("domain", ""),
+                "agents": requirements_data.get("agents", []),
+                "autonomy_rules": requirements_data.get("autonomy_rules", {}),
+                "integrations": requirements_data.get("integrations", []),
+                "llm_config": requirements_data.get("llm_config", {}),
+                "safety": requirements_data.get("safety", {}),
+            }
+        if pipeline_type == "integration":
+            return {
+                "integration_type": requirements_data.get("integration_type", ""),
+                "scope": requirements_data.get("scope", ""),
+                "existing_systems": requirements_data.get("existing_systems", []),
+                "target": requirements_data.get("target", {}),
+                "strategy": requirements_data.get("strategy", {}),
+                "constraints": requirements_data.get("constraints", {}),
+            }
+        # general
+        return {
+            "domain": requirements_data.get("domain", ""),
+            "features": requirements_data.get("features", []),
+            "users": requirements_data.get("users", {}),
+            "performance": requirements_data.get("performance", {}),
+            "integrations": requirements_data.get("integrations", []),
+        }
+
+    # =========================================================================
     # Metadata Extraction
     # =========================================================================
 
@@ -329,19 +429,37 @@ class ReadmeGeneratorAgent(BaseAgent):
         Returns:
             Dictionary with extracted metadata.
         """
+        pipeline_type = self._detect_pipeline_type(requirements_data)
+
+        # For integration infra, compute/storage/monitoring may live under a 'target' key
+        infra_compute = infra_data.get("compute") or infra_data.get("target", {}).get("compute", {})
+        infra_storage = infra_data.get("storage") or infra_data.get("target", {}).get("storage", {})
+        infra_monitoring = infra_data.get("monitoring") or infra_data.get("target", {}).get("monitoring", {})
+        infra_orchestration = (infra_data.get("orchestration") or
+                               infra_data.get("target", {}).get("orchestration", {}))
+
+        compliance = requirements_data.get("compliance", {})
+
         return {
-            "project_name": project_name,
-            "organization": requirements_data.get("organization", ""),
+            "detected_pipeline_type": pipeline_type,
+            "project_name": requirements_data.get("project_name", project_name) or project_name,
+            "organization": infra_data.get("organization", ""),
             "team": requirements_data.get("team", ""),
             "contact_email": requirements_data.get("contact_email", ""),
             "priority": requirements_data.get("priority", "high"),
             "target_date": requirements_data.get("target_date", ""),
             "description": requirements_data.get("description", ""),
-            "domain": requirements_data.get("domain", ""),
-            "compute_platforms": list(infra_data.get("compute", {}).keys()),
-            "storage_systems": list(infra_data.get("storage", {}).keys()),
-            "monitoring_tools": list(infra_data.get("monitoring", {}).keys()),
+            "notes": requirements_data.get("notes", ""),
+            "success_criteria": requirements_data.get("success_criteria", []),
+            "compliance_regulations": compliance.get("regulations", []) if isinstance(compliance, dict) else [],
+            "preferences": requirements_data.get("preferences", {}),
+            "compute_platforms": list(infra_compute.keys()) if isinstance(infra_compute, dict) else [],
+            "storage_systems": list(infra_storage.keys()) if isinstance(infra_storage, dict) else [],
+            "monitoring_tools": list(infra_monitoring.keys()) if isinstance(infra_monitoring, dict) else [],
+            "orchestration_tools": list(infra_orchestration.keys()) if isinstance(infra_orchestration, dict) else [],
             "ci_cd_provider": infra_data.get("ci_cd", {}).get("provider", ""),
+            "constraints": infra_data.get("constraints", {}),
+            "pipeline_specific": self._extract_pipeline_specific(pipeline_type, requirements_data),
         }
 
     # =========================================================================
@@ -351,7 +469,6 @@ class ReadmeGeneratorAgent(BaseAgent):
     async def _generate_sections(
         self,
         infra_data: dict[str, Any],
-        requirements_data: dict[str, Any],
         metadata: dict[str, Any],
         sections_to_generate: list[str],
         style: str,
@@ -360,8 +477,7 @@ class ReadmeGeneratorAgent(BaseAgent):
 
         Args:
             infra_data: Parsed infrastructure data.
-            requirements_data: Parsed requirements data.
-            metadata: Extracted metadata.
+            metadata: Extracted metadata (includes pipeline_specific and constraints).
             sections_to_generate: List of section names to generate.
             style: Documentation style preference.
 
@@ -370,66 +486,192 @@ class ReadmeGeneratorAgent(BaseAgent):
         """
         sections = {}
 
+        success_criteria = metadata.get("success_criteria", [])
+        success_criteria_text = (
+            "\n".join(f"- {c}" for c in success_criteria if c)
+            if success_criteria
+            else "Not specified"
+        )
+        compliance_regs = metadata.get("compliance_regulations", [])
+        preferences = metadata.get("preferences", {})
+        pipeline_specific_text = yaml.dump(
+            metadata.get("pipeline_specific", {}), default_flow_style=False
+        )
+        constraints_text = yaml.dump(
+            metadata.get("constraints", {}), default_flow_style=False
+        )
+
         # Build context for LLM
         context = f"""
 Project Information:
 - Name: {metadata.get('project_name')}
 - Organization: {metadata.get('organization')}
 - Team: {metadata.get('team')}
+- Contact Email: {metadata.get('contact_email')}
 - Description: {metadata.get('description')}
 - Priority: {metadata.get('priority')}
-- Domain: {metadata.get('domain')}
+- Target Date: {metadata.get('target_date')}
+- Pipeline Type: {metadata.get('detected_pipeline_type')}
+
+Success Criteria:
+{success_criteria_text}
+
+Compliance Regulations: {', '.join(compliance_regs) if compliance_regs else 'None specified'}
+Technology Preferences: {yaml.dump(preferences, default_flow_style=True).strip() if preferences else 'Not specified'}
 
 Infrastructure Capabilities:
 - Compute Platforms: {', '.join(metadata.get('compute_platforms', []))}
 - Storage Systems: {', '.join(metadata.get('storage_systems', []))}
 - Monitoring Tools: {', '.join(metadata.get('monitoring_tools', []))}
+- Orchestration Tools: {', '.join(metadata.get('orchestration_tools', []))}
 - CI/CD Provider: {metadata.get('ci_cd_provider')}
+
+Infrastructure Constraints:
+{constraints_text}
+
+Pipeline-Specific Requirements:
+{pipeline_specific_text}
 
 Infrastructure Details:
 {yaml.dump(infra_data, default_flow_style=False)}
 
-Requirements:
-{yaml.dump(requirements_data, default_flow_style=False)}
-
 Documentation Style: {style}
 """
+
+        # Generate each section with requirements-focused prompts
+        section_prompts = {
+            "project_overview": """Provide a high-level project overview including:
+- Project name and organization
+- Business drivers and strategic importance
+- Key stakeholders and decision-makers
+- Timeline and priority level
+- Success vision statement""",
+            "business_requirements": """Document the business requirements including:
+- Primary business objectives and goals
+- Key success metrics and KPIs
+- Stakeholder needs and expectations
+- Budget and resource constraints
+- Timeline and delivery milestones
+- Regulatory and compliance requirements""",
+            "technical_requirements": """List technical requirements including:
+- System performance requirements (throughput, latency, availability)
+- Scalability and growth projections
+- Technology stack constraints and preferences
+- Integration requirements with existing systems
+- Data requirements and volumes
+- Security and compliance requirements
+- Infrastructure and deployment constraints""",
+            "use_cases": """Define user scenarios and use cases including:
+- Primary user personas and roles
+- Main workflows and user journeys
+- Business value for each use case
+- Priority ranking of use cases
+- Data inputs and expected outputs
+- User interactions and decision points""",
+            "system_workflow": """Describe the system architecture and workflows:
+- High-level system components and their interactions
+- Data flow diagrams (in text/markdown format)
+- Processing workflows and pipelines
+- System dependencies and integrations
+- User workflows and touchpoints
+- Error handling and exception flows""",
+            "data_architecture": """Detail the data architecture including:
+- Data sources and data ownership
+- Data models and schemas
+- Data flow from source to destination
+- Data quality requirements
+- Data retention and lifecycle policies
+- Privacy and data protection requirements""",
+            "integration_points": """Document integration requirements:
+- External systems that need integration
+- Integration patterns and protocols
+- APIs and data exchange formats
+- Third-party services and dependencies
+- Synchronization requirements
+- Error recovery and fallback mechanisms""",
+            "api_endpoints": """Document API endpoints and contracts including:
+- REST/GraphQL/gRPC endpoint definitions (if applicable)
+- HTTP methods and paths for each endpoint
+- Request and response schemas/examples
+- Authentication and authorization requirements
+- Rate limiting and quota policies
+- Error responses and status codes
+- Versioning strategy
+- Webhook/event subscriptions (if applicable)
+- API documentation links or OpenAPI/Swagger specs""",
+            "security_systems": """Detail security systems and methodologies including:
+- Authentication mechanisms (OAuth2, JWT, SAML, etc.)
+- Authorization and access control models (RBAC, ABAC, etc.)
+- Encryption standards (TLS, AES, etc.)
+- Data protection and privacy measures
+- Secrets management and credential handling
+- Security compliance frameworks (SOC 2, ISO 27001, etc.)
+- Vulnerability scanning and patch management
+- DDoS protection and rate limiting strategies
+- Audit logging and monitoring
+- Security testing and penetration testing plans""",
+            "success_criteria": """Define success metrics and criteria:
+- Quantifiable success metrics
+- Performance baselines and targets
+- User adoption targets
+- Business value realization milestones
+- Quality acceptance criteria
+- Risk mitigation targets""",
+            "compliance_requirements": """Document compliance and governance:
+- Regulatory requirements
+- Industry standards and certifications needed
+- Data protection and privacy regulations
+- Audit and monitoring requirements
+- Governance policies and approval processes
+- Change management requirements""",
+        }
 
         # Generate each section
         for section in sections_to_generate:
             if section not in SECTION_TEMPLATES:
                 continue
 
-            user_prompt = f"""Generate a {section} section for the README.md file 
-for this project. Use the context provided above.
+            section_specific_prompt = section_prompts.get(
+                section,
+                f"Generate a detailed {section} section."
+            )
 
-Requirements:
-- Use markdown formatting
-- Include practical examples where applicable
-- Make it comprehensive but concise
+            user_prompt = f"""Generate a {section} section for the project documentation.
+
+Project Context:
+{context}
+
+Requirements for this section:
+{section_specific_prompt}
+
+Guidelines:
+- Use markdown formatting with clear structure
+- Focus on requirements and specifications, NOT tutorials or setup instructions
+- Use tables for requirement matrices where appropriate
+- Be comprehensive but well-organized
+- Use bullet points and numbered lists for clarity
 - Match the {style} style
-
-Section Name: {section.upper()}
 
 Generate ONLY the section content without the heading."""
 
             try:
-                content = await self._llm_provider.generate_with_system(
+                llm_response = await self._llm_provider.generate_with_system(
                     system_prompt=README_SYSTEM_PROMPT,
                     user_prompt=user_prompt,
                     context_entries=[
                         ContextEntry(
-                            key="project_context",
-                            value=context,
-                            source="metadata_extractor",
+                            context_file="project_requirements.md",
+                            section_heading=f"## {section.replace('_', ' ').upper()}",
+                            content=context,
+                            agent_id=self.agent_id,
                         ),
                     ],
                 )
-                sections[section] = content.strip()
+                sections[section] = llm_response.content.strip()
                 self._logger.debug(
                     "section_generated",
                     section=section,
-                    content_length=len(content),
+                    content_length=len(llm_response.content),
                 )
             except Exception as e:
                 self._logger.warning(
@@ -437,7 +679,7 @@ Generate ONLY the section content without the heading."""
                     section=section,
                     error=str(e),
                 )
-                sections[section] = f"*{section.capitalize()} section coming soon...*"
+                sections[section] = f"*{section.replace('_', ' ').capitalize()} details to be added*"
 
         return sections
 
@@ -462,28 +704,38 @@ Generate ONLY the section content without the heading."""
             Complete README.md content.
         """
         parts = [
-            f"# {project_name}\n",
-            "*Auto-generated by ConductorAI ReadmeGeneratorAgent*\n\n",
+            f"# {project_name}\n\n",
+            "*Auto-generated by ConductorAI ReadmeGeneratorAgent*\n",
+            "*Last Updated: {timestamp}*\n\n".format(
+                timestamp=__import__('datetime').datetime.now().isoformat()
+            ),
         ]
 
         # Add table of contents
         toc = "## Table of Contents\n\n"
         for section in section_order:
             if section in sections:
-                toc += f"- [{section.capitalize()}](#{section})\n"
+                section_title = section.replace('_', ' ').title()
+                anchor = section.lower().replace(' ', '-')
+                toc += f"- [{section_title}](#{anchor})\n"
         parts.append(toc + "\n")
 
         # Add sections
         for section in section_order:
             if section in sections:
-                heading = f"## {section.replace('_', ' ').title()}\n\n"
+                section_title = section.replace('_', ' ').title()
+                heading = f"## {section_title}\n\n"
                 parts.append(heading + sections[section] + "\n\n")
 
-        # Add footer
+        # Add footer with metadata
         parts.append(
             "\n---\n\n"
-            "*This README was generated by ConductorAI. "
-            "For questions or updates, contact the project team.*\n"
+            "## Document Information\n\n"
+            "- **Generated By**: ConductorAI ReadmeGeneratorAgent\n"
+            "- **Purpose**: Project Requirements and Architecture Documentation\n"
+            "- **Document Type**: Requirements Specification\n\n"
+            "*For questions or updates regarding project requirements, "
+            "contact the project team.*\n"
         )
 
         return "".join(parts)
